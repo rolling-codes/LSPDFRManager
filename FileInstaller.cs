@@ -4,8 +4,18 @@ using SharpCompress.Common;
 
 namespace LSPDFRManager.Services;
 
+/// <summary>
+/// Extracts mod files from a <c>.zip</c>, <c>.rar</c>, <c>.7z</c> archive, or
+/// plain directory into a target root folder (the GTA V directory).
+/// </summary>
 public static class FileInstaller
 {
+    /// <summary>
+    /// Extracts all files from <paramref name="mod"/> into <paramref name="targetRoot"/>,
+    /// overwriting any existing files.
+    /// </summary>
+    /// <param name="mod">Mod to install; <see cref="ModInfo.SourcePath"/> must exist.</param>
+    /// <param name="targetRoot">Destination directory (GTA V root).</param>
     public static void Install(ModInfo mod, string targetRoot)
     {
         if (Directory.Exists(mod.SourcePath))

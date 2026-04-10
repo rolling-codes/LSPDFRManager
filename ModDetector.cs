@@ -5,6 +5,12 @@ using SharpCompress.Archives;
 
 namespace LSPDFRManager.Services;
 
+/// <summary>
+/// Inspects an archive or directory and classifies its contents as a known
+/// <see cref="ModType"/> using a rule-based scoring engine.
+/// Produces a <see cref="ModInfo"/> ready to be passed to
+/// <see cref="LSPDFRManager.Core.InstallQueue"/>.
+/// </summary>
 public class ModDetector
 {
     private record DetectionRule(
@@ -52,6 +58,12 @@ public class ModDetector
             ["sound", "audio", "siren", "radio"]),
     ];
 
+    /// <summary>
+    /// Detects the type and metadata of the mod at <paramref name="sourcePath"/>.
+    /// Supports <c>.zip</c>, <c>.rar</c>, <c>.7z</c>, and plain directories.
+    /// </summary>
+    /// <param name="sourcePath">Path to the archive file or extracted mod directory.</param>
+    /// <returns>A populated <see cref="ModInfo"/> including any detection warnings.</returns>
     public ModInfo Detect(string sourcePath)
     {
         AppLogger.Info($"Detecting: {Path.GetFileName(sourcePath)}");

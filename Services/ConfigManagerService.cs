@@ -2,6 +2,7 @@ using LSPDFRManager.Core;
 
 namespace LSPDFRManager.Services;
 
+/// <summary>A captured mod config file stored by <see cref="ConfigManagerService"/>.</summary>
 public class ConfigEntry
 {
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -11,6 +12,11 @@ public class ConfigEntry
     public DateTime LastModified { get; set; } = DateTime.Now;
 }
 
+/// <summary>
+/// Stores and retrieves mod config file snapshots so they can be restored when
+/// reinstalling from a <see cref="LSPDFRManager.Models.ModManifest"/>.
+/// Persisted to <c>%APPDATA%\LSPDFRManager\configs.json</c>.
+/// </summary>
 public class ConfigManagerService
 {
     private static readonly string ConfigsPath = Path.Combine(

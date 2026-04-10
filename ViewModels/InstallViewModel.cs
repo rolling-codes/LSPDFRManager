@@ -125,14 +125,11 @@ public class InstallViewModel : ObservableObject
         }
 
         if (!string.IsNullOrWhiteSpace(_authorOverride))
-            _detectedMod.Name = _authorOverride;   // repurpose field for now (author stored in InstallQueue)
+            _detectedMod.Author = _authorOverride;
 
         IsInstalling = true;
         AddLog($"Queued: {_detectedMod.Name}");
         _queue.Enqueue(_detectedMod);
-
-        // Wait for queue to signal completion via events
-        await Task.Delay(200);
     }
 
     private void AddLog(string msg)

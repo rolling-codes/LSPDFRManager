@@ -3,6 +3,11 @@ using LSPDFRManager.Models;
 
 namespace LSPDFRManager.Services;
 
+/// <summary>
+/// Creates and restores ZIP backups of the manager's application data
+/// (mod library, config snapshots, key files).  Backup archives are stored
+/// in the path configured by <see cref="AppConfig.BackupPath"/>.
+/// </summary>
 public class BackupService
 {
     /// <summary>Creates a ZIP backup of the mod library and config data.</summary>

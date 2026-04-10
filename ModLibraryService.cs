@@ -3,6 +3,11 @@ using LSPDFRManager.Models;
 
 namespace LSPDFRManager.Services;
 
+/// <summary>
+/// Singleton registry of all installed mods, backed by
+/// <c>%APPDATA%\LSPDFRManager\library.json</c>.
+/// Provides search, conflict detection, and enable/disable toggling.
+/// </summary>
 public class ModLibraryService
 {
     private static readonly string LibraryPath = Path.Combine(

@@ -73,6 +73,7 @@ public class InstallQueue : IDisposable
                     TypeLabel   = mod.TypeLabel,
                     TypeColor   = mod.TypeColor,
                     Version     = mod.Version ?? "",
+                    Author      = mod.Author ?? "",
                     SourcePath  = mod.SourcePath,
                     InstallPath = gtaPath,
                     DlcPackName = mod.DlcPackName ?? "",

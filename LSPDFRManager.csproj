@@ -16,6 +16,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="LSPDFRManager.Tests\**" />
+    <EmbeddedResource Remove="LSPDFRManager.Tests\**" />
+    <None Remove="LSPDFRManager.Tests\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="SharpCompress" Version="0.38.0" />
   </ItemGroup>
 
