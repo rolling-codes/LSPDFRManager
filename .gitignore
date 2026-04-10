@@ -18,6 +18,8 @@ x64/
 x86/
 [Bb]uild*/
 publish/
+publish_*/
+*.zip
 
 ## OS
 .DS_Store
