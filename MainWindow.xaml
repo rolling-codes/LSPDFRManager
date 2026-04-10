@@ -1,0 +1,98 @@
+<Window x:Class="LSPDFRManager.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:LSPDFRManager.ViewModels"
+        Title="LSPDFR Manager"
+        Height="760" Width="1140"
+        MinHeight="600" MinWidth="860"
+        WindowStartupLocation="CenterScreen"
+        Background="#111827"
+        FontFamily="Segoe UI">
+
+    <Window.DataContext>
+        <vm:MainViewModel/>
+    </Window.DataContext>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ══ Sidebar ════════════════════════════════════════ -->
+        <Border Grid.Column="0"
+                Background="#0D1117"
+                BorderThickness="0,0,1,0"
+                BorderBrush="#21262D">
+            <DockPanel>
+
+                <!-- Logo -->
+                <StackPanel DockPanel.Dock="Top" Margin="20,24,20,28">
+                    <TextBlock FontSize="22" FontWeight="Bold">
+                        <Run Foreground="#3B82F6" Text="LSPDFR"/>
+                        <Run Foreground="#F9FAFB" Text=" Mgr"/>
+                    </TextBlock>
+                    <TextBlock Text="Mod Manager v1.0"
+                               Foreground="#4B5563"
+                               FontSize="11"
+                               Margin="0,3,0,0"/>
+                </StackPanel>
+
+                <!-- Version + status at bottom -->
+                <StackPanel DockPanel.Dock="Bottom" Margin="20,10,20,20">
+                    <Separator/>
+                    <TextBlock Text="{Binding StatusMessage}"
+                               Foreground="#6B7280"
+                               FontSize="11"
+                               TextWrapping="Wrap"
+                               Margin="0,8,0,0"/>
+                </StackPanel>
+
+                <!-- Navigation -->
+                <StackPanel Margin="0,0,0,0">
+                    <Button Style="{StaticResource NavButton}"
+                            Command="{Binding NavigateCommand}"
+                            CommandParameter="Library"
+                            Tag="{Binding IsLibraryActive}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#x2630;  " FontSize="14"/>
+                            <TextBlock Text="Library" FontSize="14"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource NavButton}"
+                            Command="{Binding NavigateCommand}"
+                            CommandParameter="Install"
+                            Tag="{Binding IsInstallActive}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#x2B07;  " FontSize="14"/>
+                            <TextBlock Text="Install" FontSize="14"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource NavButton}"
+                            Command="{Binding NavigateCommand}"
+                            CommandParameter="Keys"
+                            Tag="{Binding IsKeysActive}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#x1F511;  " FontFamily="Segoe UI Emoji" FontSize="14"/>
+                            <TextBlock Text="Keys" FontSize="14"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource NavButton}"
+                            Command="{Binding NavigateCommand}"
+                            CommandParameter="Settings"
+                            Tag="{Binding IsSettingsActive}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#x2699;  " FontSize="14"/>
+                            <TextBlock Text="Settings" FontSize="14"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- ══ Content area ═══════════════════════════════════ -->
+        <ContentControl Grid.Column="1"
+                        Content="{Binding CurrentView}"
+                        Background="#111827"/>
+    </Grid>
+</Window>

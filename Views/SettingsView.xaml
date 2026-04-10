@@ -1,0 +1,178 @@
+<UserControl x:Class="LSPDFRManager.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{StaticResource Bg}"
+             FontFamily="Segoe UI">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="28,24,28,16">
+
+            <!-- ── Header ──────────────────────────────────── -->
+            <TextBlock Text="Settings" Style="{StaticResource SectionHeader}" Margin="0,0,0,4"/>
+            <TextBlock Text="Configure paths, backups, and mod manifest import / export."
+                       Foreground="{StaticResource TextMuted}" FontSize="13" Margin="0,0,0,24"/>
+
+            <!-- ══ GTA V Path ═══════════════════════════════ -->
+            <TextBlock Text="GTA V INSTALLATION"
+                       Foreground="{StaticResource TextFaint}"
+                       FontSize="11" FontWeight="SemiBold"
+                       Margin="0,0,0,8"/>
+            <Border Background="{StaticResource Surface}" CornerRadius="10" Padding="20" Margin="0,0,0,20">
+                <StackPanel>
+                    <TextBlock Text="GTA V folder" Foreground="{StaticResource TextMuted}"
+                               FontSize="12" Margin="0,0,0,6"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0"
+                                 Text="{Binding GtaPath, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,0,8,0"/>
+                        <Button Grid.Column="1" Style="{StaticResource GhostButton}"
+                                Content="Browse"
+                                Command="{Binding BrowseGtaPathCommand}"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- ══ Behaviour ════════════════════════════════ -->
+            <TextBlock Text="BEHAVIOUR"
+                       Foreground="{StaticResource TextFaint}"
+                       FontSize="11" FontWeight="SemiBold"
+
+                       Margin="0,0,0,8"/>
+            <Border Background="{StaticResource Surface}" CornerRadius="10" Padding="20" Margin="0,0,0,20">
+                <StackPanel>
+                    <CheckBox Style="{StaticResource ToggleSwitch}"
+                              IsChecked="{Binding AutoBackupOnInstall}"
+                              Margin="0,0,0,14">
+                        <TextBlock Foreground="{StaticResource TextPrimary}" FontSize="13">
+                            Auto-backup before installing a new mod
+                        </TextBlock>
+                    </CheckBox>
+                    <CheckBox Style="{StaticResource ToggleSwitch}"
+                              IsChecked="{Binding ConfirmBeforeUninstall}">
+                        <TextBlock Foreground="{StaticResource TextPrimary}" FontSize="13">
+                            Confirm before uninstalling
+                        </TextBlock>
+                    </CheckBox>
+                </StackPanel>
+            </Border>
+
+            <!-- ══ Backup ════════════════════════════════════ -->
+            <TextBlock Text="BACKUP &amp; RESTORE"
+                       Foreground="{StaticResource TextFaint}"
+                       FontSize="11" FontWeight="SemiBold"
+
+                       Margin="0,0,0,8"/>
+            <Border Background="{StaticResource Surface}" CornerRadius="10" Padding="20" Margin="0,0,0,20">
+                <StackPanel>
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Backup folder"
+                                       Foreground="{StaticResource TextMuted}"
+                                       FontSize="12" Margin="0,0,0,6"/>
+                            <TextBox Text="{Binding BackupPath, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" Style="{StaticResource GhostButton}"
+                                Content="Browse"
+                                Command="{Binding BrowseBackupPathCommand}"
+                                VerticalAlignment="Bottom"
+                                Margin="8,0,0,0"/>
+                    </Grid>
+
+                    <TextBlock Foreground="{StaticResource TextMuted}" FontSize="12" Margin="0,0,0,14">
+                        <Run Text="Last backup: "/>
+                        <Run Text="{Binding LastBackupDate, Mode=OneWay}"/>
+                    </TextBlock>
+
+                    <StackPanel Orientation="Horizontal">
+                        <Button Style="{StaticResource PrimaryButton}"
+                                Content="Create Backup"
+                                Command="{Binding CreateBackupCommand}"
+                                IsEnabled="{Binding IsIdle}"
+                                Margin="0,0,10,0"/>
+                        <Button Style="{StaticResource GhostButton}"
+                                Content="Restore from Backup"
+                                Command="{Binding RestoreBackupCommand}"
+                                IsEnabled="{Binding IsIdle}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ══ Import / Export ══════════════════════════ -->
+            <TextBlock Text="MANIFEST IMPORT / EXPORT"
+                       Foreground="{StaticResource TextFaint}"
+                       FontSize="11" FontWeight="SemiBold"
+
+                       Margin="0,0,0,8"/>
+            <Border Background="{StaticResource Surface}" CornerRadius="10" Padding="20" Margin="0,0,0,20">
+                <StackPanel>
+                    <TextBlock Text="Export your installed mod list as a manifest for sharing or reinstalling on a new machine."
+                               Foreground="{StaticResource TextMuted}"
+                               FontSize="13"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,14"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Style="{StaticResource PrimaryButton}"
+                                Content="Export Manifest"
+                                Command="{Binding ExportManifestCommand}"
+                                IsEnabled="{Binding IsIdle}"
+                                Margin="0,0,10,0"/>
+                        <Button Style="{StaticResource GhostButton}"
+                                Content="Import &amp; Reinstall"
+                                Command="{Binding ImportManifestCommand}"
+                                IsEnabled="{Binding IsIdle}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ══ Progress log ══════════════════════════════ -->
+            <Border Background="{StaticResource Surface}"
+                    CornerRadius="10"
+                    Padding="16"
+                    Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"
+                    Margin="0,0,0,16">
+                <StackPanel>
+                    <ProgressBar IsIndeterminate="True" Margin="0,0,0,10"/>
+                    <ScrollViewer MaxHeight="120" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding ProgressLog}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}"
+                                               Foreground="#94A3B8"
+                                               FontFamily="Consolas"
+                                               FontSize="12"
+                                               Margin="0,1"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </StackPanel>
+            </Border>
+
+            <!-- ══ Footer actions ════════════════════════════ -->
+            <StackPanel Orientation="Horizontal">
+                <Button Style="{StaticResource PrimaryButton}"
+                        Content="Save Settings"
+                        Command="{Binding SaveSettingsCommand}"
+                        Margin="0,0,10,0"/>
+                <Button Style="{StaticResource GhostButton}"
+                        Content="Open Log Folder"
+                        Command="{Binding OpenLogFolderCommand}"/>
+            </StackPanel>
+
+            <!-- Status -->
+            <TextBlock Text="{Binding StatusMessage}"
+                       Foreground="{StaticResource TextMuted}"
+                       FontSize="12"
+                       Margin="0,10,0,0"/>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
