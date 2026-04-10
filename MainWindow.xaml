@@ -38,7 +38,7 @@
                                    FontSize="17" FontWeight="SemiBold"
                                    VerticalAlignment="Center"/>
                     </StackPanel>
-                    <TextBlock Text="v1.1.0 · GTA V Mod Manager"
+                    <TextBlock Text="v1.1.1 · GTA V Mod Manager"
                                Foreground="#3D4F6A" FontSize="10"
                                Margin="0,3,0,0"/>
                 </StackPanel>
