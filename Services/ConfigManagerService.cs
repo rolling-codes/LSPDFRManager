@@ -9,6 +9,8 @@ public class ConfigEntry
     public string ModName { get; set; } = "";
     public string ConfigFileName { get; set; } = "";
     public string ConfigContent { get; set; } = "";
+    /// <summary>Full path to the file on disk, if it is still present.</summary>
+    public string SourcePath { get; set; } = "";
     public DateTime LastModified { get; set; } = DateTime.Now;
 }
 
@@ -30,13 +32,15 @@ public class ConfigManagerService
 
     private ConfigManagerService() => Load();
 
-    public void AddBuiltInConfig(string modName, string fileName, string content)
+    public void AddBuiltInConfig(string modName, string fileName, string content,
+        string sourcePath = "")
     {
         var entry = new ConfigEntry
         {
-            ModName = modName,
+            ModName        = modName,
             ConfigFileName = fileName,
-            ConfigContent = content,
+            ConfigContent  = content,
+            SourcePath     = sourcePath,
         };
         Configs.Add(entry);
         Save();

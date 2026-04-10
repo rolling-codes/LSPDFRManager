@@ -29,7 +29,15 @@ public class InstallViewModel : ObservableObject
     public ModInfo? DetectedMod
     {
         get => _detectedMod;
-        set { SetProperty(ref _detectedMod, value); OnPropertyChanged(nameof(HasDetection)); OnPropertyChanged(nameof(HasNoDetection)); }
+        set
+        {
+            SetProperty(ref _detectedMod, value);
+            OnPropertyChanged(nameof(HasDetection));
+            OnPropertyChanged(nameof(HasNoDetection));
+            OnPropertyChanged(nameof(DetectedFilesSample));
+            OnPropertyChanged(nameof(HasMoreDetectedFiles));
+            OnPropertyChanged(nameof(DetectedFilesMoreText));
+        }
     }
 
     public bool IsDetecting
@@ -44,8 +52,8 @@ public class InstallViewModel : ObservableObject
         set { SetProperty(ref _isInstalling, value); OnPropertyChanged(nameof(IsIdle)); }
     }
 
-    public bool IsIdle => !_isDetecting && !_isInstalling;
-    public bool HasDetection => _detectedMod is not null;
+    public bool IsIdle         => !_isDetecting && !_isInstalling;
+    public bool HasDetection   => _detectedMod is not null;
     public bool HasNoDetection => _detectedMod is null;
 
     public string AuthorOverride
@@ -53,6 +61,30 @@ public class InstallViewModel : ObservableObject
         get => _authorOverride;
         set => SetProperty(ref _authorOverride, value);
     }
+
+    private string _nameOverride = "";
+    public string NameOverride
+    {
+        get => _nameOverride;
+        set => SetProperty(ref _nameOverride, value);
+    }
+
+    // ── File preview ──────────────────────────────────────────────
+    private const int FilePreviewCount = 8;
+
+    public IEnumerable<string> DetectedFilesSample =>
+        _detectedMod?.Files
+            .Take(FilePreviewCount)
+            .Select(f => Path.GetFileName(f) is { Length: > 0 } n ? n : f)
+            ?? [];
+
+    public bool HasMoreDetectedFiles =>
+        (_detectedMod?.Files.Count ?? 0) > FilePreviewCount;
+
+    public string DetectedFilesMoreText =>
+        HasMoreDetectedFiles
+            ? $"+{_detectedMod!.Files.Count - FilePreviewCount} more files"
+            : "";
 
     public ICommand BrowseCommand { get; }
     public ICommand InstallCommand { get; }
@@ -77,9 +109,10 @@ public class InstallViewModel : ObservableObject
 
         ClearCommand = new RelayCommand(() =>
         {
-            DroppedPath = null;
-            DetectedMod = null;
+            DroppedPath    = null;
+            DetectedMod    = null;
             AuthorOverride = "";
+            NameOverride   = "";
             Log.Clear();
         });
 
@@ -98,7 +131,8 @@ public class InstallViewModel : ObservableObject
         try
         {
             var info = await Task.Run(() => _detector.Detect(path));
-            DetectedMod = info;
+            DetectedMod  = info;
+            NameOverride = info.Name;
             AddLog($"→ {info.TypeLabel}  ({info.ConfidenceLabel} confidence)");
             foreach (var w in info.Warnings) AddLog($"⚠ {w}");
         }
@@ -124,6 +158,8 @@ public class InstallViewModel : ObservableObject
             return;
         }
 
+        if (!string.IsNullOrWhiteSpace(_nameOverride))
+            _detectedMod.Name = _nameOverride;
         if (!string.IsNullOrWhiteSpace(_authorOverride))
             _detectedMod.Author = _authorOverride;
 

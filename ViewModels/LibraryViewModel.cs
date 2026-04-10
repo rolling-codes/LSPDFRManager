@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Windows.Input;
 using LSPDFRManager.Models;
 using LSPDFRManager.Services;
@@ -28,13 +29,42 @@ public class LibraryViewModel : ObservableObject
     public InstalledMod? SelectedMod
     {
         get => _selectedMod;
-        set => SetProperty(ref _selectedMod, value);
+        set
+        {
+            SetProperty(ref _selectedMod, value);
+            OnPropertyChanged(nameof(HasSelectedMod));
+            OnPropertyChanged(nameof(HasNoSelectedMod));
+            OnPropertyChanged(nameof(SelectedModFilesSample));
+            OnPropertyChanged(nameof(HasMoreSelectedFiles));
+            OnPropertyChanged(nameof(SelectedModFilesMoreText));
+        }
     }
 
-    public int TotalMods => _library.Mods.Count;
-    public int EnabledMods => _library.Mods.Count(m => m.IsEnabled);
-    public bool IsEmpty => FilteredMods.Count == 0;
+    // ── Counts ───────────────────────────────────────────────────────
+    public int TotalMods    => _library.Mods.Count;
+    public int EnabledMods  => _library.Mods.Count(m => m.IsEnabled);
+    public bool IsEmpty     => FilteredMods.Count == 0;
 
+    // ── Selection detail ─────────────────────────────────────────────
+    public bool HasSelectedMod  => _selectedMod is not null;
+    public bool HasNoSelectedMod => _selectedMod is null;
+
+    private const int FileSampleSize = 10;
+
+    public IEnumerable<string> SelectedModFilesSample =>
+        _selectedMod?.InstalledFiles
+            .Select(f => Path.GetFileName(f) is { Length: > 0 } n ? n : f)
+            .Take(FileSampleSize) ?? [];
+
+    public bool HasMoreSelectedFiles =>
+        (_selectedMod?.InstalledFiles.Count ?? 0) > FileSampleSize;
+
+    public string SelectedModFilesMoreText =>
+        HasMoreSelectedFiles
+            ? $"+{_selectedMod!.InstalledFiles.Count - FileSampleSize} more files"
+            : "";
+
+    // ── Filter options ───────────────────────────────────────────────
     public List<string> FilterOptions { get; } =
     [
         "All", "LSPDFR Plugin", "Vehicle Add-On DLC", "Vehicle Replace",
@@ -42,43 +72,50 @@ public class LibraryViewModel : ObservableObject
         "Sound Pack", "Miscellaneous",
     ];
 
+    // ── Commands ─────────────────────────────────────────────────────
     public ICommand ToggleEnabledCommand { get; }
-    public ICommand UninstallCommand { get; }
-    public ICommand RefreshCommand { get; }
+    public ICommand UninstallCommand     { get; }
+    public ICommand RefreshCommand       { get; }
+    public ICommand OpenModFolderCommand { get; }
 
     public LibraryViewModel()
     {
         ToggleEnabledCommand = new RelayCommand(obj =>
         {
-            if (obj is InstalledMod mod)
-            {
-                _library.SetEnabled(mod.Id, !mod.IsEnabled);
-                RefreshFiltered();
-                OnPropertyChanged(nameof(EnabledMods));
-            }
+            if (obj is not InstalledMod mod) return;
+            var enable = !mod.IsEnabled;
+            SetModFilesEnabled(mod, enable);
+            _library.SetEnabled(mod.Id, enable);
+            RefreshFiltered();
+            OnPropertyChanged(nameof(EnabledMods));
         });
 
         UninstallCommand = new RelayCommand(obj =>
         {
-            if (obj is InstalledMod mod)
+            if (obj is not InstalledMod mod) return;
+
+            // Re-enable files so they exist under their original names before deletion
+            if (!mod.IsEnabled) SetModFilesEnabled(mod, true);
+
+            foreach (var file in mod.InstalledFiles)
             {
-                // Attempt to remove installed files
-                foreach (var file in mod.InstalledFiles)
+                try
                 {
-                    try
-                    {
-                        if (File.Exists(file)) File.Delete(file);
-                        var disabled = file + ".disabled";
-                        if (File.Exists(disabled)) File.Delete(disabled);
-                    }
-                    catch { /* log but don't crash */ }
+                    if (File.Exists(file))         File.Delete(file);
+                    if (File.Exists(file + ".disabled")) File.Delete(file + ".disabled");
                 }
-                _library.Remove(mod.Id);
-                if (SelectedMod?.Id == mod.Id) SelectedMod = null;
-                RefreshFiltered();
-                OnPropertyChanged(nameof(TotalMods));
-                OnPropertyChanged(nameof(EnabledMods));
+                catch { /* best-effort */ }
             }
+
+            // Remove DLC entry from dlclist.xml if applicable
+            if (mod.Type == ModType.VehicleDlc && !string.IsNullOrEmpty(mod.DlcPackName))
+                DlcListService.RemoveEntry(mod.DlcPackName);
+
+            _library.Remove(mod.Id);
+            if (SelectedMod?.Id == mod.Id) SelectedMod = null;
+            RefreshFiltered();
+            OnPropertyChanged(nameof(TotalMods));
+            OnPropertyChanged(nameof(EnabledMods));
         });
 
         RefreshCommand = new RelayCommand(() =>
@@ -86,6 +123,13 @@ public class LibraryViewModel : ObservableObject
             RefreshFiltered();
             OnPropertyChanged(nameof(TotalMods));
             OnPropertyChanged(nameof(EnabledMods));
+        });
+
+        OpenModFolderCommand = new RelayCommand(obj =>
+        {
+            var path = obj is InstalledMod m ? m.InstallPath : _selectedMod?.InstallPath;
+            if (!string.IsNullOrEmpty(path) && Directory.Exists(path))
+                Process.Start("explorer.exe", path);
         });
 
         _library.Mods.CollectionChanged += (_, _) =>
@@ -98,12 +142,34 @@ public class LibraryViewModel : ObservableObject
         RefreshFiltered();
     }
 
+    // ── Helpers ──────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Renames each installed file to/from its <c>.disabled</c> variant so
+    /// LSPDFR and ScriptHookV actually skip or load the plugin on next launch.
+    /// </summary>
+    private static void SetModFilesEnabled(InstalledMod mod, bool enable)
+    {
+        foreach (var file in mod.InstalledFiles)
+        {
+            try
+            {
+                var disabledPath = file + ".disabled";
+                if (enable && File.Exists(disabledPath) && !File.Exists(file))
+                    File.Move(disabledPath, file);
+                else if (!enable && File.Exists(file))
+                    File.Move(file, disabledPath);
+            }
+            catch { /* best-effort */ }
+        }
+    }
+
     private void RefreshFiltered()
     {
         FilteredMods.Clear();
 
         var query = _searchQuery.Trim();
-        var mods = string.IsNullOrEmpty(query)
+        var mods  = string.IsNullOrEmpty(query)
             ? _library.Mods.AsEnumerable()
             : _library.Search(query);
 

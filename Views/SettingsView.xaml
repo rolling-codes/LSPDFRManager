@@ -12,11 +12,91 @@
             <TextBlock Text="Configure paths, backups, and mod manifest import / export."
                        Foreground="{StaticResource TextMuted}" FontSize="13" Margin="0,0,0,24"/>
 
+            <!-- ══ LSPDFR Status ════════════════════════════ -->
+            <TextBlock Text="ENVIRONMENT STATUS"
+                       Foreground="{StaticResource TextFaint}"
+                       FontSize="11" FontWeight="SemiBold" Margin="0,0,0,8"/>
+            <Border Background="{StaticResource Surface}" CornerRadius="10"
+                    Padding="20" Margin="0,0,0,20">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- GTA V -->
+                    <StackPanel Grid.Column="0">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,7,0">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Fill" Value="#EF4444"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding LspdfrStatus.IsGtaPathValid}" Value="True">
+                                                <Setter Property="Fill" Value="#10B981"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+                            <TextBlock Text="GTA V" Foreground="{StaticResource TextPrimary}"
+                                       FontSize="13" FontWeight="SemiBold"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding LspdfrStatus.GtaVersion}"
+                                   Foreground="{StaticResource TextMuted}" FontSize="12"/>
+                    </StackPanel>
+
+                    <!-- LSPDFR -->
+                    <StackPanel Grid.Column="1">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,7,0">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Fill" Value="#EF4444"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding LspdfrStatus.IsLspdfrInstalled}" Value="True">
+                                                <Setter Property="Fill" Value="#10B981"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+                            <TextBlock Text="LSPDFR" Foreground="{StaticResource TextPrimary}"
+                                       FontSize="13" FontWeight="SemiBold"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding LspdfrStatus.LspdfrVersion}"
+                                   Foreground="{StaticResource TextMuted}" FontSize="12"/>
+                    </StackPanel>
+
+                    <!-- ScriptHookV -->
+                    <StackPanel Grid.Column="2">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,7,0">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Fill" Value="#EF4444"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding LspdfrStatus.IsScriptHookVInstalled}" Value="True">
+                                                <Setter Property="Fill" Value="#10B981"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+                            <TextBlock Text="ScriptHookV" Foreground="{StaticResource TextPrimary}"
+                                       FontSize="13" FontWeight="SemiBold"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding LspdfrStatus.ScriptHookVVersion}"
+                                   Foreground="{StaticResource TextMuted}" FontSize="12"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
             <!-- ══ GTA V Path ═══════════════════════════════ -->
             <TextBlock Text="GTA V INSTALLATION"
                        Foreground="{StaticResource TextFaint}"
-                       FontSize="11" FontWeight="SemiBold"
-                       Margin="0,0,0,8"/>
+                       FontSize="11" FontWeight="SemiBold" Margin="0,0,0,8"/>
             <Border Background="{StaticResource Surface}" CornerRadius="10" Padding="20" Margin="0,0,0,20">
                 <StackPanel>
                     <TextBlock Text="GTA V folder" Foreground="{StaticResource TextMuted}"
@@ -39,9 +119,7 @@
             <!-- ══ Behaviour ════════════════════════════════ -->
             <TextBlock Text="BEHAVIOUR"
                        Foreground="{StaticResource TextFaint}"
-                       FontSize="11" FontWeight="SemiBold"
-
-                       Margin="0,0,0,8"/>
+                       FontSize="11" FontWeight="SemiBold" Margin="0,0,0,8"/>
             <Border Background="{StaticResource Surface}" CornerRadius="10" Padding="20" Margin="0,0,0,20">
                 <StackPanel>
                     <CheckBox Style="{StaticResource ToggleSwitch}"
@@ -63,9 +141,7 @@
             <!-- ══ Backup ════════════════════════════════════ -->
             <TextBlock Text="BACKUP &amp; RESTORE"
                        Foreground="{StaticResource TextFaint}"
-                       FontSize="11" FontWeight="SemiBold"
-
-                       Margin="0,0,0,8"/>
+                       FontSize="11" FontWeight="SemiBold" Margin="0,0,0,8"/>
             <Border Background="{StaticResource Surface}" CornerRadius="10" Padding="20" Margin="0,0,0,20">
                 <StackPanel>
                     <Grid Margin="0,0,0,12">
@@ -82,21 +158,17 @@
                         <Button Grid.Column="1" Style="{StaticResource GhostButton}"
                                 Content="Browse"
                                 Command="{Binding BrowseBackupPathCommand}"
-                                VerticalAlignment="Bottom"
-                                Margin="8,0,0,0"/>
+                                VerticalAlignment="Bottom" Margin="8,0,0,0"/>
                     </Grid>
-
                     <TextBlock Foreground="{StaticResource TextMuted}" FontSize="12" Margin="0,0,0,14">
                         <Run Text="Last backup: "/>
                         <Run Text="{Binding LastBackupDate, Mode=OneWay}"/>
                     </TextBlock>
-
                     <StackPanel Orientation="Horizontal">
                         <Button Style="{StaticResource PrimaryButton}"
                                 Content="Create Backup"
                                 Command="{Binding CreateBackupCommand}"
-                                IsEnabled="{Binding IsIdle}"
-                                Margin="0,0,10,0"/>
+                                IsEnabled="{Binding IsIdle}" Margin="0,0,10,0"/>
                         <Button Style="{StaticResource GhostButton}"
                                 Content="Restore from Backup"
                                 Command="{Binding RestoreBackupCommand}"
@@ -108,22 +180,17 @@
             <!-- ══ Import / Export ══════════════════════════ -->
             <TextBlock Text="MANIFEST IMPORT / EXPORT"
                        Foreground="{StaticResource TextFaint}"
-                       FontSize="11" FontWeight="SemiBold"
-
-                       Margin="0,0,0,8"/>
+                       FontSize="11" FontWeight="SemiBold" Margin="0,0,0,8"/>
             <Border Background="{StaticResource Surface}" CornerRadius="10" Padding="20" Margin="0,0,0,20">
                 <StackPanel>
                     <TextBlock Text="Export your installed mod list as a manifest for sharing or reinstalling on a new machine."
-                               Foreground="{StaticResource TextMuted}"
-                               FontSize="13"
-                               TextWrapping="Wrap"
-                               Margin="0,0,0,14"/>
+                               Foreground="{StaticResource TextMuted}" FontSize="13"
+                               TextWrapping="Wrap" Margin="0,0,0,14"/>
                     <StackPanel Orientation="Horizontal">
                         <Button Style="{StaticResource PrimaryButton}"
                                 Content="Export Manifest"
                                 Command="{Binding ExportManifestCommand}"
-                                IsEnabled="{Binding IsIdle}"
-                                Margin="0,0,10,0"/>
+                                IsEnabled="{Binding IsIdle}" Margin="0,0,10,0"/>
                         <Button Style="{StaticResource GhostButton}"
                                 Content="Import &amp; Reinstall"
                                 Command="{Binding ImportManifestCommand}"
@@ -133,9 +200,7 @@
             </Border>
 
             <!-- ══ Progress log ══════════════════════════════ -->
-            <Border Background="{StaticResource Surface}"
-                    CornerRadius="10"
-                    Padding="16"
+            <Border Background="{StaticResource Surface}" CornerRadius="10" Padding="16"
                     Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"
                     Margin="0,0,0,16">
                 <StackPanel>
@@ -145,10 +210,8 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding}"
-                                               Foreground="#94A3B8"
-                                               FontFamily="Consolas"
-                                               FontSize="12"
-                                               Margin="0,1"/>
+                                               Foreground="#64748B" FontFamily="Consolas"
+                                               FontSize="12" Margin="0,1"/>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
@@ -156,7 +219,7 @@
                 </StackPanel>
             </Border>
 
-            <!-- ══ Footer actions ════════════════════════════ -->
+            <!-- ══ Footer ════════════════════════════════════ -->
             <StackPanel Orientation="Horizontal">
                 <Button Style="{StaticResource PrimaryButton}"
                         Content="Save Settings"
@@ -167,11 +230,9 @@
                         Command="{Binding OpenLogFolderCommand}"/>
             </StackPanel>
 
-            <!-- Status -->
             <TextBlock Text="{Binding StatusMessage}"
                        Foreground="{StaticResource TextMuted}"
-                       FontSize="12"
-                       Margin="0,10,0,0"/>
+                       FontSize="12" Margin="0,10,0,0"/>
 
         </StackPanel>
     </ScrollViewer>

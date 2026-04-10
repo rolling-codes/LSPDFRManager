@@ -81,6 +81,11 @@ public class InstallQueue : IDisposable
                 };
 
                 ModLibraryService.Instance.Add(installed);
+
+                // Register vehicle DLC packs in dlclist.xml so GTA V loads them
+                if (installed.Type == ModType.VehicleDlc && !string.IsNullOrEmpty(installed.DlcPackName))
+                    DlcListService.AddEntry(installed.DlcPackName);
+
                 InstallCompleted?.Invoke(installed);
                 AppLogger.Info($"Installed: {mod.Name}");
             }

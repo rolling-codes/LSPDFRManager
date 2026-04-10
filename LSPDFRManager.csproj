@@ -19,6 +19,9 @@
     <Compile Remove="LSPDFRManager.Tests\**" />
     <EmbeddedResource Remove="LSPDFRManager.Tests\**" />
     <None Remove="LSPDFRManager.Tests\**" />
+    <Compile Remove="LSPDFRManager.Api\**" />
+    <EmbeddedResource Remove="LSPDFRManager.Api\**" />
+    <None Remove="LSPDFRManager.Api\**" />
   </ItemGroup>
 
   <ItemGroup>

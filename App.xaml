@@ -17,8 +17,11 @@
             <DataTemplate DataType="{x:Type vm:InstallViewModel}">
                 <views:InstallView/>
             </DataTemplate>
-            <DataTemplate DataType="{x:Type vm:KeysViewModel}">
-                <views:KeysView/>
+            <DataTemplate DataType="{x:Type vm:ConfigViewModel}">
+                <views:ConfigView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:BrowseViewModel}">
+                <views:BrowseView/>
             </DataTemplate>
             <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
                 <views:SettingsView/>

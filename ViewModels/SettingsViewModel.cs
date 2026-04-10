@@ -19,10 +19,18 @@ public class SettingsViewModel : ObservableObject
 
     public ObservableCollection<string> ProgressLog { get; } = [];
 
+    /// <summary>Live status service — exposed so the view can bind to it.</summary>
+    public LspdfrStatusService LspdfrStatus { get; } = LspdfrStatusService.Instance;
+
     public string GtaPath
     {
         get => _gtaPath;
-        set { SetProperty(ref _gtaPath, value); AppConfig.Instance.GtaPath = value; }
+        set
+        {
+            SetProperty(ref _gtaPath, value);
+            AppConfig.Instance.GtaPath = value;
+            LspdfrStatusService.Instance.Refresh();
+        }
     }
 
     public string BackupPath
@@ -96,6 +104,7 @@ public class SettingsViewModel : ObservableObject
         SaveSettingsCommand = new RelayCommand(() =>
         {
             AppConfig.Instance.Save();
+            LspdfrStatusService.Instance.Refresh();
             StatusMessage = "Settings saved.";
         });
 
