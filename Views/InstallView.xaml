@@ -89,8 +89,7 @@
                     CornerRadius="12"
                     Padding="20">
                 <!-- No detection yet -->
-                <StackPanel Visibility="{Binding HasDetection, Converter={StaticResource BoolToVis},
-                                ConverterParameter=inverse}"
+                <StackPanel Visibility="{Binding HasNoDetection, Converter={StaticResource BoolToVis}}"
                             VerticalAlignment="Center"
                             HorizontalAlignment="Center">
                     <TextBlock Text="Detection results will appear here."

@@ -1,6 +1,3 @@
-using System.IO;
-using System.Text.Json;
-
 namespace LSPDFRManager.Models;
 
 public class AppConfig

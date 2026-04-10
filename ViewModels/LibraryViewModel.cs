@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.Windows.Input;
 using LSPDFRManager.Models;
 using LSPDFRManager.Services;
@@ -34,6 +33,7 @@ public class LibraryViewModel : ObservableObject
 
     public int TotalMods => _library.Mods.Count;
     public int EnabledMods => _library.Mods.Count(m => m.IsEnabled);
+    public bool IsEmpty => FilteredMods.Count == 0;
 
     public List<string> FilterOptions { get; } =
     [
@@ -113,5 +113,7 @@ public class LibraryViewModel : ObservableObject
 
         foreach (var mod in mods)
             FilteredMods.Add(mod);
+
+        OnPropertyChanged(nameof(IsEmpty));
     }
 }

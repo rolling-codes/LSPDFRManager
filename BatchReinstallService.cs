@@ -1,5 +1,3 @@
-using System.IO.Compression;
-using System.Text.Json;
 using LSPDFRManager.Core;
 using LSPDFRManager.Models;
 

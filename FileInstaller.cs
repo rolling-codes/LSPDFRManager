@@ -1,4 +1,3 @@
-using System.IO.Compression;
 using LSPDFRManager.Models;
 using SharpCompress.Archives;
 using SharpCompress.Common;

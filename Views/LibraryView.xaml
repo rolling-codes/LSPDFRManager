@@ -26,30 +26,25 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="180"/>
             </Grid.ColumnDefinitions>
-            <TextBox Grid.Column="0" Margin="0,0,10,0"
-                     Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
-                     Tag="Search by name, author, or type…">
-                <TextBox.Style>
-                    <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-                        <Style.Triggers>
-                            <Trigger Property="Text" Value="">
-                                <Setter Property="Background">
-                                    <Setter.Value>
-                                        <VisualBrush AlignmentX="Left" AlignmentY="Center" Stretch="None">
-                                            <VisualBrush.Visual>
-                                                <TextBlock Text="Search by name, author, or type…"
-                                                           Foreground="#4B5563"
-                                                           FontSize="13"
-                                                           Margin="11,0,0,0"/>
-                                            </VisualBrush.Visual>
-                                        </VisualBrush>
-                                    </Setter.Value>
-                                </Setter>
-                            </Trigger>
-                        </Style.Triggers>
-                    </Style>
-                </TextBox.Style>
-            </TextBox>
+            <Grid Grid.Column="0" Margin="0,0,10,0">
+                <TextBox x:Name="SearchBox"
+                         Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBlock Text="Search by name, author, or type…"
+                           Foreground="#4B5563" FontSize="13"
+                           Margin="11,0,0,0" VerticalAlignment="Center"
+                           IsHitTestVisible="False">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SearchQuery}" Value="">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Grid>
             <ComboBox Grid.Column="1"
                       ItemsSource="{Binding FilterOptions}"
                       SelectedItem="{Binding SelectedFilter}"/>
@@ -147,9 +142,7 @@
 
         <!-- ── Empty state ─────────────────────────────────── -->
         <Border DockPanel.Dock="Top"
-                Visibility="{Binding FilteredMods.Count,
-                    Converter={StaticResource BoolToVis},
-                    ConverterParameter=inverse}"
+                Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}"
                 Padding="0,40"
                 HorizontalAlignment="Center">
             <StackPanel HorizontalAlignment="Center">

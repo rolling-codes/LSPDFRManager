@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.Windows.Input;
 using LSPDFRManager.Core;
 using LSPDFRManager.Models;
@@ -30,7 +29,7 @@ public class InstallViewModel : ObservableObject
     public ModInfo? DetectedMod
     {
         get => _detectedMod;
-        set { SetProperty(ref _detectedMod, value); OnPropertyChanged(nameof(HasDetection)); }
+        set { SetProperty(ref _detectedMod, value); OnPropertyChanged(nameof(HasDetection)); OnPropertyChanged(nameof(HasNoDetection)); }
     }
 
     public bool IsDetecting
@@ -47,6 +46,7 @@ public class InstallViewModel : ObservableObject
 
     public bool IsIdle => !_isDetecting && !_isInstalling;
     public bool HasDetection => _detectedMod is not null;
+    public bool HasNoDetection => _detectedMod is null;
 
     public string AuthorOverride
     {

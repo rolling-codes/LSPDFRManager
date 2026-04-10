@@ -1,5 +1,3 @@
-using System.IO;
-
 namespace LSPDFRManager.Core;
 
 public static class AppLogger

@@ -1,5 +1,3 @@
-using System.IO;
-using System.IO.Compression;
 using System.Text.RegularExpressions;
 using LSPDFRManager.Core;
 using LSPDFRManager.Models;
