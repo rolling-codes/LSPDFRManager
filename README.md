@@ -10,9 +10,8 @@ Install, track, enable/disable, back up, and export your entire mod library from
 
 | Tab | What it does |
 |-----|-------------|
-| **Library** | Browse all installed mods, search by name/author/type, filter by category, toggle enabled/disabled, uninstall |
+| **Library** | Browse all installed mods, search by name/author/type, filter by category, sort by install date/name/author/status, bulk enable/disable visible mods, uninstall |
 | **Install** | Drag-and-drop or browse for a mod archive (`.zip` / `.rar` / `.7z`); auto-detects mod type with confidence scoring; installs into your GTA V folder |
-| **Keys** | Store mod license key files, add them manually or from file, apply them to an installed mod in one click |
 | **Settings** | Set your GTA V path, configure backup behavior, create/restore backups, export and import mod manifests |
 
 ### Supported Mod Types
@@ -110,13 +109,13 @@ dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=
 ```
 LSPDFRManager/
 ├── Models/          Data models (InstalledMod, ModInfo, ModKey, AppConfig, …)
+├── Converters/      WPF value converters
 ├── Core/            AppLogger, InstallQueue (background install processor)
 ├── Services/        ModDetector, FileInstaller, ModLibraryService,
-│                    KeyManagerService, ConfigManagerService,
-│                    BackupService, ExportService, BatchReinstallService
+│                    ConfigManagerService, BackupService,
+│                    ExportService, BatchReinstallService
 ├── ViewModels/      MVVM view models (one per tab + MainViewModel)
-├── Views/           WPF UserControls (LibraryView, InstallView, KeysView, SettingsView)
-├── Converters/      StringToBrushConverter, InverseBoolConverter
+├── Views/           WPF UserControls (LibraryView, InstallView, ConfigView, SettingsView)
 └── Resources/       Styles.xaml (dark theme)
 ```
 
