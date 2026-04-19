@@ -25,10 +25,13 @@ public static class FileInstaller
         else if (mod.SourcePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
         {
             using var zip = ZipFile.OpenRead(mod.SourcePath);
+            var sharedRoot = GetSharedTopLevelDirectory(
+                zip.Entries.Where(e => !e.FullName.EndsWith("/")).Select(e => e.FullName));
             foreach (var entry in zip.Entries)
             {
                 if (entry.FullName.EndsWith("/")) continue;
-                var dest = Path.Combine(targetRoot, entry.FullName);
+                var relative = NormalizeArchivePath(entry.FullName, sharedRoot);
+                var dest = GetSafeDestinationPath(targetRoot, relative);
                 Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
                 entry.ExtractToFile(dest, overwrite: true);
             }
@@ -36,9 +39,12 @@ public static class FileInstaller
         else // rar/7z via SharpCompress
         {
             using var archive = ArchiveFactory.Open(mod.SourcePath);
+            var sharedRoot = GetSharedTopLevelDirectory(
+                archive.Entries.Where(e => !e.IsDirectory).Select(e => e.Key ?? string.Empty));
             foreach (var entry in archive.Entries.Where(e => !e.IsDirectory))
             {
-                var dest = Path.Combine(targetRoot, entry.Key!);
+                var relative = NormalizeArchivePath(entry.Key ?? string.Empty, sharedRoot);
+                var dest = GetSafeDestinationPath(targetRoot, relative);
                 Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
                 entry.WriteToFile(dest, new ExtractionOptions { Overwrite = true });
             }
@@ -47,12 +53,56 @@ public static class FileInstaller
 
     private static void CopyDirectory(string source, string target)
     {
-        foreach (var file in Directory.GetFiles(source, "*", SearchOption.AllDirectories))
+        var files = Directory.GetFiles(source, "*", SearchOption.AllDirectories);
+        var sharedRoot = GetSharedTopLevelDirectory(
+            files.Select(f => Path.GetRelativePath(source, f).Replace('\\', '/')));
+
+        foreach (var file in files)
         {
-            var relPath = Path.GetRelativePath(source, file);
-            var dest = Path.Combine(target, relPath);
+            var relPath = Path.GetRelativePath(source, file).Replace('\\', '/');
+            relPath = NormalizeArchivePath(relPath, sharedRoot);
+            var dest = GetSafeDestinationPath(target, relPath);
             Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
             File.Copy(file, dest, overwrite: true);
         }
+    }
+
+    private static string NormalizeArchivePath(string rawPath, string? sharedRoot)
+    {
+        var normalized = rawPath.Replace('\\', '/').TrimStart('/');
+        if (string.IsNullOrWhiteSpace(normalized))
+            return string.Empty;
+
+        if (sharedRoot is not null &&
+            normalized.StartsWith(sharedRoot + "/", StringComparison.OrdinalIgnoreCase))
+            normalized = normalized[(sharedRoot.Length + 1)..];
+
+        return normalized;
+    }
+
+    private static string? GetSharedTopLevelDirectory(IEnumerable<string> rawPaths)
+    {
+        var segments = rawPaths
+            .Select(p => p.Replace('\\', '/').TrimStart('/'))
+            .Where(p => !string.IsNullOrWhiteSpace(p))
+            .Select(p => p.Split('/', StringSplitOptions.RemoveEmptyEntries))
+            .Where(parts => parts.Length > 1)
+            .Select(parts => parts[0])
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        return segments.Count == 1 ? segments[0] : null;
+    }
+
+    private static string GetSafeDestinationPath(string targetRoot, string relativePath)
+    {
+        var normalized = relativePath.Replace('/', Path.DirectorySeparatorChar);
+        var fullTargetRoot = Path.GetFullPath(targetRoot);
+        var destination = Path.GetFullPath(Path.Combine(fullTargetRoot, normalized));
+
+        if (!destination.StartsWith(fullTargetRoot, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException($"Unsafe archive path blocked: {relativePath}");
+
+        return destination;
     }
 }

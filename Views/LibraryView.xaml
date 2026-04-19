@@ -13,9 +13,13 @@
                 <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                     <TextBlock Foreground="{StaticResource TextMuted}" FontSize="12">
                         <Run Text="{Binding TotalMods, Mode=OneWay}"/>
-                        <Run Text=" mods installed · "/>
+                        <Run Text=" total · "/>
                         <Run Text="{Binding EnabledMods, Mode=OneWay}"/>
-                        <Run Text=" enabled"/>
+                        <Run Text=" enabled · "/>
+                        <Run Text="{Binding DisabledMods, Mode=OneWay}"/>
+                        <Run Text=" disabled · "/>
+                        <Run Text="{Binding FilteredCount, Mode=OneWay}"/>
+                        <Run Text=" shown"/>
                     </TextBlock>
                 </StackPanel>
             </StackPanel>
@@ -26,6 +30,8 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="180"/>
+                <ColumnDefinition Width="180"/>
+                <ColumnDefinition Width="160"/>
             </Grid.ColumnDefinitions>
             <Grid Grid.Column="0" Margin="0,0,10,0">
                 <TextBox x:Name="SearchBox"
@@ -47,9 +53,38 @@
                 </TextBlock>
             </Grid>
             <ComboBox Grid.Column="1"
+                      Margin="0,0,10,0"
                       ItemsSource="{Binding FilterOptions}"
                       SelectedItem="{Binding SelectedFilter}"/>
+            <ComboBox Grid.Column="2"
+                      Margin="0,0,10,0"
+                      ItemsSource="{Binding SortOptions}"
+                      SelectedItem="{Binding SelectedSort}"/>
+            <ComboBox Grid.Column="3"
+                      ItemsSource="{Binding StatusFilterOptions}"
+                      SelectedItem="{Binding SelectedStatusFilter}"/>
         </Grid>
+
+        <!-- ── Bulk actions ───────────────────────────────── -->
+        <StackPanel DockPanel.Dock="Top"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,0,0,12">
+            <Button Style="{StaticResource GhostButton}"
+                    Content="Enable visible"
+                    Command="{Binding EnableVisibleCommand}"
+                    Margin="0,0,8,0"
+                    Padding="10,6"/>
+            <Button Style="{StaticResource GhostButton}"
+                    Content="Disable visible"
+                    Command="{Binding DisableVisibleCommand}"
+                    Margin="0,0,8,0"
+                    Padding="10,6"/>
+            <Button Style="{StaticResource GhostButton}"
+                    Content="Toggle visible"
+                    Command="{Binding ToggleVisibleCommand}"
+                    Padding="10,6"/>
+        </StackPanel>
 
         <!-- ── Two-column content ─────────────────────────── -->
         <Grid DockPanel.Dock="Top">

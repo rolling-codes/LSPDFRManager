@@ -164,6 +164,25 @@
                                        Visibility="{Binding DetectedMod.IsAddon,
                                            Converter={StaticResource BoolToVis}}"/>
 
+                            <!-- Setup checklist warnings -->
+                            <TextBlock Style="{StaticResource DetailLabel}" Text="SETUP CHECK"
+                                       Visibility="{Binding HasPreflightWarnings,
+                                           Converter={StaticResource BoolToVis}}"/>
+                            <ItemsControl ItemsSource="{Binding PreflightWarnings}"
+                                          Visibility="{Binding HasPreflightWarnings,
+                                              Converter={StaticResource BoolToVis}}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#1B1B0E" CornerRadius="6"
+                                                Padding="10,6" Margin="0,2">
+                                            <TextBlock Text="{Binding}"
+                                                       Foreground="#FBBF24" FontSize="12"
+                                                       TextWrapping="Wrap"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
                             <!-- File preview -->
                             <TextBlock Style="{StaticResource DetailLabel}" Text="FILES DETECTED"/>
                             <ItemsControl ItemsSource="{Binding DetectedFilesSample}"

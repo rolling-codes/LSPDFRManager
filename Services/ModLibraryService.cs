@@ -40,6 +40,27 @@ public class ModLibraryService
         var mod = Mods.FirstOrDefault(m => m.Id == id);
         if (mod is null) return;
 
+        SetEnabledInternal(mod, enabled);
+        Save();
+    }
+
+    public void SetEnabledMany(IEnumerable<Guid> ids, bool enabled)
+    {
+        var idSet = ids.ToHashSet();
+        if (idSet.Count == 0) return;
+
+        var changedAny = false;
+        foreach (var mod in Mods.Where(m => idSet.Contains(m.Id)))
+        {
+            changedAny |= SetEnabledInternal(mod, enabled);
+        }
+
+        if (changedAny) Save();
+    }
+
+    private static bool SetEnabledInternal(InstalledMod mod, bool enabled)
+    {
+        if (mod.IsEnabled == enabled) return false;
         mod.IsEnabled = enabled;
 
         foreach (var file in mod.InstalledFiles)
@@ -63,8 +84,8 @@ public class ModLibraryService
                 AppLogger.Warning($"Toggle {file}: {ex.Message}");
             }
         }
-
-        Save();
+        
+        return true;
     }
 
     public IEnumerable<InstalledMod> Search(string query) =>

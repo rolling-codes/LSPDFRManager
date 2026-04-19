@@ -15,10 +15,13 @@ public class InstallViewModel : ObservableObject
     private bool _isDetecting;
     private bool _isInstalling;
     private string _authorOverride = "";
+    private readonly ObservableCollection<string> _preflightWarnings = [];
 
     public event Action<string>? LogAdded;
 
     public ObservableCollection<string> Log { get; } = [];
+    public ReadOnlyObservableCollection<string> PreflightWarnings { get; }
+    public bool HasPreflightWarnings => _preflightWarnings.Count > 0;
 
     public string? DroppedPath
     {
@@ -92,6 +95,8 @@ public class InstallViewModel : ObservableObject
 
     public InstallViewModel()
     {
+        PreflightWarnings = new ReadOnlyObservableCollection<string>(_preflightWarnings);
+
         BrowseCommand = new RelayCommand(() =>
         {
             var dlg = new Microsoft.Win32.OpenFileDialog
@@ -113,6 +118,8 @@ public class InstallViewModel : ObservableObject
             DetectedMod    = null;
             AuthorOverride = "";
             NameOverride   = "";
+            _preflightWarnings.Clear();
+            OnPropertyChanged(nameof(HasPreflightWarnings));
             Log.Clear();
         });
 
@@ -133,8 +140,10 @@ public class InstallViewModel : ObservableObject
             var info = await Task.Run(() => _detector.Detect(path));
             DetectedMod  = info;
             NameOverride = info.Name;
+            RefreshPreflightWarnings(info);
             AddLog($"→ {info.TypeLabel}  ({info.ConfidenceLabel} confidence)");
             foreach (var w in info.Warnings) AddLog($"⚠ {w}");
+            foreach (var warning in _preflightWarnings) AddLog($"⚠ Setup: {warning}");
         }
         catch (Exception ex)
         {
@@ -158,6 +167,10 @@ public class InstallViewModel : ObservableObject
             return;
         }
 
+        RefreshPreflightWarnings(_detectedMod);
+        if (HasPreflightWarnings)
+            AddLog("Setup warnings detected. Review them before launching the game.");
+
         if (!string.IsNullOrWhiteSpace(_nameOverride))
             _detectedMod.Name = _nameOverride;
         if (!string.IsNullOrWhiteSpace(_authorOverride))
@@ -172,5 +185,13 @@ public class InstallViewModel : ObservableObject
     {
         Log.Add($"[{DateTime.Now:HH:mm:ss}]  {msg}");
         LogAdded?.Invoke(msg);
+    }
+
+    private void RefreshPreflightWarnings(ModInfo? detectedMod)
+    {
+        _preflightWarnings.Clear();
+        foreach (var issue in InstallPreflightService.Evaluate(AppConfig.Instance.GtaPath, detectedMod))
+            _preflightWarnings.Add(issue);
+        OnPropertyChanged(nameof(HasPreflightWarnings));
     }
 }

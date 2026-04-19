@@ -10,6 +10,8 @@ public class LibraryViewModel : ObservableObject
     private readonly ModLibraryService _library = ModLibraryService.Instance;
     private string _searchQuery = "";
     private string _selectedFilter = "All";
+    private string _selectedStatusFilter = "All statuses";
+    private string _selectedSort = "Installed: Newest first";
     private InstalledMod? _selectedMod;
 
     public ObservableCollection<InstalledMod> FilteredMods { get; } = [];
@@ -24,6 +26,18 @@ public class LibraryViewModel : ObservableObject
     {
         get => _selectedFilter;
         set { SetProperty(ref _selectedFilter, value); RefreshFiltered(); }
+    }
+
+    public string SelectedSort
+    {
+        get => _selectedSort;
+        set { SetProperty(ref _selectedSort, value); RefreshFiltered(); }
+    }
+
+    public string SelectedStatusFilter
+    {
+        get => _selectedStatusFilter;
+        set { SetProperty(ref _selectedStatusFilter, value); RefreshFiltered(); }
     }
 
     public InstalledMod? SelectedMod
@@ -43,6 +57,8 @@ public class LibraryViewModel : ObservableObject
     // ── Counts ───────────────────────────────────────────────────────
     public int TotalMods    => _library.Mods.Count;
     public int EnabledMods  => _library.Mods.Count(m => m.IsEnabled);
+    public int DisabledMods => _library.Mods.Count(m => !m.IsEnabled);
+    public int FilteredCount => FilteredMods.Count;
     public bool IsEmpty     => FilteredMods.Count == 0;
 
     // ── Selection detail ─────────────────────────────────────────────
@@ -72,11 +88,31 @@ public class LibraryViewModel : ObservableObject
         "Sound Pack", "Miscellaneous",
     ];
 
+    public List<string> SortOptions { get; } =
+    [
+        "Installed: Newest first",
+        "Installed: Oldest first",
+        "Name: A to Z",
+        "Name: Z to A",
+        "Author: A to Z",
+        "Enabled first",
+    ];
+
+    public List<string> StatusFilterOptions { get; } =
+    [
+        "All statuses",
+        "Enabled only",
+        "Disabled only",
+    ];
+
     // ── Commands ─────────────────────────────────────────────────────
     public ICommand ToggleEnabledCommand { get; }
     public ICommand UninstallCommand     { get; }
     public ICommand RefreshCommand       { get; }
     public ICommand OpenModFolderCommand { get; }
+    public ICommand EnableVisibleCommand { get; }
+    public ICommand DisableVisibleCommand { get; }
+    public ICommand ToggleVisibleCommand { get; }
 
     public LibraryViewModel()
     {
@@ -84,10 +120,10 @@ public class LibraryViewModel : ObservableObject
         {
             if (obj is not InstalledMod mod) return;
             var enable = !mod.IsEnabled;
-            SetModFilesEnabled(mod, enable);
             _library.SetEnabled(mod.Id, enable);
             RefreshFiltered();
             OnPropertyChanged(nameof(EnabledMods));
+            OnPropertyChanged(nameof(DisabledMods));
         });
 
         UninstallCommand = new RelayCommand(obj =>
@@ -95,7 +131,7 @@ public class LibraryViewModel : ObservableObject
             if (obj is not InstalledMod mod) return;
 
             // Re-enable files so they exist under their original names before deletion
-            if (!mod.IsEnabled) SetModFilesEnabled(mod, true);
+            if (!mod.IsEnabled) _library.SetEnabled(mod.Id, true);
 
             foreach (var file in mod.InstalledFiles)
             {
@@ -116,6 +152,7 @@ public class LibraryViewModel : ObservableObject
             RefreshFiltered();
             OnPropertyChanged(nameof(TotalMods));
             OnPropertyChanged(nameof(EnabledMods));
+            OnPropertyChanged(nameof(DisabledMods));
         });
 
         RefreshCommand = new RelayCommand(() =>
@@ -123,7 +160,33 @@ public class LibraryViewModel : ObservableObject
             RefreshFiltered();
             OnPropertyChanged(nameof(TotalMods));
             OnPropertyChanged(nameof(EnabledMods));
+            OnPropertyChanged(nameof(DisabledMods));
         });
+
+        EnableVisibleCommand = new RelayCommand(() =>
+        {
+            _library.SetEnabledMany(FilteredMods.Where(m => !m.IsEnabled).Select(m => m.Id), true);
+            RefreshFiltered();
+            OnPropertyChanged(nameof(EnabledMods));
+            OnPropertyChanged(nameof(DisabledMods));
+        }, () => FilteredMods.Any(m => !m.IsEnabled));
+
+        DisableVisibleCommand = new RelayCommand(() =>
+        {
+            _library.SetEnabledMany(FilteredMods.Where(m => m.IsEnabled).Select(m => m.Id), false);
+            RefreshFiltered();
+            OnPropertyChanged(nameof(EnabledMods));
+            OnPropertyChanged(nameof(DisabledMods));
+        }, () => FilteredMods.Any(m => m.IsEnabled));
+
+        ToggleVisibleCommand = new RelayCommand(() =>
+        {
+            foreach (var mod in FilteredMods.ToList())
+                _library.SetEnabled(mod.Id, !mod.IsEnabled);
+            RefreshFiltered();
+            OnPropertyChanged(nameof(EnabledMods));
+            OnPropertyChanged(nameof(DisabledMods));
+        }, () => FilteredMods.Count > 0);
 
         OpenModFolderCommand = new RelayCommand(obj =>
         {
@@ -137,31 +200,10 @@ public class LibraryViewModel : ObservableObject
             RefreshFiltered();
             OnPropertyChanged(nameof(TotalMods));
             OnPropertyChanged(nameof(EnabledMods));
+            OnPropertyChanged(nameof(DisabledMods));
         };
 
         RefreshFiltered();
-    }
-
-    // ── Helpers ──────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Renames each installed file to/from its <c>.disabled</c> variant so
-    /// LSPDFR and ScriptHookV actually skip or load the plugin on next launch.
-    /// </summary>
-    private static void SetModFilesEnabled(InstalledMod mod, bool enable)
-    {
-        foreach (var file in mod.InstalledFiles)
-        {
-            try
-            {
-                var disabledPath = file + ".disabled";
-                if (enable && File.Exists(disabledPath) && !File.Exists(file))
-                    File.Move(disabledPath, file);
-                else if (!enable && File.Exists(file))
-                    File.Move(file, disabledPath);
-            }
-            catch { /* best-effort */ }
-        }
     }
 
     private void RefreshFiltered()
@@ -177,9 +219,27 @@ public class LibraryViewModel : ObservableObject
             mods = mods.Where(m =>
                 m.TypeLabel.Equals(_selectedFilter, StringComparison.OrdinalIgnoreCase));
 
+        mods = _selectedStatusFilter switch
+        {
+            "Enabled only" => mods.Where(m => m.IsEnabled),
+            "Disabled only" => mods.Where(m => !m.IsEnabled),
+            _ => mods,
+        };
+
+        mods = _selectedSort switch
+        {
+            "Installed: Oldest first" => mods.OrderBy(m => m.InstalledAt),
+            "Name: A to Z" => mods.OrderBy(m => m.Name, StringComparer.OrdinalIgnoreCase),
+            "Name: Z to A" => mods.OrderByDescending(m => m.Name, StringComparer.OrdinalIgnoreCase),
+            "Author: A to Z" => mods.OrderBy(m => m.Author, StringComparer.OrdinalIgnoreCase),
+            "Enabled first" => mods.OrderByDescending(m => m.IsEnabled).ThenByDescending(m => m.InstalledAt),
+            _ => mods.OrderByDescending(m => m.InstalledAt),
+        };
+
         foreach (var mod in mods)
             FilteredMods.Add(mod);
 
         OnPropertyChanged(nameof(IsEmpty));
+        OnPropertyChanged(nameof(FilteredCount));
     }
 }

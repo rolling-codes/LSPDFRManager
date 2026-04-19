@@ -129,6 +129,21 @@ public class ModLibraryServiceTests
         Assert.True(lib.Mods[0].IsEnabled);
     }
 
+    [Fact]
+    public void SetEnabledMany_UpdatesOnlyProvidedIds()
+    {
+        var lib = Fresh();
+        var modA = Mod("A");
+        var modB = Mod("B");
+        lib.Mods.Add(modA);
+        lib.Mods.Add(modB);
+
+        lib.SetEnabledMany([modA.Id], false);
+
+        Assert.False(modA.IsEnabled);
+        Assert.True(modB.IsEnabled);
+    }
+
     // ── DLC conflict detection ─────────────────────────────────────────────
 
     [Fact]
