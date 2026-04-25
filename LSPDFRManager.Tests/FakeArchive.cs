@@ -173,4 +173,59 @@ public static class FakeArchiveFactory
     {
         return new FakeArchive(Enumerable.Empty<IArchiveEntry>());
     }
+
+    // Car mod installation test scenarios
+    public static IArchive CreateReplaceVehicle()
+    {
+        return new FakeArchive(new[]
+        {
+            new FakeArchiveEntry("models/car.yft", new byte[] {1, 2, 3}),
+            new FakeArchiveEntry("textures/car.ytd", new byte[] {4, 5, 6})
+        });
+    }
+
+    public static IArchive CreateAddonDLC()
+    {
+        return new FakeArchive(new[]
+        {
+            new FakeArchiveEntry("models/car.yft", new byte[] {1, 2, 3}),
+            new FakeArchiveEntry("textures/car.ytd", new byte[] {4, 5, 6}),
+            new FakeArchiveEntry("handling.meta", new byte[] {7, 8, 9})
+        });
+    }
+
+    public static IArchive CreateConfigPatch()
+    {
+        return new FakeArchive(new[]
+        {
+            new FakeArchiveEntry("handling.meta", new byte[] {1, 2, 3}),
+            new FakeArchiveEntry("vehicles.meta", new byte[] {4, 5, 6})
+        });
+    }
+
+    public static IArchive CreateInvalidTraversalPath()
+    {
+        return new FakeArchive(new[]
+        {
+            new FakeArchiveEntry("../../etc/passwd", new byte[] {1, 2, 3})
+        });
+    }
+
+    public static IArchive CreateReservedDlcName()
+    {
+        return new FakeArchive(new[]
+        {
+            new FakeArchiveEntry("dlcpacks/update/models/car.yft", new byte[] {1, 2, 3})
+        });
+    }
+
+    public static IArchive CreateMixedYftYtdMeta()
+    {
+        return new FakeArchive(new[]
+        {
+            new FakeArchiveEntry("car.yft", new byte[] {1, 2, 3}),
+            new FakeArchiveEntry("car.ytd", new byte[] {4, 5, 6}),
+            new FakeArchiveEntry("handling.meta", new byte[] {7, 8, 9})
+        });
+    }
 }
