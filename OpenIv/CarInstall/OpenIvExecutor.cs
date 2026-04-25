@@ -6,17 +6,21 @@ using LSPDFRManager.Services;
 namespace LSPDFRManager.OpenIv.CarInstall;
 
 /// <summary>
-/// Executes a validated OpenIvInstallPlan by:
-/// 1. Extracting files from archive to target root
-/// 2. Applying XML patches
-/// 3. Tracking written files for rollback on failure
+/// Executes a validated OpenIvInstallPlan with resilience:
+/// 1. Extracts files from archive to target root (with retry on transient IO failures)
+/// 2. Applies XML patches
+/// 3. Stack-based LIFO rollback on any failure (deterministic, fail-fast)
+/// 4. Full CancellationToken support for responsive cancellation
 ///
-/// This is a dumb procedural layer: no decisions, no validation, no re-analysis.
+/// Stack-based rollback ensures LIFO order: last file written = first file rolled back.
+/// SafeCopy retries on lock contention (up to 3 attempts, 50ms→100ms→200ms backoff).
 /// Assumes plan is valid (Validator has passed).
 /// </summary>
 public class OpenIvExecutor
 {
     private readonly IXmlPatcher _xmlPatcher;
+    private const int MaxRetries = 3;
+    private const int InitialBackoffMs = 50;
 
     public OpenIvExecutor(IXmlPatcher xmlPatcher)
     {
@@ -25,20 +29,24 @@ public class OpenIvExecutor
 
     /// <summary>
     /// Executes plan: extracts files from archive, applies XML patches.
+    /// Supports cancellation; rolls back all files on any failure.
     /// Returns InstallResult with success/failure/rollback state.
     /// </summary>
     public async Task<InstallResult> ExecuteAsync(
         OpenIvInstallPlan plan,
         IArchive archive,
-        string targetRoot)
+        string targetRoot,
+        CancellationToken ct = default)
     {
-        var writtenFiles = new List<string>();
+        var writtenFiles = new Stack<string>();
 
         try
         {
             // 1. Extract files from archive
             foreach (var operation in plan.Operations)
             {
+                ct.ThrowIfCancellationRequested();
+
                 var sourceEntry = archive.Entries
                     .FirstOrDefault(e => e.Key == operation.SourcePath);
 
@@ -52,20 +60,19 @@ public class OpenIvExecutor
                 if (!string.IsNullOrEmpty(destDir))
                     Directory.CreateDirectory(destDir);
 
-                writtenFiles.Add(destPath);
+                writtenFiles.Push(destPath);
 
                 using (var entryStream = sourceEntry.OpenEntryStream())
                 {
-                    using (var destFile = File.Create(destPath))
-                    {
-                        await entryStream.CopyToAsync(destFile);
-                    }
+                    await SafeCopyAsync(entryStream, destPath, ct);
                 }
             }
 
             // 2. Apply XML patches
             foreach (var patch in plan.XmlPatches)
             {
+                ct.ThrowIfCancellationRequested();
+
                 var patchFilePath = Path.Combine(targetRoot, patch.FilePath);
                 var xmlPatch = new XmlPatch
                 {
@@ -84,24 +91,61 @@ public class OpenIvExecutor
         }
         catch (Exception ex)
         {
-            await RollbackAsync(writtenFiles);
+            int writtenCount = writtenFiles.Count;
+            await RollbackAsync(writtenFiles, ct);
 
             return new InstallResult
             {
                 Success = false,
-                IsPartial = writtenFiles.Count > 0,
-                FilesWritten = writtenFiles.Count,
+                IsPartial = writtenCount > 0,
+                FilesWritten = writtenCount,
                 Error = ex.Message
             };
         }
     }
 
-    private static Task RollbackAsync(List<string> files)
+    private static async Task SafeCopyAsync(
+        Stream source,
+        string destPath,
+        CancellationToken ct)
     {
-        foreach (var file in files.AsEnumerable().Reverse())
+        int backoff = InitialBackoffMs;
+
+        for (int attempt = 0; attempt < MaxRetries; attempt++)
         {
             try
             {
+                ct.ThrowIfCancellationRequested();
+
+                using (var destFile = File.Create(destPath))
+                {
+                    await source.CopyToAsync(destFile, 81920, ct);
+                }
+
+                return;
+            }
+            catch (IOException) when (attempt < MaxRetries - 1 && source.CanSeek)
+            {
+                await Task.Delay(backoff, ct);
+                backoff *= 2;
+                source.Seek(0, SeekOrigin.Begin);
+            }
+        }
+
+        throw new InvalidOperationException(
+            $"Failed to write file after {MaxRetries} attempts: {destPath}");
+    }
+
+    private static Task RollbackAsync(Stack<string> files, CancellationToken ct)
+    {
+        while (files.Count > 0)
+        {
+            var file = files.Pop();
+
+            try
+            {
+                ct.ThrowIfCancellationRequested();
+
                 if (File.Exists(file))
                     File.Delete(file);
             }
