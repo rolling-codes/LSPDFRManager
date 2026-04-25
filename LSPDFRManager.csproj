@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>LSPDFRManager</AssemblyName>
+    <RootNamespace>LSPDFRManager</RootNamespace>
+    <Version>1.1.1</Version>
+    <AssemblyVersion>1.1.1.0</AssemblyVersion>
+    <FileVersion>1.1.1.0</FileVersion>
+    <Platforms>x64</Platforms>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="LSPDFRManager.Tests\**" />
+    <EmbeddedResource Remove="LSPDFRManager.Tests\**" />
+    <None Remove="LSPDFRManager.Tests\**" />
+    <Compile Remove="LSPDFRManager.Api\**" />
+    <EmbeddedResource Remove="LSPDFRManager.Api\**" />
+    <None Remove="LSPDFRManager.Api\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SharpCompress" Version="0.38.0" />
+  </ItemGroup>
+
+</Project>
