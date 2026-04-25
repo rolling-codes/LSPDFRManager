@@ -64,9 +64,9 @@
                 </StackPanel>
 
                 <TextBlock Foreground="{StaticResource TextMuted}" FontSize="12" Margin="0,0,0,4">
-                    <Run Text="{Binding Author, StringFormat='By {0}'}" Foreground="{StaticResource TextMuted}"/>
+                    <Run Text="{Binding Author, Mode=OneWay, StringFormat='By {0}'}" Foreground="{StaticResource TextMuted}"/>
                     <Run Text="  ·  "/>
-                    <Run Text="{Binding InstalledAt, StringFormat='{}{0:MMM d}'}"/>
+                    <Run Text="{Binding InstalledAt, Mode=OneWay, StringFormat='{}{0:MMM d}'}"/>
                 </TextBlock>
 
                 <!-- Status text -->
