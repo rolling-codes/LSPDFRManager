@@ -48,9 +48,15 @@
                                Foreground="{StaticResource TextMuted}"
                                FontSize="12" VerticalAlignment="Center"
                                Margin="6,0,0,0"/>
+                    <!-- Risk badge -->
+                    <Border Background="{Binding RiskBrush}" CornerRadius="4"
+                            Padding="6,2" Margin="8,0,0,0">
+                        <TextBlock Text="{Binding RiskTier}" Foreground="White"
+                                   FontSize="10" FontWeight="SemiBold"/>
+                    </Border>
                     <!-- Conflict badge -->
                     <Border Background="#DC2626" CornerRadius="4"
-                            Padding="6,2" Margin="8,0,0,0"
+                            Padding="6,2" Margin="6,0,0,0"
                             Visibility="{Binding HasConflict, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
                         <TextBlock Text="⚠ Conflict" Foreground="White"
                                    FontSize="10" FontWeight="SemiBold"/>
@@ -66,6 +72,10 @@
                 <!-- Status text -->
                 <TextBlock Foreground="{StaticResource TextFaint}" FontSize="11"
                            Text="{Binding StatusText}"/>
+
+                <!-- Risk summary -->
+                <TextBlock Foreground="{StaticResource TextMuted}" FontSize="10"
+                           Text="{Binding RiskSummary}" Margin="0,2,0,0"/>
 
                 <!-- Error message -->
                 <Border Background="#2D1B1B" BorderBrush="#DC2626" BorderThickness="1"

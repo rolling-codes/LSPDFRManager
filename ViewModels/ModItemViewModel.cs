@@ -164,5 +164,45 @@ public class ModItemViewModel : ObservableObject
         ErrorMessage = message;
     }
 
+    public void Analyze(IEnumerable<string> incomingFiles)
+    {
+        DetectionScore = LspdfrValidator.CalculateDetectionScore(incomingFiles);
+
+        HasConflict = _library.Mods
+            .Any(m => m.InstalledFiles.Intersect(incomingFiles).Any());
+
+        OnPropertyChanged(nameof(DetectionScore));
+        OnPropertyChanged(nameof(HasConflict));
+        OnPropertyChanged(nameof(RiskTier));
+        OnPropertyChanged(nameof(RiskBrush));
+        OnPropertyChanged(nameof(RiskSummary));
+    }
+
+    public string RiskTier =>
+        DetectionScore >= 70 ? "Safe" :
+        DetectionScore >= 40 ? "Medium" :
+        "High";
+
+    public Brush RiskBrush
+    {
+        get
+        {
+            var color = RiskTier == "Safe"
+                ? Color.FromRgb(16, 185, 129)      // #10B981 green
+                : RiskTier == "Medium"
+                    ? Color.FromRgb(245, 158, 11)  // #F59E0B amber
+                    : Color.FromRgb(239, 68, 68);  // #EF4444 red
+
+            var brush = new SolidColorBrush(color);
+            brush.Freeze();
+            return brush;
+        }
+    }
+
+    public string RiskSummary =>
+        HasConflict
+            ? $"{RiskTier} • Conflicts detected"
+            : $"{RiskTier} • No conflicts";
+
     public Guid Id => _mod.Id;
 }

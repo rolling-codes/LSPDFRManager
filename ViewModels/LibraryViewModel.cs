@@ -11,6 +11,7 @@ public class LibraryViewModel : ObservableObject
     private string _searchQuery = "";
     private string _selectedFilter = "All";
     private string _selectedSort = "Installed: Newest first";
+    private string _riskFilter = "All";
     private ModItemViewModel? _selectedMod;
 
     public ObservableCollection<ModItemViewModel> FilteredMods { get; } = [];
@@ -98,6 +99,7 @@ public class LibraryViewModel : ObservableObject
     public ICommand OpenModFolderCommand { get; }
     public ICommand EnableVisibleCommand { get; }
     public ICommand DisableVisibleCommand { get; }
+    public ICommand SetFilterCommand { get; }
 
     public LibraryViewModel()
     {
@@ -144,6 +146,13 @@ public class LibraryViewModel : ObservableObject
                 Process.Start("explorer.exe", path);
         });
 
+        SetFilterCommand = new RelayCommand(filter =>
+        {
+            if (filter is not string filterStr || string.IsNullOrEmpty(filterStr)) return;
+            _riskFilter = filterStr;
+            RefreshFiltered();
+        });
+
         _library.Mods.CollectionChanged += (_, _) =>
         {
             RefreshFiltered();
@@ -167,6 +176,13 @@ public class LibraryViewModel : ObservableObject
         if (_selectedFilter != "All")
             mods = mods.Where(m =>
                 m.TypeLabel.Equals(_selectedFilter, StringComparison.OrdinalIgnoreCase));
+
+        if (_riskFilter != "All")
+            mods = mods.Where(m =>
+            {
+                var itemVm = new ModItemViewModel(m);
+                return itemVm.RiskTier.Equals(_riskFilter, StringComparison.OrdinalIgnoreCase);
+            });
 
         mods = _selectedSort switch
         {

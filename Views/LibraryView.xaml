@@ -62,6 +62,40 @@
                       SelectedItem="{Binding SelectedSort}"/>
         </Grid>
 
+        <!-- ── Risk Filter ────────────────────────────────── -->
+        <StackPanel DockPanel.Dock="Top"
+                    Orientation="Horizontal"
+                    Margin="0,0,0,12">
+            <TextBlock Text="Risk:"
+                       Foreground="{StaticResource TextMuted}"
+                       FontSize="12"
+                       VerticalAlignment="Center"
+                       Margin="0,0,8,0"/>
+            <Button Style="{StaticResource GhostButton}"
+                    Content="All"
+                    Command="{Binding SetFilterCommand}"
+                    CommandParameter="All"
+                    Margin="0,0,6,0"
+                    Padding="10,6"/>
+            <Button Style="{StaticResource GhostButton}"
+                    Content="Safe"
+                    Command="{Binding SetFilterCommand}"
+                    CommandParameter="Safe"
+                    Margin="0,0,6,0"
+                    Padding="10,6"/>
+            <Button Style="{StaticResource GhostButton}"
+                    Content="Medium"
+                    Command="{Binding SetFilterCommand}"
+                    CommandParameter="Medium"
+                    Margin="0,0,6,0"
+                    Padding="10,6"/>
+            <Button Style="{StaticResource GhostButton}"
+                    Content="High"
+                    Command="{Binding SetFilterCommand}"
+                    CommandParameter="High"
+                    Padding="10,6"/>
+        </StackPanel>
+
         <!-- ── Bulk actions ───────────────────────────────── -->
         <StackPanel DockPanel.Dock="Top"
                     Orientation="Horizontal"
