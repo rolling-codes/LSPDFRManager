@@ -117,7 +117,24 @@ public class InstallViewModel : ObservableObject
         });
 
         _queue.InstallStarted   += mod => AddLog($"Installing {mod.Name}…");
-        _queue.InstallCompleted += mod => { IsInstalling = false; AddLog($"✓ Installed: {mod.Name}"); };
+        _queue.InstallCompleted += mod =>
+        {
+            IsInstalling = false;
+            AddLog($"✓ Installed: {mod.Name}");
+            if (AppConfig.Instance.AutoLaunchAfterInstall)
+            {
+                AddLog("Auto-launching LSPDFR...");
+                var hook = Path.Combine(AppConfig.Instance.GtaPath, "RAGEPluginHook.exe");
+                if (File.Exists(hook))
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(hook)
+                    {
+                        UseShellExecute = true,
+                        WorkingDirectory = AppConfig.Instance.GtaPath,
+                    });
+                }
+            }
+        };
         _queue.InstallFailed    += (mod, err) => { IsInstalling = false; AddLog($"✗ Failed: {mod.Name} — {err}"); };
     }
 

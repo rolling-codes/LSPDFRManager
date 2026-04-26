@@ -57,4 +57,7 @@ public class InstalledMod
 
     /// <summary>Detection confidence score (0–100) from installation; defaults to 100 for already-installed mods.</summary>
     public int DetectionScore { get; set; } = 100;
+
+    /// <summary>User-provided notes for this mod.</summary>
+    public string Notes { get; set; } = "";
 }

@@ -24,12 +24,26 @@ public class ModItemViewModel : ObservableObject
 
         ToggleCommand = new RelayCommand(() =>
         {
-            IsEnabled = !IsEnabled;
-            _library.SetEnabled(_mod.Id, IsEnabled);
+            _library.SetEnabled(_mod.Id, !IsEnabled);
+            OnPropertyChanged(nameof(IsEnabled));
+            OnPropertyChanged(nameof(Opacity));
+            OnPropertyChanged(nameof(StatusBrush));
+            OnPropertyChanged(nameof(StatusText));
         });
 
         UninstallCommand = new RelayCommand(() =>
         {
+            if (AppConfig.Instance.ConfirmBeforeUninstall)
+            {
+                var result = System.Windows.MessageBox.Show(
+                    $"Are you sure you want to uninstall '{Name}'?",
+                    "Confirm Uninstall",
+                    System.Windows.MessageBoxButton.YesNo,
+                    System.Windows.MessageBoxImage.Warning);
+
+                if (result != System.Windows.MessageBoxResult.Yes) return;
+            }
+
             // Re-enable files so they exist under their original names before deletion
             if (!_mod.IsEnabled) _library.SetEnabled(_mod.Id, true);
 
@@ -203,6 +217,22 @@ public class ModItemViewModel : ObservableObject
         HasConflict
             ? $"{RiskTier} • Conflicts detected"
             : $"{RiskTier} • No conflicts";
+
+    public List<string> ConflictDetails => _library.FindConflicts(_mod);
+
+    public string Notes
+    {
+        get => _mod.Notes;
+        set
+        {
+            if (_mod.Notes != value)
+            {
+                _mod.Notes = value;
+                OnPropertyChanged(nameof(Notes));
+                _library.SaveProxy(); // Helper to trigger a save
+            }
+        }
+    }
 
     public Guid Id => _mod.Id;
 }

@@ -60,10 +60,8 @@ public class InstallQueue : IDisposable
                 }
 
                 // Register what was written (or fall back to manifest)
-                var newFiles = result.FilesWritten > 0
-                    ? Directory.GetFiles(gtaPath, "*", SearchOption.AllDirectories)
-                        .Where(f => File.GetCreationTimeUtc(f) >= DateTime.UtcNow.AddSeconds(-5))
-                        .ToList()
+                var newFiles = result.WrittenFiles.Count > 0
+                    ? result.WrittenFiles
                     : mod.Files
                         .Select(f => Path.Combine(gtaPath, f.Replace('/', Path.DirectorySeparatorChar)))
                         .ToList();

@@ -10,4 +10,5 @@ public class InstallResult
     public string? Error { get; init; }
     public int FilesWritten { get; init; }
     public string? FailedEntry { get; init; }
+    public List<string> WrittenFiles { get; init; } = [];
 }
