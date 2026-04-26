@@ -2,22 +2,47 @@
 
 ## Installation & Verification
 
-### Prerequisites: .NET 8 Desktop Runtime
+### Quick Start (After Building)
 
-**Check if installed** (Command Prompt or PowerShell):
+Once you have the app built, run from the `publish_v1.4.0` folder:
+
+```powershell
+./run.bat
+```
+
+The launcher script will:
+- Check for .NET 8 Desktop Runtime
+- Auto-install if missing
+- Show success dialog
+- Launch the app
+
+**Or use PowerShell one-liner to build + run:**
+
+```powershell
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/rolling-codes/LSPDFRManager/master/setup.ps1'))
+```
+
+### Check .NET Installation
+
+Verify .NET 8 is present (Command Prompt or PowerShell):
 ```
 dotnet --list-runtimes
 ```
 
 Look for a line containing `Microsoft.WindowsDesktop.App 8.` (e.g., `8.0.0` or later).
 
-**If not installed, run in PowerShell:**
+**If not installed, run this in PowerShell:**
 
 ```powershell
-powershell -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/rolling-codes/LSPDFRManager/master/install-dotnet.ps1'))"
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/rolling-codes/LSPDFRManager/master/install-dotnet.ps1'))
 ```
 
 This will auto-download and install .NET 8, then verify installation.
+
+**Note:** May need to set execution policy first:
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
+```
 
 ### Build & Install from Source
 
