@@ -169,29 +169,19 @@ internal class DirectoryEntryAdapter : IArchiveEntry
 
 /// <summary>
 /// Adapts System.IO.Compression.ZipFile to IArchive interface.
-/// Materializes all entries to memory (so archive can be disposed).
+/// Streams entries directly from archive (no materialization).
 /// </summary>
 internal class ZipArchiveAdapter : IArchive
 {
-    private IEnumerable<IArchiveEntry>? _materializedEntries;
     private readonly ZipArchive _zipArchive;
 
     public IEnumerable<IArchiveEntry> Entries
     {
         get
         {
-            _materializedEntries ??= _zipArchive.Entries
+            return _zipArchive.Entries
                 .Where(e => !e.FullName.EndsWith("/"))
-                .Select(e =>
-                {
-                    using var stream = e.Open();
-                    var ms = new MemoryStream();
-                    stream.CopyTo(ms);
-                    return new ZipEntryAdapter(e.FullName, ms.ToArray());
-                })
-                .ToList();
-
-            return _materializedEntries;
+                .Select(e => new ZipEntryAdapter(e));
         }
     }
 
@@ -200,46 +190,37 @@ internal class ZipArchiveAdapter : IArchive
 
 internal class ZipEntryAdapter : IArchiveEntry
 {
-    private readonly byte[] _content;
+    private readonly ZipArchiveEntry _entry;
 
     public string Key { get; }
     public bool IsDirectory => false;
-    public long Size => _content.Length;
+    public long Size => _entry.Length;
 
-    public ZipEntryAdapter(string fullName, byte[] content)
+    public ZipEntryAdapter(ZipArchiveEntry entry)
     {
-        Key = fullName;
-        _content = content;
+        _entry = entry;
+        Key = entry.FullName;
     }
 
-    public Stream OpenEntryStream() => new MemoryStream(_content);
+    public Stream OpenEntryStream() => _entry.Open();
 }
 
 /// <summary>
 /// Adapts SharpCompress.Archives.Archive to IArchive interface.
-/// Materializes all entries to memory (so archive can be disposed).
+/// Streams entries directly from archive (no materialization).
+/// WARNING: Streams from compressed archives may be non-seekable.
 /// </summary>
 internal class SharpCompressArchiveAdapter : IArchive
 {
-    private IEnumerable<IArchiveEntry>? _materializedEntries;
     private readonly SharpCompress.Archives.IArchive _archive;
 
     public IEnumerable<IArchiveEntry> Entries
     {
         get
         {
-            _materializedEntries ??= _archive.Entries
+            return _archive.Entries
                 .Where(e => !e.IsDirectory)
-                .Select(e =>
-                {
-                    using var stream = e.OpenEntryStream();
-                    var ms = new MemoryStream();
-                    stream.CopyTo(ms);
-                    return new SharpCompressEntryAdapter(e.Key ?? "", ms.ToArray());
-                })
-                .ToList();
-
-            return _materializedEntries;
+                .Select(e => new SharpCompressEntryAdapter(e));
         }
     }
 
@@ -248,17 +229,17 @@ internal class SharpCompressArchiveAdapter : IArchive
 
 internal class SharpCompressEntryAdapter : IArchiveEntry
 {
-    private readonly byte[] _content;
+    private readonly SharpCompress.Archives.IArchiveEntry _entry;
 
     public string Key { get; }
     public bool IsDirectory => false;
-    public long Size => _content.Length;
+    public long Size => _entry.Size;
 
-    public SharpCompressEntryAdapter(string key, byte[] content)
+    public SharpCompressEntryAdapter(SharpCompress.Archives.IArchiveEntry entry)
     {
-        Key = key;
-        _content = content;
+        _entry = entry;
+        Key = entry.Key ?? "";
     }
 
-    public Stream OpenEntryStream() => new MemoryStream(_content);
+    public Stream OpenEntryStream() => _entry.OpenEntryStream();
 }
