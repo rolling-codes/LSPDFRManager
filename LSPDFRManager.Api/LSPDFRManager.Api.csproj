@@ -6,6 +6,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>LSPDFRManager.Api</AssemblyName>
     <RootNamespace>LSPDFRManager.Api</RootNamespace>
+    <Description>API and scraper service for LSPDFR Manager, providing mod metadata and updates.</Description>
+    <Authors>rolling-codes</Authors>
+    <PackageTags>gta5;lspdfr;api;scraper;dotnet</PackageTags>
+    <RepositoryUrl>https://github.com/rolling-codes/LSPDFRManager</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>

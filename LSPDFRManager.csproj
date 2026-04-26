@@ -13,6 +13,10 @@
     <FileVersion>1.4.0.0</FileVersion>
     <Platforms>x64</Platforms>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <Description>Advanced mod manager for GTA V and LSPDFR, featuring automated installation, backup management, and mod library organization.</Description>
+    <Authors>rolling-codes</Authors>
+    <PackageTags>gta5;lspdfr;mod-manager;gtav;lspd-first-response;dotnet</PackageTags>
+    <RepositoryUrl>https://github.com/rolling-codes/LSPDFRManager</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
