@@ -2,6 +2,22 @@
 
 ## Installation & Verification
 
+### Recommended: Build from Source
+
+The executable requires WPF and .NET runtime DLLs. The easiest way to get a working install is to build from source:
+
+**Requirements:** .NET 8 SDK
+
+```bash
+git clone https://github.com/rolling-codes/LSPDFRManager.git
+cd LSPDFRManager
+dotnet publish -c Release -r win-x64 --self-contained false -o publish_v1.4.0
+cd publish_v1.4.0
+./run.bat
+```
+
+This generates the complete install with all dependencies.
+
 ### Quick Start (After Building)
 
 Once you have the app built, run from the `publish_v1.4.0` folder:
@@ -45,24 +61,6 @@ $file = "$env:TEMP\install-dotnet.ps1"
 
 This will auto-download and install .NET 8, then verify installation.
 
-### Build & Install from Source
-
-**Requirements:** .NET 8 SDK
-
-**Clone and build:**
-```bash
-git clone https://github.com/rolling-codes/LSPDFRManager.git
-cd LSPDFRManager
-dotnet publish -c Release -r win-x64 --self-contained false -o publish_v1.4.0
-```
-
-**Run the app:**
-```bash
-cd publish_v1.4.0
-./run.bat
-```
-
-This generates the complete install with all dependencies.
 
 **What's Included:**
 - ✅ `LSPDFRManager.exe` — Application executable (151 KB)
