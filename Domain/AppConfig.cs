@@ -34,6 +34,7 @@ public class AppConfig
 
     /// <summary>When <c>true</c>, the user is prompted to confirm before uninstalling a mod.</summary>
     public bool ConfirmBeforeUninstall { get; set; } = true;
+    public bool AutoLaunchAfterInstall { get; set; }
 
     /// <summary>UTC timestamp of the most recent backup, or <c>null</c> if none exists.</summary>
     public DateTime? LastBackupDate { get; set; }

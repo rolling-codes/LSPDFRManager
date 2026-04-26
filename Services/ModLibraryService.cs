@@ -18,6 +18,8 @@ public class ModLibraryService
     private static ModLibraryService? _instance;
     public static ModLibraryService Instance => _instance ??= new ModLibraryService();
 
+    public event Action<InstalledMod>? ModUpdated;
+
     public ModLibraryService() => Load();
 
     public void Add(InstalledMod mod)
@@ -35,12 +37,19 @@ public class ModLibraryService
         Save();
     }
 
+    public void SaveProxy() => Save();
+
     public void SetEnabled(Guid id, bool enabled)
     {
         var mod = Mods.FirstOrDefault(m => m.Id == id);
         if (mod is null) return;
 
+        // Skip if already in the desired state
+        if (mod.IsEnabled == enabled) return;
+
         mod.IsEnabled = enabled;
+
+        ModUpdated?.Invoke(mod);
 
         foreach (var file in mod.InstalledFiles)
         {

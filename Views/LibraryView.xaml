@@ -63,30 +63,41 @@
         <StackPanel DockPanel.Dock="Top"
                     Orientation="Horizontal"
                     Margin="0,0,0,12">
+            <StackPanel.Resources>
+                <Style x:Key="RiskFilterButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding RiskFilter}" Value="{Binding CommandParameter, RelativeSource={RelativeSource Self}}">
+                            <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
+                            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+                            <Setter Property="Background" Value="#0F1E3D"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </StackPanel.Resources>
             <TextBlock Text="Risk:"
                        Foreground="{StaticResource TextMuted}"
                        FontSize="12"
                        VerticalAlignment="Center"
                        Margin="0,0,8,0"/>
-            <Button Style="{StaticResource GhostButton}"
+            <Button Style="{StaticResource RiskFilterButton}"
                     Content="All"
                     Command="{Binding SetFilterCommand}"
                     CommandParameter="All"
                     Margin="0,0,6,0"
                     Padding="10,6"/>
-            <Button Style="{StaticResource GhostButton}"
+            <Button Style="{StaticResource RiskFilterButton}"
                     Content="Safe"
                     Command="{Binding SetFilterCommand}"
                     CommandParameter="Safe"
                     Margin="0,0,6,0"
                     Padding="10,6"/>
-            <Button Style="{StaticResource GhostButton}"
+            <Button Style="{StaticResource RiskFilterButton}"
                     Content="Medium"
                     Command="{Binding SetFilterCommand}"
                     CommandParameter="Medium"
                     Margin="0,0,6,0"
                     Padding="10,6"/>
-            <Button Style="{StaticResource GhostButton}"
+            <Button Style="{StaticResource RiskFilterButton}"
                     Content="High"
                     Command="{Binding SetFilterCommand}"
                     CommandParameter="High"
@@ -144,79 +155,117 @@
             </Grid>
 
             <Border Grid.Column="2" Background="{StaticResource Surface}"
-                    CornerRadius="10" Padding="16">
+                    CornerRadius="12" Padding="20"
+                    BorderThickness="1" BorderBrush="{StaticResource Border}">
                 <Grid>
 
                 <StackPanel Visibility="{Binding HasNoSelectedMod, Converter={StaticResource BoolToVis}}"
                             HorizontalAlignment="Center" VerticalAlignment="Center">
                     <TextBlock Text="&#xE8F1;" FontFamily="Segoe MDL2 Assets"
-                               FontSize="32" Foreground="{StaticResource TextFaint}"
-                               HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                               FontSize="48" Foreground="{StaticResource TextFaint}"
+                               HorizontalAlignment="Center" Margin="0,0,0,16"/>
                     <TextBlock Text="Select a mod to&#x0a;view details"
-                               Foreground="{StaticResource TextFaint}" FontSize="12"
-                               TextAlignment="Center" TextWrapping="Wrap"/>
+                               Foreground="{StaticResource TextMuted}" FontSize="14"
+                               TextAlignment="Center" TextWrapping="Wrap"
+                               FontWeight="Medium"/>
                 </StackPanel>
 
                 <DockPanel Visibility="{Binding HasSelectedMod, Converter={StaticResource BoolToVis}}">
 
-                    <StackPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
+                    <StackPanel DockPanel.Dock="Bottom" Margin="0,16,0,0">
                         <Button Style="{StaticResource GhostButton}"
                                 Content="&#xE838;  Open Folder"
                                 FontFamily="Segoe MDL2 Assets, Segoe UI"
                                 Command="{Binding OpenModFolderCommand}"
                                 HorizontalAlignment="Stretch"
-                                Padding="10,7"/>
+                                Padding="10,10"/>
                     </StackPanel>
 
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel>
-                            <Border CornerRadius="6" Padding="10,4" Margin="0,0,0,12"
+                            <Border CornerRadius="8" Padding="12,5" Margin="0,0,0,20"
                                     HorizontalAlignment="Left"
                                     Background="{Binding SelectedMod.TypeColor,
                                         Converter={StaticResource StringToBrush}}">
                                 <TextBlock Text="{Binding SelectedMod.TypeLabel}"
                                            Foreground="White" FontSize="11"
-                                           FontWeight="SemiBold"/>
+                                           FontWeight="ExtraBold"/>
                             </Border>
 
                             <TextBlock Style="{StaticResource DetailLabel}" Text="NAME"/>
                             <TextBlock Style="{StaticResource DetailValue}"
-                                       Text="{Binding SelectedMod.Name}"/>
+                                       Text="{Binding SelectedMod.Name}"
+                                       FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
 
-                            <TextBlock Style="{StaticResource DetailLabel}" Text="VERSION"/>
-                            <TextBlock Style="{StaticResource DetailValue}"
-                                       Text="{Binding SelectedMod.Version, FallbackValue='—'}"/>
-
-                            <TextBlock Style="{StaticResource DetailLabel}" Text="AUTHOR"/>
-                            <TextBlock Style="{StaticResource DetailValue}"
-                                       Text="{Binding SelectedMod.Author, FallbackValue='—'}"/>
-
-                            <TextBlock Style="{StaticResource DetailLabel}" Text="INSTALLED"/>
-                            <TextBlock Style="{StaticResource DetailValue}"
-                                       Text="{Binding SelectedMod.InstalledAt,
-                                           StringFormat='{}{0:MMM d, yyyy HH:mm}'}"/>
-
-                            <TextBlock Style="{StaticResource DetailLabel}" Text="DLC PACK"/>
-                            <TextBlock Style="{StaticResource DetailValue}"
-                                       Text="{Binding SelectedMod.DlcPackName, FallbackValue='—'}"/>
-
-                            <TextBlock Style="{StaticResource DetailLabel}" Text="INSTALLED FILES"/>
-                            <ItemsControl ItemsSource="{Binding SelectedModFilesSample}">
+                            <ItemsControl ItemsSource="{Binding SelectedMod.ConflictDetails}"
+                                          Visibility="{Binding SelectedMod.HasConflict, Converter={StaticResource BoolToVis}}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding}"
-                                                   Foreground="{StaticResource TextMuted}"
-                                                   FontFamily="Consolas" FontSize="11"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   Margin="0,1"/>
+                                        <Border Background="#2D1B1B" BorderBrush="{StaticResource Danger}"
+                                                BorderThickness="1" CornerRadius="6" Padding="8,4" Margin="0,0,0,4">
+                                            <TextBlock Text="{Binding}" Foreground="{StaticResource Danger}" FontSize="11" FontWeight="SemiBold"/>
+                                        </Border>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
-                            <TextBlock Text="{Binding SelectedModFilesMoreText}"
-                                       Foreground="{StaticResource TextFaint}"
-                                       FontSize="11" Margin="0,3,0,0"
-                                       Visibility="{Binding HasMoreSelectedFiles,
-                                           Converter={StaticResource BoolToVis}}"/>
+
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Style="{StaticResource DetailLabel}" Text="VERSION"/>
+                                    <TextBlock Style="{StaticResource DetailValue}"
+                                               Text="{Binding SelectedMod.Version, FallbackValue='—'}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Style="{StaticResource DetailLabel}" Text="AUTHOR"/>
+                                    <TextBlock Style="{StaticResource DetailValue}"
+                                               Text="{Binding SelectedMod.Author, FallbackValue='—'}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock Style="{StaticResource DetailLabel}" Text="INSTALLED ON"/>
+                            <TextBlock Style="{StaticResource DetailValue}"
+                                       Text="{Binding SelectedMod.InstalledAt,
+                                           StringFormat='{}{0:MMM d, yyyy · HH:mm}'}"
+                                       Margin="0,0,0,12"/>
+
+                            <TextBlock Style="{StaticResource DetailLabel}" Text="DLC PACK NAME"
+                                       Visibility="{Binding SelectedMod.DlcPackName, Converter={StaticResource StringToVis}, FallbackValue=Collapsed}"/>
+                            <TextBlock Style="{StaticResource DetailValue}"
+                                       Text="{Binding SelectedMod.DlcPackName}"
+                                       Margin="0,0,0,12"
+                                       Visibility="{Binding SelectedMod.DlcPackName, Converter={StaticResource StringToVis}, FallbackValue=Collapsed}"/>
+
+                            <TextBlock Style="{StaticResource DetailLabel}" Text="NOTES"/>
+                            <TextBox Text="{Binding SelectedMod.Notes, UpdateSourceTrigger=PropertyChanged}"
+                                     AcceptsReturn="True" TextWrapping="Wrap" MinHeight="60"
+                                     Margin="0,0,0,16"/>
+
+                            <TextBlock Style="{StaticResource DetailLabel}" Text="INSTALLED FILES"/>
+                            <Border Background="{StaticResource Bg}" CornerRadius="8" Padding="12" Margin="0,4,0,0">
+                                <StackPanel>
+                                    <ItemsControl ItemsSource="{Binding SelectedModFilesSample}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding}"
+                                                           Foreground="{StaticResource TextMuted}"
+                                                           FontFamily="Consolas" FontSize="11"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           Margin="0,2"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <TextBlock Text="{Binding SelectedModFilesMoreText}"
+                                               Foreground="{StaticResource TextFaint}"
+                                               FontSize="11" Margin="0,6,0,0"
+                                               FontStyle="Italic"
+                                               Visibility="{Binding HasMoreSelectedFiles,
+                                                   Converter={StaticResource BoolToVis}}"/>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                     </ScrollViewer>
                 </DockPanel>
