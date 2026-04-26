@@ -1,0 +1,32 @@
+## .NET / WPF
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.swp
+*.orig
+
+## NuGet
+packages/
+*.nupkg
+
+## Build output
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Bb]uild*/
+publish/
+publish*/
+*.zip
+
+## OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+## User-specific
+*.rsuser
+.idea/
+*.DotSettings.user

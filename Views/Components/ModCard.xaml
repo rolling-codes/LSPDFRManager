@@ -1,0 +1,103 @@
+<UserControl x:Class="LSPDFRManager.Views.Components.ModCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="Transparent">
+
+    <Border Background="{StaticResource Surface}"
+            CornerRadius="12"
+            Margin="0,6"
+            Padding="18,16"
+            Opacity="{Binding Opacity}"
+            BorderThickness="1"
+            BorderBrush="{StaticResource Border}">
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="60"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                <Border Width="44" Height="44" CornerRadius="10"
+                        Background="{Binding TypeColor, Converter={StaticResource StringToBrush}}"
+                        HorizontalAlignment="Left">
+                    <TextBlock Text="{Binding TypeLabel}"
+                               Foreground="White" FontSize="9"
+                               FontWeight="Heavy" TextWrapping="Wrap"
+                               TextAlignment="Center" Padding="4"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center"/>
+                </Border>
+                <ProgressBar Value="{Binding DetectionScore, FallbackValue=100}"
+                             Width="44" Height="4" Margin="0,10,0,0"
+                             HorizontalAlignment="Left"
+                             ToolTip="{Binding DetectionScore, StringFormat='Detection Confidence: {0}%'}"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="4,0,16,0">
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                    <TextBlock Text="{Binding Name}"
+                               Foreground="{StaticResource TextPrimary}"
+                               FontSize="15" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding Version, StringFormat=' v{0}'}"
+                               Foreground="{StaticResource TextMuted}"
+                               FontSize="13" VerticalAlignment="Center"
+                               Margin="8,0,0,0"/>
+                    <Border Background="{Binding RiskBrush}" CornerRadius="6"
+                            Padding="8,3" Margin="12,0,0,0">
+                        <TextBlock Text="{Binding RiskTier}" Foreground="White"
+                                   FontSize="10" FontWeight="ExtraBold"/>
+                    </Border>
+                    <Border Background="{StaticResource Danger}" CornerRadius="6"
+                            Padding="8,3" Margin="8,0,0,0"
+                            Visibility="{Binding HasConflict, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
+                        <TextBlock Text="⚠ CONFLICT" Foreground="White"
+                                   FontSize="10" FontWeight="ExtraBold"/>
+                    </Border>
+                </StackPanel>
+
+                <TextBlock Foreground="{StaticResource TextMuted}" FontSize="12" Margin="0,0,0,6">
+                    <Run Text="{Binding Author, Mode=OneWay, StringFormat='BY {0}'}" FontWeight="SemiBold"/>
+                    <Run Text="  ·  " Foreground="{StaticResource TextFaint}"/>
+                    <Run Text="{Binding InstalledAt, Mode=OneWay, StringFormat='{}{0:MMM d, yyyy}'}"/>
+                </TextBlock>
+
+                <StackPanel Orientation="Horizontal">
+                    <Border CornerRadius="4" Background="{StaticResource Surface2}" Padding="6,2" Margin="0,0,8,0">
+                        <TextBlock Foreground="{StaticResource TextMuted}" FontSize="11"
+                                   FontWeight="Medium" Text="{Binding StatusText}"/>
+                    </Border>
+                    <TextBlock Foreground="{StaticResource TextFaint}" FontSize="11"
+                               VerticalAlignment="Center" Text="{Binding RiskSummary}"/>
+                </StackPanel>
+
+                <Border Background="#2D1B1B" BorderBrush="{StaticResource Danger}" BorderThickness="1"
+                        CornerRadius="8" Padding="10" Margin="0,10,0,0"
+                        Visibility="{Binding HasError, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xEA39; " FontFamily="Segoe MDL2 Assets" Foreground="{StaticResource Danger}" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding ErrorMessage}"
+                                   Foreground="#FCA5A5" FontSize="11"
+                                   TextWrapping="Wrap" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal"
+                        VerticalAlignment="Center">
+                <CheckBox Style="{StaticResource ToggleSwitch}"
+                          IsChecked="{Binding IsEnabled, Mode=OneWay}"
+                          Command="{Binding ToggleCommand}"
+                          Margin="0,0,16,0"
+                          ToolTip="Enable / Disable mod"/>
+                <Button Style="{StaticResource IconButton}"
+                        Content="&#xE74D;"
+                        FontFamily="Segoe MDL2 Assets"
+                        FontSize="16"
+                        Command="{Binding UninstallCommand}"
+                        ToolTip="Uninstall mod"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>
