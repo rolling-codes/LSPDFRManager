@@ -1,4 +1,4 @@
-namespace LSPDFRManager.Models;
+namespace LSPDFRManager.Domain;
 
 /// <summary>
 /// Serialisable snapshot of a mod library, produced by

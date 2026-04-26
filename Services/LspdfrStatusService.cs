@@ -1,6 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
-using LSPDFRManager.Models;
+using LSPDFRManager.Domain;
 
 namespace LSPDFRManager.Services;
 

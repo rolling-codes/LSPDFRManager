@@ -1,6 +1,6 @@
 using System.Xml.Linq;
 using LSPDFRManager.Core;
-using LSPDFRManager.Models;
+using LSPDFRManager.Domain;
 
 namespace LSPDFRManager.Services;
 

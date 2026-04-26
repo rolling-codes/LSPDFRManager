@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using LSPDFRManager.Models;
+using LSPDFRManager.Domain;
 using LSPDFRManager.Services;
 
 namespace LSPDFRManager.Core;

@@ -1,4 +1,4 @@
-namespace LSPDFRManager.Models;
+namespace LSPDFRManager.Domain;
 
 /// <summary>
 /// Result of an install operation, used to communicate success/failure/partial state to callers.

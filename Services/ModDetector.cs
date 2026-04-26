@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 using LSPDFRManager.Core;
-using LSPDFRManager.Models;
+using LSPDFRManager.Domain;
 using SharpCompress.Archives;
 
 namespace LSPDFRManager.Services;

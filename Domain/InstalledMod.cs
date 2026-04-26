@@ -1,4 +1,4 @@
-namespace LSPDFRManager.Models;
+namespace LSPDFRManager.Domain;
 
 /// <summary>
 /// Persisted record of a mod that has been installed into the GTA V directory.

@@ -1,4 +1,4 @@
-using LSPDFRManager.Models;
+using LSPDFRManager.Domain;
 using LSPDFRManager.Services;
 using Xunit;
 

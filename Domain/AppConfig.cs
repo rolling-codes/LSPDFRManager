@@ -1,4 +1,4 @@
-namespace LSPDFRManager.Models;
+namespace LSPDFRManager.Domain;
 
 /// <summary>
 /// Persistent application settings stored at

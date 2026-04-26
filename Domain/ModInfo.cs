@@ -1,4 +1,4 @@
-namespace LSPDFRManager.Models;
+namespace LSPDFRManager.Domain;
 
 /// <summary>
 /// Transient result produced by <see cref="LSPDFRManager.Services.ModDetector"/>

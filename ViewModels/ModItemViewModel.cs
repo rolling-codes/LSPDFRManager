@@ -1,6 +1,6 @@
 using System.Windows.Input;
 using System.Windows.Media;
-using LSPDFRManager.Models;
+using LSPDFRManager.Domain;
 using LSPDFRManager.Services;
 
 namespace LSPDFRManager.ViewModels;

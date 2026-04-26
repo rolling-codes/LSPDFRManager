@@ -1,5 +1,5 @@
 using LSPDFRManager.Core;
-using LSPDFRManager.Models;
+using LSPDFRManager.Domain;
 
 namespace LSPDFRManager.Services;
 

@@ -1,4 +1,4 @@
-namespace LSPDFRManager.Models;
+namespace LSPDFRManager.Domain;
 
 /// <summary>Broad category of a GTA V / LSPDFR mod.</summary>
 public enum ModType
