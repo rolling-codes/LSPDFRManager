@@ -2,9 +2,26 @@
 
 ## Installation & Verification
 
+### Prerequisites: .NET 8 Desktop Runtime
+
+**Check if installed** (Command Prompt or PowerShell):
+```
+dotnet --list-runtimes
+```
+
+Look for a line containing `Microsoft.WindowsDesktop.App 8.` (e.g., `8.0.0` or later).
+
+**If not installed, run in PowerShell:**
+
+```powershell
+powershell -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/rolling-codes/LSPDFRManager/master/install-dotnet.ps1'))"
+```
+
+This will auto-download and install .NET 8, then verify installation.
+
 ### Quick Install (Recommended)
 
-One-line setup from PowerShell (downloads, extracts, and runs automatically):
+**Run in PowerShell** (downloads, extracts, and launches automatically):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/rolling-codes/LSPDFRManager/master/setup.ps1'))"
@@ -18,36 +35,18 @@ This script:
 
 ### Manual Installation
 
-**Prerequisites: .NET 8 Desktop Runtime**
-
-Verify your system has it:
-
-```bash
-dotnet --list-runtimes
-```
-
-Look for a line containing `Microsoft.WindowsDesktop.App 8.` (e.g., `8.0.0` or later).
-
-**If not installed:**
-1. Download: [.NET 8 Desktop Runtime (Windows x64)](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
-2. Run the installer
-3. Restart your terminal
-4. Verify: `dotnet --list-runtimes`
-
-**Manual Steps:**
-
 1. Download `LSPDFRManager-v1.4.0.zip` from the [Release page](https://github.com/rolling-codes/LSPDFRManager/releases/tag/v1.4.0)
 2. Extract to folder (e.g., `C:\Program Files\LSPDFRManager\`)
-3. Run: `run.bat`
+3. Run: `run.bat` (checks/installs .NET 8, launches app)
 4. Click OK on success dialog
-5. Go to **Settings** → Set your **GTA V folder** (e.g., `C:\Program Files\Rockstar Games\Grand Theft Auto V`)
+5. Go to **Settings** → Set your **GTA V folder**
 6. Click **Save Settings**
 
 **Release Package Contents:**
 - ✅ `LSPDFRManager.exe` — Standalone executable (151 KB)
-- ✅ `run.bat` — Launcher with .NET 8 auto-install
+- ✅ `run.bat` — Launcher with .NET 8 auto-install & success dialog
 - ✅ `INSTALL.txt` — Quick start guide
-- ✅ Runtime DLLs — All WPF and .NET dependencies
+- ✅ Runtime DLLs — All WPF and .NET dependencies (~69 MB total)
 
 ---
 
