@@ -86,6 +86,12 @@ Phase C streaming optimization complete. True streaming pipeline with adaptive b
 
 **Impact**: Enables grep-based monitoring and log aggregation for production incident diagnosis. Retry and rollback behavior fully visible. Session ID allows tracking multi-entry sequences.
 
+## Bug Fixes
+
+- **Archive Materialization Defeat** — ZipArchiveAdapter and SharpCompressArchiveAdapter were materializing entire archives to MemoryStream, defeating Phase C streaming. Now streams directly from archive entries, reducing 200MB archive memory footprint from 200MB+ to ~2MB.
+- **Test Logic Errors** — RealWorldInstallerTests successful extraction tests incorrectly expected empty mods directories. Fixed to properly validate extracted files exist after successful installs.
+- **Path Normalization** — DeepNestedPaths test was searching for shallow source path in archive containing deeply nested structure. Corrected source path to match archive structure.
+
 ## Breaking Changes
 
 **None**. This is an internal architecture improvement:
