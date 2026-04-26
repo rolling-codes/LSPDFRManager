@@ -96,7 +96,8 @@ public static class FileInstaller
             return new InstallResult
             {
                 Success = true,
-                FilesWritten = writtenFiles.Count
+                FilesWritten = writtenFiles.Count,
+                WrittenFiles = writtenFiles
             };
         }
         catch (Exception ex)
@@ -109,7 +110,8 @@ public static class FileInstaller
                 Success = false,
                 IsPartial = writtenFiles.Count > 0,
                 FilesWritten = writtenFiles.Count,
-                Error = ex.Message
+                Error = ex.Message,
+                WrittenFiles = []
             };
         }
     }

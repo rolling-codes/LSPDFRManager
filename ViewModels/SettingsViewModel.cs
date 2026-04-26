@@ -14,6 +14,7 @@ public class SettingsViewModel : ObservableObject
     private string _backupPath = AppConfig.Instance.BackupPath;
     private bool _autoBackup = AppConfig.Instance.AutoBackupOnInstall;
     private bool _confirmUninstall = AppConfig.Instance.ConfirmBeforeUninstall;
+    private bool _autoLaunch = AppConfig.Instance.AutoLaunchAfterInstall;
     private string _statusMessage = "";
     private bool _isBusy;
 
@@ -49,6 +50,12 @@ public class SettingsViewModel : ObservableObject
     {
         get => _confirmUninstall;
         set { SetProperty(ref _confirmUninstall, value); AppConfig.Instance.ConfirmBeforeUninstall = value; }
+    }
+
+    public bool AutoLaunchAfterInstall
+    {
+        get => _autoLaunch;
+        set { SetProperty(ref _autoLaunch, value); AppConfig.Instance.AutoLaunchAfterInstall = value; }
     }
 
     public string StatusMessage

@@ -34,6 +34,12 @@ public class LibraryViewModel : ObservableObject
         set { SetProperty(ref _selectedSort, value); RefreshFiltered(); }
     }
 
+    public string RiskFilter
+    {
+        get => _riskFilter;
+        set { SetProperty(ref _riskFilter, value); RefreshFiltered(); }
+    }
+
     public ModItemViewModel? SelectedMod
     {
         get => _selectedMod;
@@ -149,8 +155,7 @@ public class LibraryViewModel : ObservableObject
         SetFilterCommand = new RelayCommand(filter =>
         {
             if (filter is not string filterStr || string.IsNullOrEmpty(filterStr)) return;
-            _riskFilter = filterStr;
-            RefreshFiltered();
+            RiskFilter = filterStr;
         });
 
         _library.Mods.CollectionChanged += (_, _) =>
@@ -166,8 +171,6 @@ public class LibraryViewModel : ObservableObject
 
     private void RefreshFiltered()
     {
-        FilteredMods.Clear();
-
         var query = _searchQuery.Trim();
         var mods  = string.IsNullOrEmpty(query)
             ? _library.Mods.AsEnumerable()
@@ -180,8 +183,9 @@ public class LibraryViewModel : ObservableObject
         if (_riskFilter != "All")
             mods = mods.Where(m =>
             {
-                var itemVm = new ModItemViewModel(m);
-                return itemVm.RiskTier.Equals(_riskFilter, StringComparison.OrdinalIgnoreCase);
+                var score = m.DetectionScore;
+                var tier = score >= 70 ? "Safe" : score >= 40 ? "Medium" : "High";
+                return tier.Equals(_riskFilter, StringComparison.OrdinalIgnoreCase);
             });
 
         mods = _selectedSort switch
@@ -194,8 +198,34 @@ public class LibraryViewModel : ObservableObject
             _ => mods.OrderByDescending(m => m.InstalledAt),
         };
 
+        var modIds = mods.Select(m => m.Id).ToHashSet();
+
+        // Remove mods no longer in filter
+        for (int i = FilteredMods.Count - 1; i >= 0; i--)
+        {
+            if (!modIds.Contains(FilteredMods[i].Id))
+                FilteredMods.RemoveAt(i);
+        }
+
+        // Add or move mods to match sort order
+        int index = 0;
         foreach (var mod in mods)
-            FilteredMods.Add(new ModItemViewModel(mod));
+        {
+            var existing = FilteredMods.FirstOrDefault(m => m.Id == mod.Id);
+            if (existing == null)
+            {
+                FilteredMods.Insert(index, new ModItemViewModel(mod));
+            }
+            else
+            {
+                int oldIndex = FilteredMods.IndexOf(existing);
+                if (oldIndex != index)
+                {
+                    FilteredMods.Move(oldIndex, index);
+                }
+            }
+            index++;
+        }
 
         OnPropertyChanged(nameof(IsEmpty));
         OnPropertyChanged(nameof(FilteredCount));
