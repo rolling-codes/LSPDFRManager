@@ -62,8 +62,17 @@ Grab the latest release from [Releases](https://github.com/rolling-codes/LSPDFRM
 ## Requirements
 
 - Windows 10 / 11 (x64)
+- .NET 8 Desktop Runtime (auto-installed by launcher if missing)
 - GTA V installed
 - LSPDFR installed if you're managing LSPDFR plugins
+
+### Install .NET 8 (If Needed)
+
+```powershell
+powershell -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/rolling-codes/LSPDFRManager/master/install-dotnet.ps1'))"
+```
+
+Or manually: [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
 
 ---
 
