@@ -11,7 +11,7 @@ The executable requires WPF and .NET runtime DLLs. The easiest way to get a work
 ```bash
 git clone https://github.com/rolling-codes/LSPDFRManager.git
 cd LSPDFRManager
-dotnet publish -c Release -r win-x64 --self-contained false -o publish_v1.4.0
+dotnet publish -c Release -r win-x64 --self-contained true -o publish_v1.4.0
 cd publish_v1.4.0
 ./run.bat
 ```
