@@ -9,6 +9,7 @@ public partial class MainWindow : Window
 {
     private LoadingView? _loadingView;
     private MainViewModel? _mainViewModel;
+    private UIElement? _originalContent;
 
     public MainWindow()
     {
@@ -17,6 +18,7 @@ public partial class MainWindow : Window
         {
             AppLogger.Info("[MAINWINDOW] InitializeComponent starting");
             InitializeComponent();
+            _originalContent = Content as UIElement;
             AppLogger.Info("[MAINWINDOW] InitializeComponent completed");
         }
         catch (Exception ex)
@@ -38,12 +40,15 @@ public partial class MainWindow : Window
             _loadingView.SetStatus("Initializing services...");
             Content = _loadingView;
 
+            // Simulate some background work if needed, or just proceed
             AppLogger.Info("[MAINWINDOW] Creating MainViewModel");
             _mainViewModel = new MainViewModel();
 
             AppLogger.Info("[MAINWINDOW] Switching to MainViewModel");
             DataContext = _mainViewModel;
-            Content = _mainViewModel;
+
+            // Restore original XAML content (the Grid with sidebar and content area)
+            Content = _originalContent;
 
             AppLogger.Info("[MAINWINDOW] OnInitialized completed successfully");
         }
