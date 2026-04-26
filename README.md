@@ -29,6 +29,20 @@ Detection is scored automatically from path patterns, file extensions, and archi
 
 ---
 
+## Current Release: v1.4.0
+
+**Production-ready** with streaming installer and comprehensive observability.
+
+- **Memory Efficient** — Streaming pipeline reduces peak memory from archive size to ~2MB buffer (200MB archives previously used 200MB+ RAM)
+- **Adaptive Buffering** — File size-aware buffer selection (64KB–2MB) for optimal throughput on all systems
+- **Fully Observable** — Installation logs include version tags, session IDs, detailed operation tracking (extraction, retry behavior, rollback cleanup), and stack traces for production debugging
+- **Battle-Tested** — 149 test validations covering streaming, rollback, error recovery, and edge cases
+- **Backward Compatible** — All existing mod installations work unchanged; zero API breaking changes
+
+See [v1.4.0 Release Notes](RELEASE_v1.4.0.md) for details.
+
+---
+
 ## Download
 
 Grab the latest self-contained Windows executable from [Releases](https://github.com/rolling-codes/LSPDFRManager/releases/latest) — no .NET runtime required.
