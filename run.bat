@@ -12,7 +12,8 @@ dotnet --list-runtimes 2>nul | find "WindowsDesktop.App 8." >nul 2>&1
 if %errorlevel% equ 0 (
     echo [OK] .NET 8 Desktop Runtime found. Launching LSPDFRManager...
     echo.
-    start LSPDFRManager.exe
+    powershell -Command "[System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms') | Out-Null; [System.Windows.Forms.MessageBox]::Show('LSPDFRManager is launching...', 'Success', [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)" >nul 2>&1
+    LSPDFRManager.exe
     exit /b 0
 )
 
@@ -56,7 +57,8 @@ if %errorlevel% equ 0 (
     echo [OK] .NET 8 Desktop Runtime installed successfully!
     echo Launching LSPDFRManager...
     echo.
-    start LSPDFRManager.exe
+    powershell -Command "[System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms') | Out-Null; [System.Windows.Forms.MessageBox]::Show('.NET 8 installed successfully. LSPDFRManager is launching...', 'Success', [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)" >nul 2>&1
+    LSPDFRManager.exe
     exit /b 0
 ) else (
     echo [FAILED] .NET 8 Desktop Runtime still not found.
