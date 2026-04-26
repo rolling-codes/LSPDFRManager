@@ -1,5 +1,37 @@
 # Release v1.4.0 — Streaming Installer (Phase C)
 
+## Installation & Verification
+
+### Prerequisites: .NET 8 Desktop Runtime
+
+LSPDFRManager requires .NET 8 Desktop Runtime (not the SDK). Verify your system has it:
+
+```bash
+dotnet --list-runtimes
+```
+
+Look for a line containing `Microsoft.WindowsDesktop.App 8.` (e.g., `8.0.0` or later).
+
+**If not installed:**
+1. Download: [.NET 8 Desktop Runtime (Windows x64)](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
+2. Run the installer
+3. Restart your terminal
+4. Verify: `dotnet --list-runtimes`
+
+### Installation
+
+1. Download `LSPDFRManager.exe` from the [Release page](https://github.com/rolling-codes/LSPDFRManager/releases/tag/v1.4.0)
+2. Place in any folder (e.g., `C:\Program Files\LSPDFRManager\`)
+3. Run: `LSPDFRManager.exe`
+4. Go to **Settings** → Set your **GTA V folder** (e.g., `C:\Program Files\Rockstar Games\Grand Theft Auto V`)
+5. Click **Save Settings**
+
+**Release Package Contents:**
+- ✅ `LSPDFRManager.exe` — Standalone executable (151 KB)
+- ✅ `INSTALL.txt` — Quick start guide
+
+---
+
 ## Summary
 
 Phase C streaming optimization complete. True streaming pipeline with adaptive buffering replaces archive materialization. Memory usage reduced from archive-size to constant buffer-size.
