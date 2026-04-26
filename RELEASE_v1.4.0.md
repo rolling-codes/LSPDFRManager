@@ -16,10 +16,13 @@ The launcher script will:
 - Show success dialog
 - Launch the app
 
-**Or use PowerShell one-liner to build + run:**
+**Or use PowerShell to build + run:**
 
 ```powershell
-iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/rolling-codes/LSPDFRManager/master/setup.ps1'))
+$url = 'https://raw.githubusercontent.com/rolling-codes/LSPDFRManager/master/setup.ps1'
+$file = "$env:TEMP\setup.ps1"
+(New-Object System.Net.WebClient).DownloadFile($url, $file)
+& $file
 ```
 
 ### Check .NET Installation
@@ -34,15 +37,13 @@ Look for a line containing `Microsoft.WindowsDesktop.App 8.` (e.g., `8.0.0` or l
 **If not installed, run this in PowerShell:**
 
 ```powershell
-iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/rolling-codes/LSPDFRManager/master/install-dotnet.ps1'))
+$url = 'https://raw.githubusercontent.com/rolling-codes/LSPDFRManager/master/install-dotnet.ps1'
+$file = "$env:TEMP\install-dotnet.ps1"
+(New-Object System.Net.WebClient).DownloadFile($url, $file)
+& $file
 ```
 
 This will auto-download and install .NET 8, then verify installation.
-
-**Note:** May need to set execution policy first:
-```powershell
-Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
-```
 
 ### Build & Install from Source
 
