@@ -27,4 +27,4 @@ First off, thank you for considering contributing to LSPDFR Manager! It's people
 
 ## License
 
-By contributing to LSPDFR Manager, you agree that your contributions will be licensed under its MIT License.
+By contributing to this project, you acknowledge that you have access to this version or any version currently on GitHub. However, at a later point, I will be monetizing this software. If you want updated versions with the new features I develop, I will be announcing those details when it happens.
