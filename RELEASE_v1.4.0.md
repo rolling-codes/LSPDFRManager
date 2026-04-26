@@ -2,9 +2,25 @@
 
 ## Installation & Verification
 
-### Prerequisites: .NET 8 Desktop Runtime
+### Quick Install (Recommended)
 
-LSPDFRManager requires .NET 8 Desktop Runtime (not the SDK). Verify your system has it:
+One-line setup from PowerShell (downloads, extracts, and runs automatically):
+
+```powershell
+powershell -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/rolling-codes/LSPDFRManager/master/setup.ps1'))"
+```
+
+This script:
+- Downloads v1.4.0 from GitHub release
+- Extracts to `C:\Program Files\LSPDFRManager\`
+- Runs `run.bat` (auto-installs .NET 8 if needed)
+- Shows success dialog
+
+### Manual Installation
+
+**Prerequisites: .NET 8 Desktop Runtime**
+
+Verify your system has it:
 
 ```bash
 dotnet --list-runtimes
@@ -18,17 +34,20 @@ Look for a line containing `Microsoft.WindowsDesktop.App 8.` (e.g., `8.0.0` or l
 3. Restart your terminal
 4. Verify: `dotnet --list-runtimes`
 
-### Installation
+**Manual Steps:**
 
-1. Download `LSPDFRManager.exe` from the [Release page](https://github.com/rolling-codes/LSPDFRManager/releases/tag/v1.4.0)
-2. Place in any folder (e.g., `C:\Program Files\LSPDFRManager\`)
-3. Run: `LSPDFRManager.exe`
-4. Go to **Settings** → Set your **GTA V folder** (e.g., `C:\Program Files\Rockstar Games\Grand Theft Auto V`)
-5. Click **Save Settings**
+1. Download `LSPDFRManager-v1.4.0.zip` from the [Release page](https://github.com/rolling-codes/LSPDFRManager/releases/tag/v1.4.0)
+2. Extract to folder (e.g., `C:\Program Files\LSPDFRManager\`)
+3. Run: `run.bat`
+4. Click OK on success dialog
+5. Go to **Settings** → Set your **GTA V folder** (e.g., `C:\Program Files\Rockstar Games\Grand Theft Auto V`)
+6. Click **Save Settings**
 
 **Release Package Contents:**
 - ✅ `LSPDFRManager.exe` — Standalone executable (151 KB)
+- ✅ `run.bat` — Launcher with .NET 8 auto-install
 - ✅ `INSTALL.txt` — Quick start guide
+- ✅ Runtime DLLs — All WPF and .NET dependencies
 
 ---
 

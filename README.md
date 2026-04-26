@@ -43,9 +43,19 @@ See [v1.4.0 Release Notes](RELEASE_v1.4.0.md) for details.
 
 ---
 
-## Download
+## Download & Install
 
-Grab the latest self-contained Windows executable from [Releases](https://github.com/rolling-codes/LSPDFRManager/releases/latest) — no .NET runtime required.
+### Quick Install (One-Liner)
+
+```powershell
+powershell -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/rolling-codes/LSPDFRManager/master/setup.ps1'))"
+```
+
+Automatically downloads v1.4.0, extracts to `C:\Program Files\LSPDFRManager\`, and launches.
+
+### Manual Download
+
+Grab the latest release from [Releases](https://github.com/rolling-codes/LSPDFRManager/releases/latest) — extract and run `run.bat`.
 
 ---
 
