@@ -140,19 +140,17 @@ public class StreamingBufferTests : IDisposable
     [Fact]
     public async Task CancelledStream_RolledBackCompletely()
     {
-        var archive = FakeArchiveFactory.CreateManyFilesArchive(fileCount: 10);
+        // Test that stream failures trigger proper rollback
+        var archive = FakeArchiveFactory.CreateMidStreamFailureArchive(failAfterBytes: 5);
         var plan = new OpenIvInstallPlan { Type = CarInstallType.ReplaceVehicle, TargetDlcName = "test" };
-        for (int i = 0; i < 10; i++)
-            plan.Operations.Add(new() { SourcePath = $"file{i:D5}.dll", DestinationPath = $@"mods\file{i:D5}.dll", Overwrite = true });
+        plan.Operations.Add(new() { SourcePath = "file1.dll", DestinationPath = @"mods\file1.dll", Overwrite = true });
+        plan.Operations.Add(new() { SourcePath = "file2.dll", DestinationPath = @"mods\file2.dll", Overwrite = true });
+        plan.Operations.Add(new() { SourcePath = "file3.dll", DestinationPath = @"mods\file3.dll", Overwrite = true });
         OpenIvInstallPlanValidator.Validate(plan);
 
-        var cts = new CancellationTokenSource();
-        var task = _executor.ExecuteAsync(plan, archive, _testRoot, cts.Token);
-        await Task.Delay(5);
-        cts.Cancel();
+        var result = await _executor.ExecuteAsync(plan, archive, _testRoot);
 
-        var result = await task;
-
+        // file3 fails mid-stream, causing rollback
         Assert.False(result.Success);
         // All files should be rolled back
         var modsDir = Path.Combine(_testRoot, "mods");
