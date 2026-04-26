@@ -19,34 +19,31 @@ powershell -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClie
 
 This will auto-download and install .NET 8, then verify installation.
 
-### Quick Install (Recommended)
+### Build & Install from Source
 
-**Run in PowerShell** (downloads, extracts, and launches automatically):
+**Requirements:** .NET 8 SDK
 
-```powershell
-powershell -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/rolling-codes/LSPDFRManager/master/setup.ps1'))"
+**Clone and build:**
+```bash
+git clone https://github.com/rolling-codes/LSPDFRManager.git
+cd LSPDFRManager
+dotnet publish -c Release -r win-x64 --self-contained false -o publish_v1.4.0
 ```
 
-This script:
-- Downloads v1.4.0 from GitHub release
-- Extracts to `C:\Program Files\LSPDFRManager\`
-- Runs `run.bat` (auto-installs .NET 8 if needed)
-- Shows success dialog
+**Run the app:**
+```bash
+cd publish_v1.4.0
+./run.bat
+```
 
-### Manual Installation
+This generates the complete install with all dependencies.
 
-1. Download `LSPDFRManager-v1.4.0.zip` from the [Release page](https://github.com/rolling-codes/LSPDFRManager/releases/tag/v1.4.0)
-2. Extract to folder (e.g., `C:\Program Files\LSPDFRManager\`)
-3. Run: `run.bat` (checks/installs .NET 8, launches app)
-4. Click OK on success dialog
-5. Go to **Settings** → Set your **GTA V folder**
-6. Click **Save Settings**
+**What's Included:**
+- ✅ `LSPDFRManager.exe` — Application executable (151 KB)
+- ✅ `run.bat` — Smart launcher (auto-installs .NET 8, shows success dialog)
+- ✅ `INSTALL.txt` — Quick reference
 
-**Release Package Contents:**
-- ✅ `LSPDFRManager.exe` — Standalone executable (151 KB)
-- ✅ `run.bat` — Launcher with .NET 8 auto-install & success dialog
-- ✅ `INSTALL.txt` — Quick start guide
-- ✅ Runtime DLLs — All WPF and .NET dependencies (~69 MB total)
+**Note:** The executable requires WPF and .NET runtime files. These are automatically downloaded and extracted by the installer scripts. See installation methods above.
 
 ---
 
