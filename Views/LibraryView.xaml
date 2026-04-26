@@ -8,7 +8,6 @@
 
     <DockPanel Margin="28,24,28,16">
 
-        <!-- ── Header ─────────────────────────────────────── -->
         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,16">
             <StackPanel DockPanel.Dock="Left">
                 <TextBlock Text="Mod Library" Style="{StaticResource SectionHeader}"/>
@@ -27,7 +26,6 @@
             </StackPanel>
         </DockPanel>
 
-        <!-- ── Search & Filter ────────────────────────────── -->
         <Grid DockPanel.Dock="Top" Margin="0,0,0,14">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -62,7 +60,6 @@
                       SelectedItem="{Binding SelectedSort}"/>
         </Grid>
 
-        <!-- ── Risk Filter ────────────────────────────────── -->
         <StackPanel DockPanel.Dock="Top"
                     Orientation="Horizontal"
                     Margin="0,0,0,12">
@@ -96,7 +93,6 @@
                     Padding="10,6"/>
         </StackPanel>
 
-        <!-- ── Bulk actions ───────────────────────────────── -->
         <StackPanel DockPanel.Dock="Top"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right"
@@ -112,7 +108,6 @@
                     Padding="10,6"/>
         </StackPanel>
 
-        <!-- ── Two-column content ─────────────────────────── -->
         <Grid DockPanel.Dock="Top">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -120,7 +115,6 @@
                 <ColumnDefinition Width="270"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Mod list + empty state overlay -->
             <Grid Grid.Column="0">
                 <ListBox ItemsSource="{Binding FilteredMods}"
                          SelectedItem="{Binding SelectedMod}"
@@ -133,7 +127,6 @@
                     </ListBox.ItemTemplate>
                 </ListBox>
 
-                <!-- Empty state overlay -->
                 <Border Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}"
                         Background="{StaticResource Bg}">
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -150,12 +143,10 @@
                 </Border>
             </Grid>
 
-            <!-- Detail panel -->
             <Border Grid.Column="2" Background="{StaticResource Surface}"
                     CornerRadius="10" Padding="16">
                 <Grid>
 
-                <!-- Placeholder when nothing selected -->
                 <StackPanel Visibility="{Binding HasNoSelectedMod, Converter={StaticResource BoolToVis}}"
                             HorizontalAlignment="Center" VerticalAlignment="Center">
                     <TextBlock Text="&#xE8F1;" FontFamily="Segoe MDL2 Assets"
@@ -166,10 +157,8 @@
                                TextAlignment="Center" TextWrapping="Wrap"/>
                 </StackPanel>
 
-                <!-- Details when mod is selected -->
                 <DockPanel Visibility="{Binding HasSelectedMod, Converter={StaticResource BoolToVis}}">
 
-                    <!-- Actions at bottom -->
                     <StackPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
                         <Button Style="{StaticResource GhostButton}"
                                 Content="&#xE838;  Open Folder"
@@ -179,10 +168,8 @@
                                 Padding="10,7"/>
                     </StackPanel>
 
-                    <!-- Scrollable detail content -->
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel>
-                            <!-- Type badge -->
                             <Border CornerRadius="6" Padding="10,4" Margin="0,0,0,12"
                                     HorizontalAlignment="Left"
                                     Background="{Binding SelectedMod.TypeColor,

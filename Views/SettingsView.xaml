@@ -7,12 +7,10 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="28,24,28,16">
 
-            <!-- ── Header ──────────────────────────────────── -->
             <TextBlock Text="Settings" Style="{StaticResource SectionHeader}" Margin="0,0,0,4"/>
             <TextBlock Text="Configure paths, backups, and mod manifest import / export."
                        Foreground="{StaticResource TextMuted}" FontSize="13" Margin="0,0,0,24"/>
 
-            <!-- ══ LSPDFR Status ════════════════════════════ -->
             <TextBlock Text="ENVIRONMENT STATUS"
                        Foreground="{StaticResource TextFaint}"
                        FontSize="11" FontWeight="SemiBold" Margin="0,0,0,8"/>
@@ -25,7 +23,6 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- GTA V -->
                     <StackPanel Grid.Column="0">
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                             <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,7,0">
@@ -47,7 +44,6 @@
                                    Foreground="{StaticResource TextMuted}" FontSize="12"/>
                     </StackPanel>
 
-                    <!-- LSPDFR -->
                     <StackPanel Grid.Column="1">
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                             <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,7,0">
@@ -69,7 +65,6 @@
                                    Foreground="{StaticResource TextMuted}" FontSize="12"/>
                     </StackPanel>
 
-                    <!-- ScriptHookV -->
                     <StackPanel Grid.Column="2">
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                             <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,7,0">
@@ -93,7 +88,6 @@
                 </Grid>
             </Border>
 
-            <!-- ══ GTA V Path ═══════════════════════════════ -->
             <TextBlock Text="GTA V INSTALLATION"
                        Foreground="{StaticResource TextFaint}"
                        FontSize="11" FontWeight="SemiBold" Margin="0,0,0,8"/>
@@ -116,7 +110,6 @@
                 </StackPanel>
             </Border>
 
-            <!-- ══ Behaviour ════════════════════════════════ -->
             <TextBlock Text="BEHAVIOUR"
                        Foreground="{StaticResource TextFaint}"
                        FontSize="11" FontWeight="SemiBold" Margin="0,0,0,8"/>
@@ -138,7 +131,6 @@
                 </StackPanel>
             </Border>
 
-            <!-- ══ Backup ════════════════════════════════════ -->
             <TextBlock Text="BACKUP &amp; RESTORE"
                        Foreground="{StaticResource TextFaint}"
                        FontSize="11" FontWeight="SemiBold" Margin="0,0,0,8"/>
@@ -177,7 +169,6 @@
                 </StackPanel>
             </Border>
 
-            <!-- ══ Import / Export ══════════════════════════ -->
             <TextBlock Text="MANIFEST IMPORT / EXPORT"
                        Foreground="{StaticResource TextFaint}"
                        FontSize="11" FontWeight="SemiBold" Margin="0,0,0,8"/>
@@ -199,7 +190,6 @@
                 </StackPanel>
             </Border>
 
-            <!-- ══ Progress log ══════════════════════════════ -->
             <Border Background="{StaticResource Surface}" CornerRadius="10" Padding="16"
                     Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"
                     Margin="0,0,0,16">
@@ -219,7 +209,6 @@
                 </StackPanel>
             </Border>
 
-            <!-- ══ Footer ════════════════════════════════════ -->
             <StackPanel Orientation="Horizontal">
                 <Button Style="{StaticResource PrimaryButton}"
                         Content="Save Settings"

@@ -6,7 +6,6 @@
 
     <DockPanel Margin="28,24,28,16">
 
-        <!-- ── Header ─────────────────────────────────────── -->
         <StackPanel DockPanel.Dock="Top" Margin="0,0,0,20">
             <TextBlock Text="Plugin Configs" Style="{StaticResource SectionHeader}"/>
             <TextBlock Text="View and edit configuration files (.ini, .xml, .cfg) for your installed plugins."
@@ -14,7 +13,6 @@
                        TextWrapping="Wrap"/>
         </StackPanel>
 
-        <!-- ── Toolbar ────────────────────────────────────── -->
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,14">
             <Button Style="{StaticResource PrimaryButton}"
                     Content="&#xE8E5;  Add Config File"
@@ -27,13 +25,11 @@
                     Command="{Binding ExtractFromModCommand}"/>
         </StackPanel>
 
-        <!-- ── Status ─────────────────────────────────────── -->
         <TextBlock DockPanel.Dock="Bottom"
                    Text="{Binding StatusMessage}"
                    Foreground="{StaticResource TextMuted}"
                    FontSize="12" Margin="0,8,0,0"/>
 
-        <!-- ── Two-column layout ──────────────────────────── -->
         <Grid DockPanel.Dock="Top">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -41,7 +37,6 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Left: config list -->
             <ListBox Grid.Column="0"
                      ItemsSource="{Binding Configs}"
                      SelectedItem="{Binding SelectedConfig}">
@@ -80,11 +75,9 @@
                 </ListBox.ItemTemplate>
             </ListBox>
 
-            <!-- Right: editor panel -->
             <Border Grid.Column="2" Background="{StaticResource Surface}" CornerRadius="10" Padding="16">
                 <Grid>
 
-                <!-- No selection placeholder -->
                 <StackPanel Visibility="{Binding HasNoSelection, Converter={StaticResource BoolToVis}}"
                             HorizontalAlignment="Center" VerticalAlignment="Center">
                     <TextBlock Text="&#xE9E9;" FontFamily="Segoe MDL2 Assets"
@@ -95,10 +88,8 @@
                                TextAlignment="Center" TextWrapping="Wrap"/>
                 </StackPanel>
 
-                <!-- Editor -->
                 <DockPanel Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}">
 
-                    <!-- Header + actions -->
                     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
                         <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
                             <Button Style="{StaticResource GhostButton}"
@@ -122,7 +113,6 @@
                         </StackPanel>
                     </DockPanel>
 
-                    <!-- Text editor -->
                     <TextBox DockPanel.Dock="Top"
                              Text="{Binding EditContent, UpdateSourceTrigger=PropertyChanged}"
                              AcceptsReturn="True"

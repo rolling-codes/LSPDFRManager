@@ -7,14 +7,12 @@
 
     <DockPanel Margin="28,24,28,16">
 
-        <!-- ── Header ─────────────────────────────────────── -->
         <StackPanel DockPanel.Dock="Top" Margin="0,0,0,20">
             <TextBlock Text="Install Mod" Style="{StaticResource SectionHeader}"/>
             <TextBlock Text="Drop a .zip / .rar / .7z archive or browse to select one."
                        Foreground="{StaticResource TextMuted}" FontSize="13"/>
         </StackPanel>
 
-        <!-- ── Log panel (bottom) ─────────────────────────── -->
         <Border DockPanel.Dock="Bottom"
                 Background="{StaticResource Surface}"
                 CornerRadius="10" Margin="0,14,0,0" Height="140">
@@ -37,7 +35,6 @@
             </DockPanel>
         </Border>
 
-        <!-- ── Main content ───────────────────────────────── -->
         <Grid DockPanel.Dock="Top">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -45,7 +42,6 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Drop zone -->
             <Border Grid.Column="0"
                     x:Name="DropZone"
                     Background="{StaticResource Surface}"
@@ -75,12 +71,10 @@
                 </StackPanel>
             </Border>
 
-            <!-- Detection result panel -->
             <Border Grid.Column="2" Background="{StaticResource Surface}"
                     CornerRadius="12" Padding="18">
                 <Grid>
 
-                <!-- No detection yet -->
                 <StackPanel Visibility="{Binding HasNoDetection, Converter={StaticResource BoolToVis}}"
                             VerticalAlignment="Center" HorizontalAlignment="Center">
                     <TextBlock Text="&#xE946;" FontFamily="Segoe MDL2 Assets"
@@ -91,10 +85,8 @@
                                TextAlignment="Center" TextWrapping="Wrap"/>
                 </StackPanel>
 
-                <!-- Detection results -->
                 <DockPanel Visibility="{Binding HasDetection, Converter={StaticResource BoolToVis}}">
 
-                    <!-- Detecting spinner -->
                     <StackPanel DockPanel.Dock="Top"
                                 Visibility="{Binding IsDetecting, Converter={StaticResource BoolToVis}}"
                                 Orientation="Horizontal" Margin="0,0,0,8">
@@ -102,7 +94,6 @@
                                    Foreground="{StaticResource TextMuted}" FontSize="12"/>
                     </StackPanel>
 
-                    <!-- Actions at bottom -->
                     <StackPanel DockPanel.Dock="Bottom" Margin="0,14,0,0">
                         <Button Style="{StaticResource PrimaryButton}"
                                 Content="Install Mod"
@@ -116,10 +107,8 @@
                                 Margin="0,8,0,0"/>
                     </StackPanel>
 
-                    <!-- Scrollable detection info -->
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel>
-                            <!-- Type + confidence badges -->
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                                 <Border CornerRadius="6" Padding="10,4"
                                         Background="{Binding DetectedMod.TypeColor,
@@ -137,24 +126,20 @@
                                 </Border>
                             </StackPanel>
 
-                            <!-- Mod name (editable) -->
                             <TextBlock Style="{StaticResource DetailLabel}" Text="MOD NAME"/>
                             <TextBox Text="{Binding NameOverride, UpdateSourceTrigger=PropertyChanged}"
                                      Margin="0,0,0,10"/>
 
-                            <!-- Version -->
                             <TextBlock Style="{StaticResource DetailLabel}" Text="DETECTED VERSION"/>
                             <TextBlock Foreground="{StaticResource TextPrimary}" FontSize="13"
                                        Margin="0,0,0,10">
                                 <Run Text="{Binding DetectedMod.Version, Mode=OneWay, FallbackValue='—'}"/>
                             </TextBlock>
 
-                            <!-- Author override -->
                             <TextBlock Style="{StaticResource DetailLabel}" Text="AUTHOR (OPTIONAL)"/>
                             <TextBox Text="{Binding AuthorOverride, UpdateSourceTrigger=PropertyChanged}"
                                      Margin="0,0,0,10"/>
 
-                            <!-- DLC pack name (shown for VehicleDlc) -->
                             <TextBlock Style="{StaticResource DetailLabel}" Text="DLC PACK NAME"
                                        Visibility="{Binding DetectedMod.IsAddon,
                                            Converter={StaticResource BoolToVis}}"/>
@@ -164,7 +149,6 @@
                                        Visibility="{Binding DetectedMod.IsAddon,
                                            Converter={StaticResource BoolToVis}}"/>
 
-                            <!-- File preview -->
                             <TextBlock Style="{StaticResource DetailLabel}" Text="FILES DETECTED"/>
                             <ItemsControl ItemsSource="{Binding DetectedFilesSample}"
                                           Margin="0,2,0,0">
@@ -184,7 +168,6 @@
                                        Visibility="{Binding HasMoreDetectedFiles,
                                            Converter={StaticResource BoolToVis}}"/>
 
-                            <!-- Warnings -->
                             <ItemsControl ItemsSource="{Binding DetectedMod.Warnings}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
