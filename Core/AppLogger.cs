@@ -3,13 +3,16 @@ namespace LSPDFRManager.Core;
 /// <summary>
 /// Static, thread-safe logger that writes to an in-memory list and to
 /// <c>%APPDATA%\LSPDFRManager\app.log</c>.
-/// Subscribers can react to new entries in real time via <see cref="EntryAdded"/>.
+/// Includes version, session ID, and stack traces for production observability.
 /// </summary>
 public static class AppLogger
 {
     private static readonly string LogPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "LSPDFRManager", "app.log");
+
+    private static readonly string Version = "1.4.0";
+    private static readonly string SessionId = Guid.NewGuid().ToString("N").Substring(0, 8);
 
     /// <summary>Raised on every thread that calls a log method when a new entry is written.</summary>
     public static event Action<LogEntry>? EntryAdded;
@@ -21,9 +24,9 @@ public static class AppLogger
     public static void Info(string message) => Log(LogLevel.Info, message);
     /// <inheritdoc cref="Log"/>
     public static void Warning(string message) => Log(LogLevel.Warning, message);
-    /// <summary>Logs at <see cref="LogLevel.Error"/>, optionally appending the exception message.</summary>
+    /// <summary>Logs at <see cref="LogLevel.Error"/>, optionally appending the exception and stack trace.</summary>
     public static void Error(string message, Exception? ex = null) =>
-        Log(LogLevel.Error, ex is not null ? $"{message}: {ex.Message}" : message);
+        Log(LogLevel.Error, ex is not null ? $"{message}: {ex.Message}\n{ex.StackTrace}" : message);
 
     private static void Log(LogLevel level, string message)
     {
@@ -33,7 +36,7 @@ public static class AppLogger
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(LogPath)!);
-            File.AppendAllText(LogPath, $"[{entry.Timestamp:HH:mm:ss}] [{level,7}] {message}\n");
+            File.AppendAllText(LogPath, $"[{entry.Timestamp:yyyy-MM-dd HH:mm:ss}] [v{Version}] [{SessionId}] [{level,7}] {message}\n");
         }
         catch { /* don't let logging crash the app */ }
     }

@@ -74,6 +74,7 @@ public class OpenIvExecutor
                 ct.ThrowIfCancellationRequested();
 
                 var patchFilePath = Path.Combine(targetRoot, patch.FilePath);
+                AppLogger.Info($"[PATCH_APPLY] {Path.GetFileName(patchFilePath)} | xpath={patch.XPath}");
                 var xmlPatch = new XmlPatch
                 {
                     FilePath = patchFilePath,
@@ -81,8 +82,10 @@ public class OpenIvExecutor
                     Value = patch.Value
                 };
                 _xmlPatcher.Apply(xmlPatch);
+                AppLogger.Info($"[PATCH_OK] {Path.GetFileName(patchFilePath)}");
             }
 
+            AppLogger.Info($"[PLAN_SUCCESS] operations={plan.Operations.Count} | patches={plan.XmlPatches.Count}");
             return new InstallResult
             {
                 Success = true,
@@ -92,6 +95,7 @@ public class OpenIvExecutor
         catch (Exception ex)
         {
             int writtenCount = writtenFiles.Count;
+            AppLogger.Error($"[PLAN_ERROR] written={writtenCount}", ex);
             await RollbackAsync(writtenFiles, ct);
 
             return new InstallResult
@@ -122,6 +126,9 @@ public class OpenIvExecutor
         bool canRetry = source.CanSeek;
         int bufferSize = SelectBufferSize(fileSize);
         int backoff = InitialBackoffMs;
+        var fileName = Path.GetFileName(destPath);
+
+        AppLogger.Info($"[COPY_START] {fileName} | size={fileSize} | seekable={canRetry} | buffer={bufferSize}");
 
         for (int attempt = 0; attempt < MaxRetries; attempt++)
         {
@@ -134,22 +141,29 @@ public class OpenIvExecutor
                     await source.CopyToAsync(destFile, bufferSize, ct);
                 }
 
+                AppLogger.Info($"[COPY_OK] {fileName}");
                 return;
             }
-            catch (IOException) when (attempt < MaxRetries - 1 && canRetry)
+            catch (IOException ex) when (attempt < MaxRetries - 1 && canRetry)
             {
+                AppLogger.Warning($"[COPY_RETRY] {fileName} | attempt={attempt + 1}/{MaxRetries} | backoff={backoff}ms | reason={ex.Message}");
                 await Task.Delay(backoff, ct);
                 backoff *= 2;
                 source.Seek(0, SeekOrigin.Begin);
             }
         }
 
+        AppLogger.Error($"[COPY_FAILED] {fileName} | exhausted {MaxRetries} attempts");
         throw new InvalidOperationException(
             $"Failed to write file after {MaxRetries} attempts: {destPath}");
     }
 
     private static Task RollbackAsync(Stack<string> files, CancellationToken ct)
     {
+        int rollbackCount = files.Count;
+        AppLogger.Info($"[ROLLBACK_START] {rollbackCount} files");
+
+        int deletedCount = 0;
         while (files.Count > 0)
         {
             var file = files.Pop();
@@ -159,13 +173,19 @@ public class OpenIvExecutor
                 ct.ThrowIfCancellationRequested();
 
                 if (File.Exists(file))
+                {
                     File.Delete(file);
+                    deletedCount++;
+                    AppLogger.Info($"[ROLLBACK_DELETE] {Path.GetFileName(file)}");
+                }
             }
-            catch
+            catch (Exception ex)
             {
+                AppLogger.Warning($"[ROLLBACK_ERROR] {Path.GetFileName(file)} | {ex.Message}");
             }
         }
 
+        AppLogger.Info($"[ROLLBACK_COMPLETE] deleted={deletedCount} of {rollbackCount}");
         return Task.CompletedTask;
     }
 }

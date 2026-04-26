@@ -1,3 +1,4 @@
+using LSPDFRManager.Core;
 using LSPDFRManager.Domain;
 using SharpCompress.Archives;
 using SharpCompress.Common;
@@ -83,10 +84,12 @@ public static class FileInstaller
                 using (var entryStream = entry.OpenEntryStream())
                 {
                     int bufferSize = SelectBufferSize(entry.Size);
+                    AppLogger.Info($"[EXTRACT_START] {entry.Key} | size={entry.Size} bytes | buffer={bufferSize} bytes");
                     using (var destFile = File.Create(dest))
                     {
                         await entryStream.CopyToAsync(destFile, bufferSize);
                     }
+                    AppLogger.Info($"[EXTRACT_OK] {entry.Key}");
                 }
             }
 
@@ -98,6 +101,7 @@ public static class FileInstaller
         }
         catch (Exception ex)
         {
+            AppLogger.Error($"[EXTRACT_ERROR] rollback {writtenFiles.Count} files", ex);
             await RollbackAsync(writtenFiles);
 
             return new InstallResult

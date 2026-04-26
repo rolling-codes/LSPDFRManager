@@ -47,12 +47,13 @@ public class InstallQueue : IDisposable
             try
             {
                 var gtaPath = AppConfig.Instance.GtaPath;
+                AppLogger.Info($"[INSTALL_START] {mod.Name} | source={mod.SourcePath} | target={gtaPath}");
 
                 var result = await FileInstaller.InstallAsync(mod, gtaPath).ConfigureAwait(false);
 
                 if (!result.Success)
                 {
-                    AppLogger.Error($"Install failed for {mod.Name}: {result.Error}");
+                    AppLogger.Error($"[INSTALL_FAILED] {mod.Name} | partial={result.IsPartial} | filesWritten={result.FilesWritten}");
                     InstallFailed?.Invoke(mod, result.Error ?? "Unknown error");
                     InstallFailedWithResult?.Invoke(mod, result);
                     continue;
@@ -82,17 +83,21 @@ public class InstallQueue : IDisposable
                 };
 
                 ModLibraryService.Instance.Add(installed);
+                AppLogger.Info($"[INSTALL_REGISTERED] {mod.Name} | filesTracked={newFiles.Count}");
 
                 // Register vehicle DLC packs in dlclist.xml so GTA V loads them
                 if (installed.Type == ModType.VehicleDlc && !string.IsNullOrEmpty(installed.DlcPackName))
+                {
                     DlcListService.AddEntry(installed.DlcPackName);
+                    AppLogger.Info($"[DLC_REGISTERED] {mod.Name} | dlcPack={installed.DlcPackName}");
+                }
 
                 InstallCompleted?.Invoke(installed);
-                AppLogger.Info($"Installed: {mod.Name} ({result.FilesWritten} files)");
+                AppLogger.Info($"[INSTALL_SUCCESS] {mod.Name} | filesWritten={result.FilesWritten} | type={mod.Type}");
             }
             catch (Exception ex)
             {
-                AppLogger.Error($"Install queue error for {mod.Name}", ex);
+                AppLogger.Error($"[INSTALL_EXCEPTION] {mod.Name}", ex);
                 InstallFailed?.Invoke(mod, ex.Message);
                 var result = new InstallResult { Success = false, Error = ex.Message };
                 InstallFailedWithResult?.Invoke(mod, result);
