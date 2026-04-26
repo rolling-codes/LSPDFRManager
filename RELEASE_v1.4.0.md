@@ -69,6 +69,23 @@ Phase C streaming optimization complete. True streaming pipeline with adaptive b
 - Partial write rollback
 - Cancellation mid-stream cleanup
 
+## Production Observability
+
+### Enhanced Application Logging
+- Version tag (1.4.0) included in every log entry for release correlation
+- 8-character session ID enables multi-log aggregation per installation session
+- Full ISO 8601 timestamps (date + time) for accurate event sequencing
+- Stack traces captured for exceptions, not just messages
+
+### Structured Operation Logging
+- InstallQueue: `INSTALL_START` / `INSTALL_SUCCESS` / `INSTALL_FAILED` lifecycle tracking
+- FileInstaller: `EXTRACT_START` (with file size and buffer strategy) and `EXTRACT_OK` status
+- OpenIvExecutor: `COPY_START` (with stream seekability), `COPY_RETRY` (with backoff timing), `COPY_FAILED` outcomes
+- Rollback system: `ROLLBACK_START`, `ROLLBACK_DELETE` (per file), `ROLLBACK_COMPLETE` summary
+- XML patches: `PATCH_APPLY` and `PATCH_OK` markers for config modifications
+
+**Impact**: Enables grep-based monitoring and log aggregation for production incident diagnosis. Retry and rollback behavior fully visible. Session ID allows tracking multi-entry sequences.
+
 ## Breaking Changes
 
 **None**. This is an internal architecture improvement:
