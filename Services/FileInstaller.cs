@@ -11,6 +11,15 @@ namespace LSPDFRManager.Services;
 /// </summary>
 public static class FileInstaller
 {
+    private static int SelectBufferSize(long fileSize)
+    {
+        if (fileSize < 1_000_000)
+            return 65_536;        // 64KB for small
+        if (fileSize < 100_000_000)
+            return 524_288;       // 512KB for medium
+        return 2_097_152;         // 2MB for large
+    }
+
     /// <summary>
     /// Extracts all files from <paramref name="mod"/> into <paramref name="targetRoot"/>,
     /// overwriting any existing files. Returns a result indicating success/failure.
@@ -73,9 +82,10 @@ public static class FileInstaller
 
                 using (var entryStream = entry.OpenEntryStream())
                 {
+                    int bufferSize = SelectBufferSize(entry.Size);
                     using (var destFile = File.Create(dest))
                     {
-                        await entryStream.CopyToAsync(destFile);
+                        await entryStream.CopyToAsync(destFile, bufferSize);
                     }
                 }
             }

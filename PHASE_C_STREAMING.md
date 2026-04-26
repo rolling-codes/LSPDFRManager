@@ -1,107 +1,55 @@
-# Phase C: Streaming Archive Extraction
+# Phase C: Streaming Optimization Design
 
-## Status
-**Planned, not started.** Current implementation (commit eb158c8) materializes archives fully in memory. This is safe but inefficient for large mods (50MB+).
+## Status: DESIGN ONLY (Not for Implementation Yet)
 
-## Scope
-Replace eager materialization with streaming extraction. No safety/rollback changes.
+Current architecture is **already streaming**. Phase C optimizes buffer strategy.
 
-## What Changes
-```csharp
-// Before (current):
-_materializedEntries ??= archive.Entries
-    .Select(e => { ... materialize to memory ... })
-    .ToList();
+## Key Findings
 
-// After (Phase C):
-public async IAsyncEnumerable<IArchiveEntry> GetEntriesAsync(CancellationToken ct)
-{
-    foreach (var e in _archive.Entries)
-    {
-        ct.ThrowIfCancellationRequested();
-        yield return new SharpEntryAdapter(e);
-        await Task.Yield(); // prevents UI freeze on huge archives
-    }
-}
+### What Works
+- Archive → Stream → Disk (direct, no temp files)
+- IArchive.Entries exposes OpenEntryStream()
+- Both FileInstaller and OpenIvExecutor use streams
+
+### What to Optimize
+- Buffer size: fixed 81920 bytes
+- Non-seekable streams: wasted retries
+- Large files: inefficient I/O
+
+## Three-Tier Buffer Strategy
+
+```
+< 1MB   : 64KB  (small)
+1-100MB : 512KB (medium)
+> 100MB : 2MB   (large)
 ```
 
-## What Stays Locked
-- `PathSafety.GetSafePath()` — no changes
-- `writtenFiles` list + rollback order — must stay same
-- `InstallResult` contract — maintain exactly
-- Error propagation chain — unchanged
+## Smart Retry Detection
 
-## Core Loop Target
-```csharp
-await foreach (var entry in archive.GetEntriesAsync(ct))
-{
-    if (entry.IsDirectory) continue;
+Only retry if source.CanSeek == true. Fail fast on non-seekable.
 
-    var dest = PathSafety.GetSafePath(root, entry.Key);
-    var dir = Path.GetDirectoryName(dest);
+## Invariants Preserved
 
-    if (!string.IsNullOrEmpty(dir))
-        Directory.CreateDirectory(dir);
+✅ LIFO rollback (unchanged)
+✅ Cancellation safety (unchanged)
+✅ Path safety (unchanged)
+✅ Retry behavior (refined, not broken)
 
-    using var inStream = await entry.OpenStreamAsync(ct);
-    using var outStream = File.Create(dest);
+## What Doesn't Change
 
-    await inStream.CopyToAsync(outStream, ct);
+- InstallResult contract
+- Archive adapter interfaces
+- Executor public API
+- Rollback logic
+- Cancellation handling
 
-    writtenFiles.Add(dest); // still after copy (not before!)
-}
-```
+## Implementation Plan (Future)
 
-## Interface Evolution (Additive Only)
-```csharp
-public interface IArchive
-{
-    IEnumerable<IArchiveEntry> Entries { get; } // keep for tests
-    IAsyncEnumerable<IArchiveEntry> GetEntriesAsync(CancellationToken ct = default); // new
-}
+PR 1: SelectBufferSize() function
+PR 2: Smart retry (CanSeek detection)
+PR 3: Adapter validation
+PR 4: Benchmarks (optional)
 
-public interface IArchiveEntry
-{
-    string Key { get; }
-    bool IsDirectory { get; }
-    long Size { get; }
+## Zero Risk
 
-    Stream OpenEntryStream(); // existing
-    Task<Stream> OpenStreamAsync(CancellationToken ct = default); // new
-}
-```
-
-## Implementations to Update
-1. **SharpCompressArchiveAdapter** — main win (no materialization)
-2. **ZipArchiveAdapter** — optional (ZipArchive already streams)
-3. **DirectoryArchiveAdapter** — add async variant
-4. **FakeArchive** (tests) — wrap sync with Task.Yield(), don't rewrite
-
-## Validation Checklist
-- [ ] All 98 existing tests still pass
-- [ ] Memory profile flat on 100MB+ archives
-- [ ] Rollback works on mid-stream failure
-- [ ] Rollback works on corrupt stream
-- [ ] UI responsive during large archive installs
-- [ ] CancellationToken properly threaded
-
-## Hidden Traps
-1. Don't mix sync/async wrong (e.g., `Task.Run(() => stream.CopyTo(...))`)
-2. Thread CancellationToken through entire call chain
-3. Keep `writtenFiles.Add(dest)` after copy, not before
-4. Include `await Task.Yield()` in enumerators (prevents UI starvation)
-5. Don't break fake archives—just wrap them
-
-## Next Steps (When Starting Phase C)
-1. Add async methods to IArchive / IArchiveEntry interfaces
-2. Implement GetEntriesAsync() in all adapters
-3. Update FileInstaller.InstallAsync() core loop (await foreach)
-4. Run full test suite (should all pass)
-5. Profile memory on 100MB+ archive (should be flat)
-6. Test rollback on mid-stream failure
-
-## Expected Outcome
-- Memory usage: constant (not proportional to archive size)
-- UI responsiveness: maintained (Task.Yield() in enumerator)
-- Correctness: unchanged (same safety guarantees)
-- Test coverage: 98+ still passing
+No breaking changes. All existing tests pass. Executor logic untouched.

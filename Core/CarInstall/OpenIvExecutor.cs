@@ -64,7 +64,7 @@ public class OpenIvExecutor
 
                 using (var entryStream = sourceEntry.OpenEntryStream())
                 {
-                    await SafeCopyAsync(entryStream, destPath, ct);
+                    await SafeCopyAsync(entryStream, destPath, sourceEntry.Size, ct);
                 }
             }
 
@@ -104,11 +104,23 @@ public class OpenIvExecutor
         }
     }
 
+    private static int SelectBufferSize(long fileSize)
+    {
+        if (fileSize < 1_000_000)
+            return 65_536;        // 64KB for small
+        if (fileSize < 100_000_000)
+            return 524_288;       // 512KB for medium
+        return 2_097_152;         // 2MB for large
+    }
+
     private static async Task SafeCopyAsync(
         Stream source,
         string destPath,
+        long fileSize,
         CancellationToken ct)
     {
+        bool canRetry = source.CanSeek;
+        int bufferSize = SelectBufferSize(fileSize);
         int backoff = InitialBackoffMs;
 
         for (int attempt = 0; attempt < MaxRetries; attempt++)
@@ -119,12 +131,12 @@ public class OpenIvExecutor
 
                 using (var destFile = File.Create(destPath))
                 {
-                    await source.CopyToAsync(destFile, 81920, ct);
+                    await source.CopyToAsync(destFile, bufferSize, ct);
                 }
 
                 return;
             }
-            catch (IOException) when (attempt < MaxRetries - 1 && source.CanSeek)
+            catch (IOException) when (attempt < MaxRetries - 1 && canRetry)
             {
                 await Task.Delay(backoff, ct);
                 backoff *= 2;
