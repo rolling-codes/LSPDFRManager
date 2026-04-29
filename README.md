@@ -18,6 +18,7 @@ Whether you are looking to organize your **LSPDFR plugins**, manage **vehicle ad
 | **Smart Installation** | Drag-and-drop mod archives (`.zip`, `.rar`, `.7z`). Auto-detects mod type with high-confidence scoring. |
 | **Backup & Restore** | Create full backups of your mod library and configuration snapshots. |
 | **Export/Import** | Share your mod list with others or migrate to a new installation using `.lspmanifest` files. |
+| **Release Automation** | GitHub Actions validates builds and tests before publishing tagged Windows release artifacts. |
 
 ### Supported GTA V Mod Types
 
