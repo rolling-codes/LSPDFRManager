@@ -3,9 +3,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![.NET Version](https://img.shields.io/badge/.NET-8.0-blue.svg)](https://dotnet.microsoft.com/download/dotnet/8.0)
 
-**LSPDFR Manager** is a powerful, open-source desktop **mod manager for Grand Theft Auto V (GTA V)** and the **LSPD First Response (LSPDFR)** plugin. Built with .NET 8 and WPF, it provides a seamless experience for installing, tracking, and managing your GTA V mod library.
+**LSPDFR Manager** is an open-source desktop **mod manager for Grand Theft Auto V (GTA V)** and the **LSPD First Response (LSPDFR)** plugin. Built with .NET 8 and WPF, it provides a streamlined workflow for installing, tracking, and managing a GTA V mod library.
 
-Whether you are looking to organize your **LSPDFR plugins**, manage **vehicle add-ons**, or simplify **GTA V script installations**, LSPDFR Manager is the all-in-one solution for your modding needs.
+Designed for **LSPDFR plugins**, **vehicle add-ons**, and **GTA V script installations**, LSPDFR Manager focuses on stable mod management, clear organization, and practical release automation.
 
 ---
 
@@ -13,31 +13,31 @@ Whether you are looking to organize your **LSPDFR plugins**, manage **vehicle ad
 
 | Feature | Description |
 |:---|:---|
-| **Library Management** | Browse all installed mods, search by name/author/type, and filter by category. |
+| **Library Management** | Browse installed mods, search by name/author/type, and filter by category. |
 | **One-Click Toggle** | Bulk enable or disable mods instantly. Uses file renaming to safely toggle mods without data loss. |
 | **Smart Installation** | Drag-and-drop mod archives (`.zip`, `.rar`, `.7z`). Auto-detects mod type with high-confidence scoring. |
-| **Backup & Restore** | Create full backups of your mod library and configuration snapshots. |
-| **Export/Import** | Share your mod list with others or migrate to a new installation using `.lspmanifest` files. |
+| **Backup & Restore** | Create full backups of the mod library and configuration snapshots. |
+| **Export/Import** | Share a mod list with others or migrate to a new installation using `.lspmanifest` files. |
 | **Release Automation** | GitHub Actions validates builds and tests before publishing tagged Windows release artifacts. |
 
 ### Supported GTA V Mod Types
 
 - **LSPDFR Plugins** — Automated installation to `plugins/lspdfr/`.
 - **Vehicle Add-Ons & Replacements** — Full support for DLC RPFs and YTD/YFT files.
-- **ASI Mods & Scripts** — Easy management of `.asi`, `.cs`, `.vb`, and `.lua` scripts.
+- **ASI Mods & Scripts** — Management of `.asi`, `.cs`, `.vb`, and `.lua` scripts.
 - **Custom Content** — Support for EUP Clothing, Map/MLO interiors, and Sound Packs.
 
 ---
 
-## Current Release: v1.4.0
+## Current Release: v1.5.0
 
-LSPDFR Manager is **production-ready**, featuring a high-performance streaming installer and comprehensive observability.
+LSPDFR Manager is built on a more stable foundation with improved startup behavior, safer UI-thread handling, and cleaner release automation.
 
-- **High Performance** — Efficient memory usage even with massive mod archives.
-- **Reliable** — Built-in rollback mechanisms and error recovery.
-- **Observable** — Detailed logging for troubleshooting and transparency.
+- **Stable** — Core startup and threading issues resolved
+- **Reliable** — Reduced risk of UI crashes caused by background operations
+- **Maintainable** — Cleaner structure for long-term open-source development
 
-See the [v1.4.0 Release Notes](RELEASE_v1.4.0.md) for a full list of improvements.
+See the [v1.5.0 Release Notes](RELEASE_v1.5.0.md) for details.
 
 ---
 
@@ -45,7 +45,7 @@ See the [v1.4.0 Release Notes](RELEASE_v1.4.0.md) for a full list of improvement
 
 ### Quick Install (PowerShell)
 
-Run the following command to download and install the latest version:
+Use the following command to download and install the latest version:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/rolling-codes/LSPDFRManager/master/setup.ps1'))"
@@ -61,16 +61,14 @@ powershell -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClie
 
 ## Usage
 
-1. **Setup:** Launch the app and set your GTA V installation path in **Settings**.
+1. **Setup:** Launch the app and set the GTA V installation path in **Settings**.
 2. **Install:** Drag any mod archive into the **Install** tab.
 3. **Manage:** Use the **Library** tab to toggle mods or uninstall them.
-4. **Backup:** Periodically create backups in **Settings** to secure your setup.
+4. **Backup:** Periodically create backups in **Settings**.
 
 ---
 
 ## Build from Source
-
-Interested in contributing or building your own version?
 
 ```bash
 git clone https://github.com/rolling-codes/LSPDFRManager.git
@@ -82,7 +80,7 @@ dotnet build
 
 ## Contributing & Support
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md).
+Contributions are welcome. See the [Contributing Guidelines](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md).
 
 **LSPDFR Manager** is licensed under the [MIT License](LICENSE).
 
