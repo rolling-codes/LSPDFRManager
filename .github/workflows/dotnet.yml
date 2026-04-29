@@ -7,13 +7,26 @@ on:
       - "v*"
   pull_request:
     branches: [ "master" ]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch or tag to validate/build"
+        required: true
+        default: "master"
+      publish_release:
+        description: "Also publish a GitHub Release for the selected tag/ref"
+        required: true
+        default: "false"
 
 permissions:
   contents: write
 
 concurrency:
-  group: dotnet-${{ github.ref }}
+  group: dotnet-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.ref }}
   cancel-in-progress: true
+
+env:
+  BUILD_CONFIGURATION: Release
 
 jobs:
   validate:
@@ -21,6 +34,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.ref }}
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -31,18 +46,20 @@ jobs:
         run: dotnet restore
 
       - name: Build
-        run: dotnet build --no-restore --configuration Release
+        run: dotnet build --no-restore --configuration $BUILD_CONFIGURATION
 
       - name: Test
-        run: dotnet test --no-build --configuration Release --verbosity normal
+        run: dotnet test --no-build --configuration $BUILD_CONFIGURATION --verbosity normal
 
   release:
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish_release == 'true')
     needs: validate
     runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.ref }}
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -53,14 +70,16 @@ jobs:
         run: dotnet restore
 
       - name: Publish app
-        run: dotnet publish LSPDFRManager.csproj -c Release -r win-x64 --self-contained false -o publish
+        run: dotnet publish LSPDFRManager.csproj -c $env:BUILD_CONFIGURATION -r win-x64 --self-contained false -o publish
+        shell: pwsh
 
       - name: Package release zip
         shell: pwsh
-        run: Compress-Archive -Path publish\* -DestinationPath LSPDFRManager-${{ github.ref_name }}-win-x64.zip
+        run: Compress-Archive -Path publish\* -DestinationPath LSPDFRManager-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.ref_name }}-win-x64.zip
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.ref_name }}
           generate_release_notes: true
-          files: LSPDFRManager-${{ github.ref_name }}-win-x64.zip
+          files: LSPDFRManager-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.ref_name }}-win-x64.zip
