@@ -3,11 +3,6 @@ using LSPDFRManager.Domain;
 
 namespace LSPDFRManager.Services;
 
-/// <summary>
-/// Singleton registry of all installed mods, backed by
-/// <c>%APPDATA%\LSPDFRManager\library.json</c>.
-/// Provides search, conflict detection, and enable/disable toggling.
-/// </summary>
 public class ModLibraryService
 {
     private static readonly string LibraryPath = Path.Combine(
@@ -15,6 +10,7 @@ public class ModLibraryService
         "LSPDFRManager", "library.json");
 
     public ObservableCollection<InstalledMod> Mods { get; } = [];
+
     private static ModLibraryService? _instance;
     public static ModLibraryService Instance => _instance ??= new ModLibraryService();
 
@@ -24,16 +20,17 @@ public class ModLibraryService
 
     public void Add(InstalledMod mod)
     {
-        Mods.Add(mod);
+        UiDispatcher.Invoke(() => Mods.Add(mod));
         Save();
-        AppLogger.Info($"Library: registered {mod.Name}");
     }
 
     public void Remove(Guid id)
     {
-        var mod = Mods.FirstOrDefault(m => m.Id == id);
-        if (mod is null) return;
-        Mods.Remove(mod);
+        UiDispatcher.Invoke(() =>
+        {
+            var mod = Mods.FirstOrDefault(m => m.Id == id);
+            if (mod is not null) Mods.Remove(mod);
+        });
         Save();
     }
 
@@ -41,17 +38,20 @@ public class ModLibraryService
 
     public void SetEnabled(Guid id, bool enabled)
     {
-        var mod = Mods.FirstOrDefault(m => m.Id == id);
-        if (mod is null) return;
+        InstalledMod? target = null;
 
-        // Skip if already in the desired state
-        if (mod.IsEnabled == enabled) return;
+        UiDispatcher.Invoke(() =>
+        {
+            target = Mods.FirstOrDefault(m => m.Id == id);
+            if (target is null || target.IsEnabled == enabled) return;
 
-        mod.IsEnabled = enabled;
+            target.IsEnabled = enabled;
+            ModUpdated?.Invoke(target);
+        });
 
-        ModUpdated?.Invoke(mod);
+        if (target is null) return;
 
-        foreach (var file in mod.InstalledFiles)
+        foreach (var file in target.InstalledFiles)
         {
             try
             {
@@ -82,7 +82,7 @@ public class ModLibraryService
             : Mods.Where(m =>
                 m.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                 m.TypeLabel.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                m.Author.Contains(query, StringComparison.OrdinalIgnoreCase));
+                (m.Author?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false));
 
     public bool IsDlcPackInstalled(string dlcName) =>
         Mods.Any(m => m.DlcPackName.Equals(dlcName, StringComparison.OrdinalIgnoreCase));
@@ -94,7 +94,9 @@ public class ModLibraryService
         if (!string.IsNullOrEmpty(candidate.DlcPackName) &&
             Mods.Any(m => m.Id != candidate.Id &&
                           m.DlcPackName.Equals(candidate.DlcPackName, StringComparison.OrdinalIgnoreCase)))
+        {
             issues.Add($"DLC pack name '{candidate.DlcPackName}' is already installed");
+        }
 
         var allFiles = Mods
             .Where(m => m.Id != candidate.Id)
@@ -102,8 +104,10 @@ public class ModLibraryService
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         foreach (var file in candidate.InstalledFiles)
+        {
             if (allFiles.Contains(file))
                 issues.Add($"File conflict: {Path.GetFileName(file)}");
+        }
 
         return issues;
     }
@@ -116,12 +120,13 @@ public class ModLibraryService
             var json = File.ReadAllText(LibraryPath);
             var list = JsonSerializer.Deserialize<List<InstalledMod>>(json);
             if (list is null) return;
-            foreach (var m in list) Mods.Add(m);
+
+            UiDispatcher.Invoke(() =>
+            {
+                foreach (var m in list) Mods.Add(m);
+            });
         }
-        catch (Exception ex)
-        {
-            AppLogger.Warning($"Library load failed: {ex.Message}");
-        }
+        catch { }
     }
 
     private void Save()
@@ -129,13 +134,9 @@ public class ModLibraryService
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(LibraryPath)!);
-            var json = JsonSerializer.Serialize(Mods.ToList(),
-                new JsonSerializerOptions { WriteIndented = true });
+            var json = JsonSerializer.Serialize(Mods.ToList(), new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(LibraryPath, json);
         }
-        catch (Exception ex)
-        {
-            AppLogger.Warning($"Library save failed: {ex.Message}");
-        }
+        catch { }
     }
 }

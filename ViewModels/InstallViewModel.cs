@@ -29,15 +29,7 @@ public class InstallViewModel : ObservableObject
     public ModInfo? DetectedMod
     {
         get => _detectedMod;
-        set
-        {
-            SetProperty(ref _detectedMod, value);
-            OnPropertyChanged(nameof(HasDetection));
-            OnPropertyChanged(nameof(HasNoDetection));
-            OnPropertyChanged(nameof(DetectedFilesSample));
-            OnPropertyChanged(nameof(HasMoreDetectedFiles));
-            OnPropertyChanged(nameof(DetectedFilesMoreText));
-        }
+        set => SetProperty(ref _detectedMod, value);
     }
 
     public bool IsDetecting
@@ -52,9 +44,7 @@ public class InstallViewModel : ObservableObject
         set { SetProperty(ref _isInstalling, value); OnPropertyChanged(nameof(IsIdle)); }
     }
 
-    public bool IsIdle         => !_isDetecting && !_isInstalling;
-    public bool HasDetection   => _detectedMod is not null;
-    public bool HasNoDetection => _detectedMod is null;
+    public bool IsIdle => !_isDetecting && !_isInstalling;
 
     public string AuthorOverride
     {
@@ -68,23 +58,6 @@ public class InstallViewModel : ObservableObject
         get => _nameOverride;
         set => SetProperty(ref _nameOverride, value);
     }
-
-    // ── File preview ──────────────────────────────────────────────
-    private const int FilePreviewCount = 8;
-
-    public IEnumerable<string> DetectedFilesSample =>
-        _detectedMod?.Files
-            .Take(FilePreviewCount)
-            .Select(f => Path.GetFileName(f) is { Length: > 0 } n ? n : f)
-            ?? [];
-
-    public bool HasMoreDetectedFiles =>
-        (_detectedMod?.Files.Count ?? 0) > FilePreviewCount;
-
-    public string DetectedFilesMoreText =>
-        HasMoreDetectedFiles
-            ? $"+{_detectedMod!.Files.Count - FilePreviewCount} more files"
-            : "";
 
     public ICommand BrowseCommand { get; }
     public ICommand InstallCommand { get; }
@@ -103,39 +76,30 @@ public class InstallViewModel : ObservableObject
                 _ = DetectAsync(dlg.FileName);
         });
 
-        InstallCommand = new RelayCommand(
-            () => _ = InstallAsync(),
-            () => HasDetection && IsIdle);
+        InstallCommand = new RelayCommand(() => _ = InstallAsync(), () => DetectedMod is not null && IsIdle);
 
         ClearCommand = new RelayCommand(() =>
         {
-            DroppedPath    = null;
-            DetectedMod    = null;
+            DroppedPath = null;
+            DetectedMod = null;
             AuthorOverride = "";
-            NameOverride   = "";
+            NameOverride = "";
             Log.Clear();
         });
 
-        _queue.InstallStarted   += mod => AddLog($"Installing {mod.Name}…");
-        _queue.InstallCompleted += mod =>
+        _queue.InstallStarted += mod => UiDispatcher.Invoke(() => AddLog($"Installing {mod.Name}…"));
+
+        _queue.InstallCompleted += mod => UiDispatcher.Invoke(() =>
         {
             IsInstalling = false;
             AddLog($"✓ Installed: {mod.Name}");
-            if (AppConfig.Instance.AutoLaunchAfterInstall)
-            {
-                AddLog("Auto-launching LSPDFR...");
-                var hook = Path.Combine(AppConfig.Instance.GtaPath, "RAGEPluginHook.exe");
-                if (File.Exists(hook))
-                {
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(hook)
-                    {
-                        UseShellExecute = true,
-                        WorkingDirectory = AppConfig.Instance.GtaPath,
-                    });
-                }
-            }
-        };
-        _queue.InstallFailed    += (mod, err) => { IsInstalling = false; AddLog($"✗ Failed: {mod.Name} — {err}"); };
+        });
+
+        _queue.InstallFailed += (mod, err) => UiDispatcher.Invoke(() =>
+        {
+            IsInstalling = false;
+            AddLog($"✗ Failed: {mod.Name} — {err}");
+        });
     }
 
     public async Task DetectAsync(string path)
@@ -143,42 +107,26 @@ public class InstallViewModel : ObservableObject
         DroppedPath = path;
         DetectedMod = null;
         IsDetecting = true;
-        AddLog($"Detecting: {System.IO.Path.GetFileName(path)}");
 
         try
         {
             var info = await Task.Run(() => _detector.Detect(path));
-            DetectedMod  = info;
-            NameOverride = info.Name;
-            AddLog($"→ {info.TypeLabel}  ({info.ConfidenceLabel} confidence)");
-            foreach (var w in info.Warnings) AddLog($"⚠ {w}");
-        }
-        catch (Exception ex)
-        {
-            AddLog($"Detection error: {ex.Message}");
+            UiDispatcher.Invoke(() =>
+            {
+                DetectedMod = info;
+                NameOverride = info.Name;
+                AddLog($"→ {info.TypeLabel}");
+            });
         }
         finally
         {
-            IsDetecting = false;
+            UiDispatcher.Invoke(() => IsDetecting = false);
         }
     }
 
     private async Task InstallAsync()
     {
         if (_detectedMod is null) return;
-
-        var gtaPath = AppConfig.Instance.GtaPath;
-        if (!System.IO.Directory.Exists(gtaPath))
-        {
-            AddLog($"✗ GTA V path not found: {gtaPath}");
-            AddLog("Please set your GTA V path in Settings.");
-            return;
-        }
-
-        if (!string.IsNullOrWhiteSpace(_nameOverride))
-            _detectedMod.Name = _nameOverride;
-        if (!string.IsNullOrWhiteSpace(_authorOverride))
-            _detectedMod.Author = _authorOverride;
 
         IsInstalling = true;
         AddLog($"Queued: {_detectedMod.Name}");
@@ -187,7 +135,10 @@ public class InstallViewModel : ObservableObject
 
     private void AddLog(string msg)
     {
-        Log.Add($"[{DateTime.Now:HH:mm:ss}]  {msg}");
-        LogAdded?.Invoke(msg);
+        UiDispatcher.Invoke(() =>
+        {
+            Log.Add($"[{DateTime.Now:HH:mm:ss}] {msg}");
+            LogAdded?.Invoke(msg);
+        });
     }
 }
