@@ -10,15 +10,10 @@ public partial class MainWindow : Window
     {
         ArgumentNullException.ThrowIfNull(viewModel);
 
-        AppLogger.Info("[MAINWINDOW] Constructor called");
         try
         {
-            AppLogger.Info("[MAINWINDOW] InitializeComponent starting");
             InitializeComponent();
-            AppLogger.Info("[MAINWINDOW] InitializeComponent completed");
-
             DataContext = viewModel;
-            AppLogger.Info("[MAINWINDOW] DataContext assigned");
         }
         catch (Exception ex)
         {
