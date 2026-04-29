@@ -8,8 +8,6 @@ public partial class App : Application
 {
     protected override void OnStartup(StartupEventArgs e)
     {
-        AppLogger.Info("[APP_START] Application startup initiated");
-
         AppDomain.CurrentDomain.UnhandledException += (s, ex) =>
         {
             AppLogger.Error("[UNHANDLED_EXCEPTION]", (Exception)ex.ExceptionObject);
