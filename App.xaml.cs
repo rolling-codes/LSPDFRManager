@@ -1,5 +1,6 @@
 using System.Windows;
 using LSPDFRManager.Core;
+using LSPDFRManager.ViewModels;
 
 namespace LSPDFRManager;
 
@@ -22,16 +23,11 @@ public partial class App : Application
 
         try
         {
-            AppLogger.Info("[APP_STARTUP] Calling base.OnStartup");
             base.OnStartup(e);
 
-            AppLogger.Info("[APP_STARTUP] Creating MainWindow");
-            var window = new MainWindow();
-
-            AppLogger.Info("[APP_STARTUP] Showing MainWindow");
+            var vm = new MainViewModel();
+            var window = new MainWindow(vm);
             window.Show();
-
-            AppLogger.Info("[APP_STARTUP] Success");
         }
         catch (Exception ex)
         {
