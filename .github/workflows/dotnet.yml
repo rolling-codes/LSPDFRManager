@@ -72,7 +72,7 @@ jobs:
         run: dotnet restore LSPDFRManager.sln
 
       - name: Publish app
-        run: dotnet publish LSPDFRManager.csproj -c $env:BUILD_CONFIGURATION -r win-x64 --self-contained false -o publish
+        run: dotnet publish LSPDFRManager.csproj -c $env:BUILD_CONFIGURATION -r win-x64 --self-contained false -o publish -p:DebugType=None -p:DebugSymbols=false
         shell: pwsh
 
       - name: Verify release payload
