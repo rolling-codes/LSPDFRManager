@@ -54,7 +54,7 @@ public class OpenIvExecutor
                     throw new InvalidOperationException(
                         $"Archive entry not found: {operation.SourcePath}");
 
-                var destPath = Path.Combine(targetRoot, operation.DestinationPath);
+                var destPath = GetSafeModsPath(targetRoot, operation.DestinationPath);
                 var destDir = Path.GetDirectoryName(destPath);
 
                 if (!string.IsNullOrEmpty(destDir))
@@ -115,6 +115,19 @@ public class OpenIvExecutor
         if (fileSize < 100_000_000)
             return 524_288;       // 512KB for medium
         return 2_097_152;         // 2MB for large
+    }
+
+    private static string GetSafeModsPath(string targetRoot, string destinationPath)
+    {
+        var destPath = PathSafety.GetSafePath(targetRoot, destinationPath);
+        var relativePath = Path.GetRelativePath(targetRoot, destPath)
+            .Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+        var normalizedPath = relativePath.ToLowerInvariant();
+
+        if (normalizedPath == "mods" || normalizedPath.StartsWith($"mods{Path.DirectorySeparatorChar}"))
+            return destPath;
+
+        throw new InvalidOperationException($"Path traversal detected: {destinationPath}");
     }
 
     private static async Task SafeCopyAsync(

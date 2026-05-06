@@ -1,4 +1,3 @@
-using LSPDFRManager.Core;
 using LSPDFRManager.Domain;
 
 namespace LSPDFRManager.Services;
@@ -14,13 +13,58 @@ public class ExportService
         _configManager = ConfigManagerService.Instance;
     }
 
-    /// <summary>
-    /// Exports all installed mods into a .lspmanifest file (JSON) and optionally packages them into a ZIP.
-    /// </summary>
-    public async Task<string> ExportAsync(string outputPath, bool includeArchiveFiles = false, IProgress<string>? progress = null)
+    public async Task<string> ExportAsync(
+        string outputPath,
+        bool includeArchiveFiles = false,
+        IProgress<string>? progress = null)
+    {
+        var manifest = BuildManifest(progress);
+        var json = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
+        var tempManifestPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.json");
+
+        await File.WriteAllTextAsync(tempManifestPath, json);
+
+        try
+        {
+            if (!includeArchiveFiles)
+            {
+                File.Copy(tempManifestPath, outputPath, overwrite: true);
+                progress?.Report($"Exported manifest to {outputPath}");
+                return outputPath;
+            }
+
+            var zipPath = outputPath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)
+                ? outputPath
+                : outputPath + ".zip";
+
+            using var zip = ZipFile.Open(zipPath, ZipArchiveMode.Create);
+            zip.CreateEntryFromFile(tempManifestPath, "manifest.json");
+
+            foreach (var mod in manifest.Mods)
+            {
+                if (!File.Exists(mod.SourceArchivePath))
+                {
+                    progress?.Report($"Warning: missing archive {mod.SourceArchivePath}");
+                    continue;
+                }
+
+                zip.CreateEntryFromFile(mod.SourceArchivePath, Path.GetFileName(mod.SourceArchivePath));
+                progress?.Report($"Added archive: {Path.GetFileName(mod.SourceArchivePath)}");
+            }
+
+            progress?.Report($"Exported package to {zipPath}");
+            return zipPath;
+        }
+        finally
+        {
+            if (File.Exists(tempManifestPath))
+                File.Delete(tempManifestPath);
+        }
+    }
+
+    private ModManifest BuildManifest(IProgress<string>? progress)
     {
         var manifest = new ModManifest();
-        progress?.Report("Scanning installed mods...");
 
         foreach (var mod in _library.Mods)
         {
@@ -35,66 +79,36 @@ public class ExportService
                 SourceArchivePath = mod.SourcePath,
                 DlcPackName = mod.DlcPackName,
                 IsEnabled = mod.IsEnabled,
-                InstalledFiles = mod.InstalledFiles.Select(f => GetRelativePath(f, AppConfig.Instance.GtaPath)).ToList(),
-                Configs = new List<ConfigSnapshot>()
+                InstalledFiles = mod.InstalledFiles
+                    .Select(file => GetRelativePath(file, AppConfig.Instance.GtaPath))
+                    .ToList(),
+                Configs = GetConfigSnapshots(mod),
             };
 
-            // Capture current config files for this mod (from ConfigManagerService)
-            var modConfigs = _configManager.Configs.Where(c => c.ModName.Equals(mod.Name, StringComparison.OrdinalIgnoreCase));
-            foreach (var cfg in modConfigs)
-            {
-                entry.Configs.Add(new ConfigSnapshot
-                {
-                    FileName = cfg.ConfigFileName,
-                    Content = cfg.ConfigContent,
-                    RelativeInstallPath = GetRelativePath(Path.Combine(mod.InstallPath, cfg.ConfigFileName), AppConfig.Instance.GtaPath)
-                });
-            }
             manifest.Mods.Add(entry);
             progress?.Report($"Processed: {mod.Name}");
         }
 
-        // Save manifest as JSON
-        var json = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
-        var manifestPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json");
-        await File.WriteAllTextAsync(manifestPath, json);
-
-        if (includeArchiveFiles)
-        {
-            // Create a ZIP containing the manifest + all original mod archives
-            var zipPath = outputPath.EndsWith(".zip") ? outputPath : outputPath + ".zip";
-            using (var zip = ZipFile.Open(zipPath, ZipArchiveMode.Create))
-            {
-                zip.CreateEntryFromFile(manifestPath, "manifest.json");
-                foreach (var mod in manifest.Mods)
-                {
-                    if (File.Exists(mod.SourceArchivePath))
-                    {
-                        zip.CreateEntryFromFile(mod.SourceArchivePath, Path.GetFileName(mod.SourceArchivePath));
-                        progress?.Report($"Added archive: {Path.GetFileName(mod.SourceArchivePath)}");
-                    }
-                    else
-                    {
-                        progress?.Report($"Warning: missing archive {mod.SourceArchivePath}");
-                    }
-                }
-            }
-            File.Delete(manifestPath);
-            return zipPath;
-        }
-        else
-        {
-            // Save only the manifest JSON
-            File.Copy(manifestPath, outputPath, overwrite: true);
-            File.Delete(manifestPath);
-            return outputPath;
-        }
+        return manifest;
     }
 
-    private static string GetRelativePath(string fullPath, string basePath)
+    private List<ConfigSnapshot> GetConfigSnapshots(InstalledMod mod)
     {
-        if (!fullPath.StartsWith(basePath, StringComparison.OrdinalIgnoreCase))
-            return fullPath;
-        return fullPath.Substring(basePath.Length).TrimStart(Path.DirectorySeparatorChar);
+        return _configManager.Configs
+            .Where(config => config.ModName.Equals(mod.Name, StringComparison.OrdinalIgnoreCase))
+            .Select(config => new ConfigSnapshot
+            {
+                FileName = config.ConfigFileName,
+                Content = config.ConfigContent,
+                RelativeInstallPath = GetRelativePath(
+                    Path.Combine(mod.InstallPath, config.ConfigFileName),
+                    AppConfig.Instance.GtaPath),
+            })
+            .ToList();
     }
+
+    private static string GetRelativePath(string fullPath, string basePath) =>
+        fullPath.StartsWith(basePath, StringComparison.OrdinalIgnoreCase)
+            ? fullPath.Substring(basePath.Length).TrimStart(Path.DirectorySeparatorChar)
+            : fullPath;
 }

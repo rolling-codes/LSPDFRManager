@@ -29,15 +29,17 @@ Designed for **LSPDFR plugins**, **vehicle add-ons**, and **GTA V script install
 
 ---
 
-## Current Release: v1.5.0
+## Current Release: v3.2.1
 
-LSPDFR Manager is built on a more stable foundation with improved startup behavior, safer UI-thread handling, and cleaner release automation.
+LSPDFR Manager v3.2.1 is a bugfix release focused on safer installs, restored desktop build files, fixed WPF navigation, and corrected release packaging links.
 
-- **Stable** — Core startup and threading issues resolved
-- **Reliable** — Reduced risk of UI crashes caused by background operations
-- **Maintainable** — Cleaner structure for long-term open-source development
+- **Safer** — Path traversal and rollback behavior hardened for archive and OpenIV installs.
+- **Usable** — Navigation, missing styles, Browse detail installs, and install error visibility restored.
+- **Releasable** — Solution/project files and download links now match the release workflow.
 
-See the [v1.5.0 Release Notes](RELEASE_v1.5.0.md) for details.
+See the [v3.2.1 Release Notes](RELEASE_v3.2.1.md) for details.
+
+**Download:** [LSPDFRManager-v3.2.1-win-x64.zip](https://github.com/rolling-codes/LSPDFRManager/releases/download/v3.2.1/LSPDFRManager-v3.2.1-win-x64.zip)
 
 ---
 
@@ -66,6 +68,10 @@ powershell -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClie
 3. **Manage:** Use the **Library** tab to toggle mods or uninstall them.
 4. **Backup:** Periodically create backups in **Settings**.
 
+### Browse API
+
+The **Browse** tab uses the separate local API service at `http://localhost:5284`. Start `LSPDFRManager.Api` alongside the desktop app when using catalog search and direct downloads.
+
 ---
 
 ## Build from Source
@@ -73,8 +79,17 @@ powershell -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClie
 ```bash
 git clone https://github.com/rolling-codes/LSPDFRManager.git
 cd LSPDFRManager
-dotnet build
+dotnet restore LSPDFRManager.sln
+dotnet build LSPDFRManager.sln
 ```
+
+### Repository References
+
+- Repository: https://github.com/rolling-codes/LSPDFRManager
+- Release notes: [RELEASE_v3.2.1.md](RELEASE_v3.2.1.md)
+- Desktop app project: [LSPDFRManager.csproj](LSPDFRManager.csproj)
+- Solution: [LSPDFRManager.sln](LSPDFRManager.sln)
+- Domain models: [Domain/](Domain/)
 
 ---
 

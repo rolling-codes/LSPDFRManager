@@ -30,8 +30,8 @@ public class PathSafetyTests
     public void GetSafePath_DeepNestedPath_Succeeds()
     {
         var result = PathSafety.GetSafePath(_tempRoot, "a/b/c/d/e/file.dll");
-        Assert.StartsWith(_tempRoot, result, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("file.dll", result);
+        var expected = Path.Combine(_tempRoot, "a", "b", "c", "d", "e", "file.dll");
+        Assert.Equal(expected, result, ignoreCase: true);
     }
 
     [Fact]
@@ -46,22 +46,25 @@ public class PathSafetyTests
     public void GetSafePath_ForwardSlashesInWindowsPath_Succeeds()
     {
         var result = PathSafety.GetSafePath(_tempRoot, "plugins/lspdfr/callout.dll");
-        Assert.StartsWith(_tempRoot, result, StringComparison.OrdinalIgnoreCase);
+        var expected = Path.Combine(_tempRoot, "plugins", "lspdfr", "callout.dll");
+        Assert.Equal(expected, result, ignoreCase: true);
     }
 
     [Fact]
     public void GetSafePath_BackslashesInWindowsPath_Succeeds()
     {
         var result = PathSafety.GetSafePath(_tempRoot, @"plugins\lspdfr\callout.dll");
-        Assert.StartsWith(_tempRoot, result, StringComparison.OrdinalIgnoreCase);
+        var expected = Path.Combine(_tempRoot, "plugins", "lspdfr", "callout.dll");
+        Assert.Equal(expected, result, ignoreCase: true);
     }
 
     [Fact]
-    public void GetSafePath_LeadingSlashStripped_Succeeds()
+    public void GetSafePath_LeadingSlash_ThrowsInvalidOperationException()
     {
-        var result = PathSafety.GetSafePath(_tempRoot, "/file.txt");
-        var expected = Path.Combine(_tempRoot, "file.txt");
-        Assert.Equal(expected, result, ignoreCase: true);
+        var ex = Assert.Throws<InvalidOperationException>(
+            () => PathSafety.GetSafePath(_tempRoot, "/file.txt")
+        );
+        Assert.Contains("Path traversal detected", ex.Message);
     }
 
     // ── Traversal attacks ──────────────────────────────────────────────────
@@ -111,6 +114,33 @@ public class PathSafetyTests
         Assert.Contains("Path traversal detected", ex.Message);
     }
 
+    [Fact]
+    public void GetSafePath_LeadingBackslash_ThrowsInvalidOperationException()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(
+            () => PathSafety.GetSafePath(_tempRoot, "\\file.txt")
+        );
+        Assert.Contains("Path traversal detected", ex.Message);
+    }
+
+    [Fact]
+    public void GetSafePath_DriveQualifiedPath_ThrowsInvalidOperationException()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(
+            () => PathSafety.GetSafePath(_tempRoot, "C:\\Windows\\win.ini")
+        );
+        Assert.Contains("Path traversal detected", ex.Message);
+    }
+
+    [Fact]
+    public void GetSafePath_UncPath_ThrowsInvalidOperationException()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(
+            () => PathSafety.GetSafePath(_tempRoot, "\\\\server\\share\\file.txt")
+        );
+        Assert.Contains("Path traversal detected", ex.Message);
+    }
+
     // ── Edge cases ─────────────────────────────────────────────────────────
 
     [Fact]
@@ -125,7 +155,8 @@ public class PathSafetyTests
     {
         var root = _tempRoot.TrimEnd(Path.DirectorySeparatorChar);
         var result = PathSafety.GetSafePath(root, "file.dll");
-        Assert.StartsWith(root, result, StringComparison.OrdinalIgnoreCase);
+        var expected = Path.Combine(root, "file.dll");
+        Assert.Equal(expected, result, ignoreCase: true);
     }
 
     [Fact]
@@ -135,7 +166,8 @@ public class PathSafetyTests
             ? _tempRoot
             : _tempRoot + Path.DirectorySeparatorChar;
         var result = PathSafety.GetSafePath(root, "file.dll");
-        Assert.StartsWith(_tempRoot, result, StringComparison.OrdinalIgnoreCase);
+        var expected = Path.Combine(_tempRoot, "file.dll");
+        Assert.Equal(expected, result, ignoreCase: true);
     }
 
     [Fact]
@@ -143,20 +175,23 @@ public class PathSafetyTests
     {
         var longPath = string.Join("/", Enumerable.Range(0, 20).Select(i => $"dir{i}"));
         var result = PathSafety.GetSafePath(_tempRoot, longPath);
-        Assert.StartsWith(_tempRoot, result, StringComparison.OrdinalIgnoreCase);
+        var expected = Path.Combine(new[] { _tempRoot }.Concat(Enumerable.Range(0, 20).Select(i => $"dir{i}")).ToArray());
+        Assert.Equal(expected, result, ignoreCase: true);
     }
 
     [Fact]
     public void GetSafePath_SpecialCharactersInFilename_Succeeds()
     {
         var result = PathSafety.GetSafePath(_tempRoot, "file (1).dll");
-        Assert.StartsWith(_tempRoot, result, StringComparison.OrdinalIgnoreCase);
+        var expected = Path.Combine(_tempRoot, "file (1).dll");
+        Assert.Equal(expected, result, ignoreCase: true);
     }
 
     [Fact]
     public void GetSafePath_DotInPathButNotTraversal_Succeeds()
     {
         var result = PathSafety.GetSafePath(_tempRoot, "mod.1.0/file.dll");
-        Assert.StartsWith(_tempRoot, result, StringComparison.OrdinalIgnoreCase);
+        var expected = Path.Combine(_tempRoot, "mod.1.0", "file.dll");
+        Assert.Equal(expected, result, ignoreCase: true);
     }
 }

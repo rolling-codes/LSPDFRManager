@@ -5,21 +5,21 @@ namespace LSPDFRManager.Services;
 
 public class ModLibraryService
 {
-    private static readonly string LibraryPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "LSPDFRManager", "library.json");
-
-    public ObservableCollection<InstalledMod> Mods { get; } = [];
-
+    private static readonly JsonFileStore<List<InstalledMod>> Store = new(AppDataPaths.LibraryFile);
     private static ModLibraryService? _instance;
+
+    private readonly InstalledModFileService _fileService = new();
+
     public static ModLibraryService Instance => _instance ??= new ModLibraryService();
 
+    public ObservableCollection<InstalledMod> Mods { get; } = [];
     public event Action<InstalledMod>? ModUpdated;
 
     public ModLibraryService() => Load();
 
     public void Add(InstalledMod mod)
     {
+        ArgumentNullException.ThrowIfNull(mod);
         UiDispatcher.Invoke(() => Mods.Add(mod));
         Save();
     }
@@ -28,9 +28,11 @@ public class ModLibraryService
     {
         UiDispatcher.Invoke(() =>
         {
-            var mod = Mods.FirstOrDefault(m => m.Id == id);
-            if (mod is not null) Mods.Remove(mod);
+            var mod = Mods.FirstOrDefault(item => item.Id == id);
+            if (mod is not null)
+                Mods.Remove(mod);
         });
+
         Save();
     }
 
@@ -42,101 +44,60 @@ public class ModLibraryService
 
         UiDispatcher.Invoke(() =>
         {
-            target = Mods.FirstOrDefault(m => m.Id == id);
-            if (target is null || target.IsEnabled == enabled) return;
-
-            target.IsEnabled = enabled;
-            ModUpdated?.Invoke(target);
+            target = Mods.FirstOrDefault(mod => mod.Id == id);
         });
 
-        if (target is null) return;
+        if (target is null || target.IsEnabled == enabled)
+            return;
 
-        foreach (var file in target.InstalledFiles)
-        {
-            try
-            {
-                if (enabled)
-                {
-                    var disabledPath = file + ".disabled";
-                    if (File.Exists(disabledPath) && !File.Exists(file))
-                        File.Move(disabledPath, file);
-                }
-                else
-                {
-                    if (File.Exists(file))
-                        File.Move(file, file + ".disabled");
-                }
-            }
-            catch (Exception ex)
-            {
-                AppLogger.Warning($"Toggle {file}: {ex.Message}");
-            }
-        }
-
+        _fileService.SetEnabled(target, enabled);
+        ModUpdated?.Invoke(target);
         Save();
     }
 
-    public IEnumerable<InstalledMod> Search(string query) =>
-        string.IsNullOrWhiteSpace(query)
-            ? Mods
-            : Mods.Where(m =>
-                m.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                m.TypeLabel.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                (m.Author?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false));
+    public IEnumerable<InstalledMod> Search(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+            return Mods;
+
+        return Mods.Where(mod =>
+            mod.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+            mod.TypeLabel.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+            mod.Author.Contains(query, StringComparison.OrdinalIgnoreCase));
+    }
 
     public bool IsDlcPackInstalled(string dlcName) =>
-        Mods.Any(m => m.DlcPackName.Equals(dlcName, StringComparison.OrdinalIgnoreCase));
+        !string.IsNullOrWhiteSpace(dlcName) &&
+        Mods.Any(mod => mod.DlcPackName.Equals(dlcName, StringComparison.OrdinalIgnoreCase));
 
-    public List<string> FindConflicts(InstalledMod candidate)
+    public List<string> FindConflicts(InstalledMod candidate) => _fileService.FindConflicts(Mods, candidate);
+
+    public void Uninstall(Guid id)
     {
-        var issues = new List<string>();
+        InstalledMod? target = null;
 
-        if (!string.IsNullOrEmpty(candidate.DlcPackName) &&
-            Mods.Any(m => m.Id != candidate.Id &&
-                          m.DlcPackName.Equals(candidate.DlcPackName, StringComparison.OrdinalIgnoreCase)))
+        UiDispatcher.Invoke(() =>
         {
-            issues.Add($"DLC pack name '{candidate.DlcPackName}' is already installed");
-        }
+            target = Mods.FirstOrDefault(mod => mod.Id == id);
+        });
 
-        var allFiles = Mods
-            .Where(m => m.Id != candidate.Id)
-            .SelectMany(m => m.InstalledFiles)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (target is null)
+            return;
 
-        foreach (var file in candidate.InstalledFiles)
-        {
-            if (allFiles.Contains(file))
-                issues.Add($"File conflict: {Path.GetFileName(file)}");
-        }
-
-        return issues;
+        _fileService.Uninstall(target, Mods);
+        Remove(id);
     }
 
     private void Load()
     {
-        if (!File.Exists(LibraryPath)) return;
-        try
+        var items = Store.LoadOrDefault(static () => []);
+        UiDispatcher.Invoke(() =>
         {
-            var json = File.ReadAllText(LibraryPath);
-            var list = JsonSerializer.Deserialize<List<InstalledMod>>(json);
-            if (list is null) return;
-
-            UiDispatcher.Invoke(() =>
-            {
-                foreach (var m in list) Mods.Add(m);
-            });
-        }
-        catch { }
+            Mods.Clear();
+            foreach (var item in items.OrderByDescending(mod => mod.InstalledAt))
+                Mods.Add(item);
+        });
     }
 
-    private void Save()
-    {
-        try
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(LibraryPath)!);
-            var json = JsonSerializer.Serialize(Mods.ToList(), new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(LibraryPath, json);
-        }
-        catch { }
-    }
+    private void Save() => Store.Save(Mods.ToList());
 }

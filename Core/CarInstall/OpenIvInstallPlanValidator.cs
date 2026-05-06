@@ -1,9 +1,12 @@
 using LSPDFRManager.OpenIv.CarInstall.Models;
+using LSPDFRManager.Services;
 
 namespace LSPDFRManager.OpenIv.CarInstall;
 
 public static class OpenIvInstallPlanValidator
 {
+    private static readonly string ValidationRoot = Path.Combine(Path.GetTempPath(), "LSPDFRManagerPathValidationRoot");
+
     public static void Validate(OpenIvInstallPlan plan)
     {
         if (plan == null)
@@ -25,7 +28,7 @@ public static class OpenIvInstallPlanValidator
             if (string.IsNullOrWhiteSpace(op.DestinationPath))
                 throw new InvalidOperationException("Destination path cannot be empty.");
 
-            var normalizedDest = op.DestinationPath.Replace("/", @"\").ToLowerInvariant();
+            var normalizedDest = GetSafeRelativePath(op.DestinationPath).ToLowerInvariant();
             if (!normalizedDest.StartsWith(@"mods\") && normalizedDest != "mods")
                 throw new InvalidOperationException(
                     $"Unsafe path detected: '{op.DestinationPath}'. All files must be installed under mods/ directory.");
@@ -79,5 +82,21 @@ public static class OpenIvInstallPlanValidator
         if (plan.Type == CarInstallType.AddonDLC && !plan.XmlPatches.Any())
             throw new InvalidOperationException(
                 "AddonDLC type must have at least one XML patch (dlclist.xml entry).");
+    }
+
+    private static string GetSafeRelativePath(string path)
+    {
+        try
+        {
+            var safePath = PathSafety.GetSafePath(ValidationRoot, path);
+            return Path.GetRelativePath(ValidationRoot, safePath)
+                .Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new InvalidOperationException(
+                $"Unsafe path detected: '{path}'. All files must be installed under mods/ directory.",
+                ex);
+        }
     }
 }

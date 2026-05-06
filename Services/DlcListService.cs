@@ -27,32 +27,33 @@ public static class DlcListService
     /// </summary>
     public static void AddEntry(string dlcPackName)
     {
-        if (string.IsNullOrWhiteSpace(dlcPackName)) return;
+        var normalizedPackName = NormalizePackName(dlcPackName);
+        if (string.IsNullOrWhiteSpace(normalizedPackName)) return;
 
         var path = XmlPath;
         if (!File.Exists(path))
         {
             AppLogger.Warning(
-                $"dlclist.xml not found — cannot register '{dlcPackName}'. " +
+                $"dlclist.xml not found — cannot register '{normalizedPackName}'. " +
                 "Use OpenIV to extract it to mods/update/update.rpf/common/data/");
             return;
         }
 
         try
         {
-            var doc    = XDocument.Load(path);
-            var paths  = doc.Root?.Element("Paths");
+            var doc = XDocument.Load(path);
+            var paths = doc.Root?.Element("Paths");
             if (paths is null) return;
 
-            var entry  = $@"dlcpacks:\{dlcPackName}\";
+            var canonicalEntry = ToCanonicalEntry(normalizedPackName);
             var exists = paths.Elements("Item")
-                .Any(e => e.Value.Trim().Equals(entry, StringComparison.OrdinalIgnoreCase));
+                .Any(e => EntryMatchesPack(e.Value, normalizedPackName));
 
             if (!exists)
             {
-                paths.Add(new XElement("Item", entry));
+                paths.Add(new XElement("Item", canonicalEntry));
                 doc.Save(path);
-                AppLogger.Info($"dlclist.xml: added {entry}");
+                AppLogger.Info($"dlclist.xml: added {canonicalEntry}");
             }
         }
         catch (Exception ex)
@@ -66,32 +67,58 @@ public static class DlcListService
     /// </summary>
     public static void RemoveEntry(string dlcPackName)
     {
-        if (string.IsNullOrWhiteSpace(dlcPackName)) return;
+        var normalizedPackName = NormalizePackName(dlcPackName);
+        if (string.IsNullOrWhiteSpace(normalizedPackName)) return;
 
         var path = XmlPath;
         if (!File.Exists(path)) return;
 
         try
         {
-            var doc   = XDocument.Load(path);
+            var doc = XDocument.Load(path);
             var paths = doc.Root?.Element("Paths");
             if (paths is null) return;
 
-            var entry = $@"dlcpacks:\{dlcPackName}\";
-            var item  = paths.Elements("Item")
-                .FirstOrDefault(e => e.Value.Trim()
-                    .Equals(entry, StringComparison.OrdinalIgnoreCase));
+            var matchingItems = paths.Elements("Item")
+                .Where(e => EntryMatchesPack(e.Value, normalizedPackName))
+                .ToList();
 
-            if (item is not null)
-            {
+            foreach (var item in matchingItems)
                 item.Remove();
+
+            if (matchingItems.Count > 0)
+            {
                 doc.Save(path);
-                AppLogger.Info($"dlclist.xml: removed {entry}");
+                AppLogger.Info($"dlclist.xml: removed {ToCanonicalEntry(normalizedPackName)}");
             }
         }
         catch (Exception ex)
         {
             AppLogger.Warning($"dlclist.xml update failed: {ex.Message}");
         }
+    }
+
+    private static string ToCanonicalEntry(string dlcPackName) => $"dlcpacks:/{dlcPackName}/";
+
+    private static bool EntryMatchesPack(string entryValue, string dlcPackName)
+    {
+        return NormalizePackName(entryValue).Equals(dlcPackName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizePackName(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return string.Empty;
+
+        var normalized = value.Trim()
+            .Replace('\\', '/')
+            .Trim('/');
+
+        const string prefix = "dlcpacks:";
+        if (normalized.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            normalized = normalized[prefix.Length..].Trim('/');
+
+        var parts = normalized.Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return parts.Length == 0 ? string.Empty : parts[^1];
     }
 }

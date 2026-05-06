@@ -1,3 +1,4 @@
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Windows.Input;
 using LSPDFRManager.Domain;
@@ -7,37 +8,87 @@ namespace LSPDFRManager.ViewModels;
 
 public class LibraryViewModel : ObservableObject
 {
+    private const int FileSampleSize = 10;
+
     private readonly ModLibraryService _library = ModLibraryService.Instance;
+
     private string _searchQuery = "";
     private string _selectedFilter = "All";
     private string _selectedSort = "Installed: Newest first";
     private string _riskFilter = "All";
     private ModItemViewModel? _selectedMod;
 
+    public LibraryViewModel()
+    {
+        ToggleEnabledCommand = new RelayCommand(static _ => { });
+        UninstallCommand = new RelayCommand(static _ => { });
+
+        RefreshCommand = new RelayCommand(Refresh);
+        EnableVisibleCommand = new RelayCommand(
+            () => SetVisibleModsEnabled(true),
+            () => FilteredMods.Any(mod => !mod.IsEnabled));
+
+        DisableVisibleCommand = new RelayCommand(
+            () => SetVisibleModsEnabled(false),
+            () => FilteredMods.Any(mod => mod.IsEnabled));
+
+        OpenModFolderCommand = new RelayCommand(OpenModFolder);
+        SetFilterCommand = new RelayCommand(filter =>
+        {
+            if (filter is string risk)
+                RiskFilter = risk;
+        });
+
+        _library.Mods.CollectionChanged += OnLibraryChanged;
+        RefreshFiltered();
+    }
+
     public ObservableCollection<ModItemViewModel> FilteredMods { get; } = [];
 
     public string SearchQuery
     {
         get => _searchQuery;
-        set { SetProperty(ref _searchQuery, value); RefreshFiltered(); }
+        set
+        {
+            if (SetProperty(ref _searchQuery, value))
+                RefreshFiltered();
+        }
     }
 
     public string SelectedFilter
     {
         get => _selectedFilter;
-        set { SetProperty(ref _selectedFilter, value); RefreshFiltered(); }
+        set
+        {
+            if (SetProperty(ref _selectedFilter, value))
+                RefreshFiltered();
+        }
     }
 
     public string SelectedSort
     {
         get => _selectedSort;
-        set { SetProperty(ref _selectedSort, value); RefreshFiltered(); }
+        set
+        {
+            if (SetProperty(ref _selectedSort, value))
+                RefreshFiltered();
+        }
     }
 
     public string RiskFilter
     {
         get => _riskFilter;
-        set { SetProperty(ref _riskFilter, value); RefreshFiltered(); }
+        set
+        {
+            if (SetProperty(ref _riskFilter, value))
+            {
+                RefreshFiltered();
+                OnPropertyChanged(nameof(IsRiskAllActive));
+                OnPropertyChanged(nameof(IsRiskSafeActive));
+                OnPropertyChanged(nameof(IsRiskMediumActive));
+                OnPropertyChanged(nameof(IsRiskHighActive));
+            }
+        }
     }
 
     public ModItemViewModel? SelectedMod
@@ -45,7 +96,9 @@ public class LibraryViewModel : ObservableObject
         get => _selectedMod;
         set
         {
-            SetProperty(ref _selectedMod, value);
+            if (!SetProperty(ref _selectedMod, value))
+                return;
+
             OnPropertyChanged(nameof(HasSelectedMod));
             OnPropertyChanged(nameof(HasNoSelectedMod));
             OnPropertyChanged(nameof(SelectedModFilesSample));
@@ -54,38 +107,45 @@ public class LibraryViewModel : ObservableObject
         }
     }
 
-    // ── Counts ───────────────────────────────────────────────────────
-    public int TotalMods    => _library.Mods.Count;
-    public int EnabledMods  => _library.Mods.Count(m => m.IsEnabled);
-    public int DisabledMods => _library.Mods.Count(m => !m.IsEnabled);
+    public int TotalMods => _library.Mods.Count;
+    public int EnabledMods => _library.Mods.Count(mod => mod.IsEnabled);
+    public int DisabledMods => _library.Mods.Count(mod => !mod.IsEnabled);
     public int FilteredCount => FilteredMods.Count;
-    public bool IsEmpty     => FilteredMods.Count == 0;
+    public bool IsEmpty => FilteredMods.Count == 0;
 
-    // ── Selection detail ─────────────────────────────────────────────
-    public bool HasSelectedMod  => _selectedMod is not null;
-    public bool HasNoSelectedMod => _selectedMod is null;
-
-    private const int FileSampleSize = 10;
+    public bool HasSelectedMod => SelectedMod is not null;
+    public bool HasNoSelectedMod => SelectedMod is null;
+    public bool IsRiskAllActive => RiskFilter.Equals("All", StringComparison.OrdinalIgnoreCase);
+    public bool IsRiskSafeActive => RiskFilter.Equals("Safe", StringComparison.OrdinalIgnoreCase);
+    public bool IsRiskMediumActive => RiskFilter.Equals("Medium", StringComparison.OrdinalIgnoreCase);
+    public bool IsRiskHighActive => RiskFilter.Equals("High", StringComparison.OrdinalIgnoreCase);
 
     public IEnumerable<string> SelectedModFilesSample =>
-        _selectedMod?.InstalledFiles
-            .Select(f => Path.GetFileName(f) is { Length: > 0 } n ? n : f)
-            .Take(FileSampleSize) ?? [];
+        SelectedMod?.InstalledFiles
+            .Select(file => Path.GetFileName(file) is { Length: > 0 } name ? name : file)
+            .Take(FileSampleSize)
+        ?? [];
 
     public bool HasMoreSelectedFiles =>
-        (_selectedMod?.InstalledFiles.Count ?? 0) > FileSampleSize;
+        (SelectedMod?.InstalledFiles.Count ?? 0) > FileSampleSize;
 
     public string SelectedModFilesMoreText =>
         HasMoreSelectedFiles
-            ? $"+{_selectedMod!.InstalledFiles.Count - FileSampleSize} more files"
+            ? $"+{SelectedMod!.InstalledFiles.Count - FileSampleSize} more files"
             : "";
 
-    // ── Filter options ───────────────────────────────────────────────
     public List<string> FilterOptions { get; } =
     [
-        "All", "LSPDFR Plugin", "Vehicle Add-On DLC", "Vehicle Replace",
-        "ASI Mod", "Script (CS/VB)", "EUP Clothing", "Map / MLO",
-        "Sound Pack", "Miscellaneous",
+        "All",
+        "LSPDFR Plugin",
+        "Vehicle Add-On DLC",
+        "Vehicle Replace",
+        "ASI Mod",
+        "Script (CS/VB)",
+        "EUP Clothing",
+        "Map / MLO",
+        "Sound Pack",
+        "Miscellaneous",
     ];
 
     public List<string> SortOptions { get; } =
@@ -98,136 +158,105 @@ public class LibraryViewModel : ObservableObject
         "Enabled first",
     ];
 
-    // ── Commands ─────────────────────────────────────────────────────
     public ICommand ToggleEnabledCommand { get; }
-    public ICommand UninstallCommand     { get; }
-    public ICommand RefreshCommand       { get; }
+    public ICommand UninstallCommand { get; }
+    public ICommand RefreshCommand { get; }
     public ICommand OpenModFolderCommand { get; }
     public ICommand EnableVisibleCommand { get; }
     public ICommand DisableVisibleCommand { get; }
     public ICommand SetFilterCommand { get; }
 
-    public LibraryViewModel()
+    private void Refresh()
     {
-        // Commands moved to ModItemViewModel for component reusability
-        ToggleEnabledCommand = new RelayCommand(obj => { });
-        UninstallCommand = new RelayCommand(obj =>
-        {
-            if (obj is not ModItemViewModel vm) return;
-            if (SelectedMod?.Id == vm.Id) SelectedMod = null;
-        });
-
-        RefreshCommand = new RelayCommand(() =>
-        {
-            RefreshFiltered();
-            OnPropertyChanged(nameof(TotalMods));
-            OnPropertyChanged(nameof(EnabledMods));
-            OnPropertyChanged(nameof(DisabledMods));
-        });
-
-        EnableVisibleCommand = new RelayCommand(() =>
-        {
-            foreach (var vm in FilteredMods.Where(m => !m.IsEnabled))
-                _library.SetEnabled(vm.Id, true);
-            RefreshFiltered();
-            OnPropertyChanged(nameof(EnabledMods));
-            OnPropertyChanged(nameof(DisabledMods));
-        }, () => FilteredMods.Any(m => !m.IsEnabled));
-
-        DisableVisibleCommand = new RelayCommand(() =>
-        {
-            foreach (var vm in FilteredMods.Where(m => m.IsEnabled))
-                _library.SetEnabled(vm.Id, false);
-            RefreshFiltered();
-            OnPropertyChanged(nameof(EnabledMods));
-            OnPropertyChanged(nameof(DisabledMods));
-        }, () => FilteredMods.Any(m => m.IsEnabled));
-
-        OpenModFolderCommand = new RelayCommand(obj =>
-        {
-            var path = obj is ModItemViewModel vm
-                ? vm.Model.InstallPath
-                : _selectedMod?.Model.InstallPath;
-            if (!string.IsNullOrEmpty(path) && Directory.Exists(path))
-                Process.Start("explorer.exe", path);
-        });
-
-        SetFilterCommand = new RelayCommand(filter =>
-        {
-            if (filter is not string filterStr || string.IsNullOrEmpty(filterStr)) return;
-            RiskFilter = filterStr;
-        });
-
-        _library.Mods.CollectionChanged += (_, _) =>
-        {
-            RefreshFiltered();
-            OnPropertyChanged(nameof(TotalMods));
-            OnPropertyChanged(nameof(EnabledMods));
-            OnPropertyChanged(nameof(DisabledMods));
-        };
-
         RefreshFiltered();
+        RaiseCountsChanged();
+    }
+
+    private void SetVisibleModsEnabled(bool enabled)
+    {
+        foreach (var mod in FilteredMods.Where(mod => mod.IsEnabled != enabled).ToList())
+            _library.SetEnabled(mod.Id, enabled);
+
+        Refresh();
+    }
+
+    private void OpenModFolder(object? parameter)
+    {
+        var path = parameter is ModItemViewModel vm
+            ? vm.Model.InstallPath
+            : SelectedMod?.Model.InstallPath;
+
+        if (!string.IsNullOrWhiteSpace(path) && Directory.Exists(path))
+            Process.Start("explorer.exe", path);
+    }
+
+    private void OnLibraryChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        RefreshFiltered();
+        RaiseCountsChanged();
+
+        if (SelectedMod is not null &&
+            !_library.Mods.Any(mod => mod.Id == SelectedMod.Id))
+        {
+            SelectedMod = null;
+        }
     }
 
     private void RefreshFiltered()
     {
-        var query = _searchQuery.Trim();
-        var mods  = string.IsNullOrEmpty(query)
-            ? _library.Mods.AsEnumerable()
-            : _library.Search(query);
+        var filtered = ApplyFilters(_library.Mods)
+            .Select(mod => new ModItemViewModel(mod))
+            .ToList();
 
-        if (_selectedFilter != "All")
-            mods = mods.Where(m =>
-                m.TypeLabel.Equals(_selectedFilter, StringComparison.OrdinalIgnoreCase));
+        FilteredMods.Clear();
+        foreach (var item in filtered)
+            FilteredMods.Add(item);
 
-        if (_riskFilter != "All")
-            mods = mods.Where(m =>
-            {
-                var score = m.DetectionScore;
-                var tier = score >= 70 ? "Safe" : score >= 40 ? "Medium" : "High";
-                return tier.Equals(_riskFilter, StringComparison.OrdinalIgnoreCase);
-            });
-
-        mods = _selectedSort switch
-        {
-            "Installed: Oldest first" => mods.OrderBy(m => m.InstalledAt),
-            "Name: A to Z" => mods.OrderBy(m => m.Name, StringComparer.OrdinalIgnoreCase),
-            "Name: Z to A" => mods.OrderByDescending(m => m.Name, StringComparer.OrdinalIgnoreCase),
-            "Author: A to Z" => mods.OrderBy(m => m.Author, StringComparer.OrdinalIgnoreCase),
-            "Enabled first" => mods.OrderByDescending(m => m.IsEnabled).ThenByDescending(m => m.InstalledAt),
-            _ => mods.OrderByDescending(m => m.InstalledAt),
-        };
-
-        var modIds = mods.Select(m => m.Id).ToHashSet();
-
-        // Remove mods no longer in filter
-        for (int i = FilteredMods.Count - 1; i >= 0; i--)
-        {
-            if (!modIds.Contains(FilteredMods[i].Id))
-                FilteredMods.RemoveAt(i);
-        }
-
-        // Add or move mods to match sort order
-        int index = 0;
-        foreach (var mod in mods)
-        {
-            var existing = FilteredMods.FirstOrDefault(m => m.Id == mod.Id);
-            if (existing == null)
-            {
-                FilteredMods.Insert(index, new ModItemViewModel(mod));
-            }
-            else
-            {
-                int oldIndex = FilteredMods.IndexOf(existing);
-                if (oldIndex != index)
-                {
-                    FilteredMods.Move(oldIndex, index);
-                }
-            }
-            index++;
-        }
+        if (SelectedMod is not null)
+            SelectedMod = FilteredMods.FirstOrDefault(mod => mod.Id == SelectedMod.Id);
 
         OnPropertyChanged(nameof(IsEmpty));
         OnPropertyChanged(nameof(FilteredCount));
     }
+
+    private IEnumerable<InstalledMod> ApplyFilters(IEnumerable<InstalledMod> mods)
+    {
+        var query = SearchQuery.Trim();
+        if (!string.IsNullOrWhiteSpace(query))
+            mods = _library.Search(query);
+
+        if (!SelectedFilter.Equals("All", StringComparison.OrdinalIgnoreCase))
+        {
+            mods = mods.Where(mod =>
+                mod.TypeLabel.Equals(SelectedFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (!RiskFilter.Equals("All", StringComparison.OrdinalIgnoreCase))
+        {
+            mods = mods.Where(mod =>
+                RiskFor(mod.DetectionScore).Equals(RiskFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        return SelectedSort switch
+        {
+            "Installed: Oldest first" => mods.OrderBy(mod => mod.InstalledAt),
+            "Name: A to Z" => mods.OrderBy(mod => mod.Name, StringComparer.OrdinalIgnoreCase),
+            "Name: Z to A" => mods.OrderByDescending(mod => mod.Name, StringComparer.OrdinalIgnoreCase),
+            "Author: A to Z" => mods.OrderBy(mod => mod.Author, StringComparer.OrdinalIgnoreCase),
+            "Enabled first" => mods.OrderByDescending(mod => mod.IsEnabled).ThenByDescending(mod => mod.InstalledAt),
+            _ => mods.OrderByDescending(mod => mod.InstalledAt),
+        };
+    }
+
+    private void RaiseCountsChanged()
+    {
+        OnPropertyChanged(nameof(TotalMods));
+        OnPropertyChanged(nameof(EnabledMods));
+        OnPropertyChanged(nameof(DisabledMods));
+    }
+
+    private static string RiskFor(int score) =>
+        score >= 70 ? "Safe" :
+        score >= 40 ? "Medium" :
+        "High";
 }

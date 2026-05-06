@@ -91,6 +91,66 @@ public class OpenIvIntegrationTests
         Assert.Contains("mods", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public void ConfigPatch_ShouldRejectTraversalAfterModsPrefix()
+    {
+        var plan = new OpenIvInstallPlan
+        {
+            Type = CarInstallType.ConfigPatch,
+            TargetDlcName = "bad_mod",
+            Operations = new()
+            {
+                new() { SourcePath = "handling.meta", DestinationPath = @"mods\..\escape.meta", Overwrite = true }
+            },
+            XmlPatches = new()
+        };
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            OpenIvInstallPlanValidator.Validate(plan));
+
+        Assert.Contains("Unsafe path", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void ConfigPatch_ShouldRejectNestedTraversalAfterModsPrefix()
+    {
+        var plan = new OpenIvInstallPlan
+        {
+            Type = CarInstallType.ConfigPatch,
+            TargetDlcName = "bad_mod",
+            Operations = new()
+            {
+                new() { SourcePath = "handling.meta", DestinationPath = "mods/update/../../escape.meta", Overwrite = true }
+            },
+            XmlPatches = new()
+        };
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            OpenIvInstallPlanValidator.Validate(plan));
+
+        Assert.Contains("Unsafe path", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void ConfigPatch_ShouldRejectAbsoluteDestinationPath()
+    {
+        var plan = new OpenIvInstallPlan
+        {
+            Type = CarInstallType.ConfigPatch,
+            TargetDlcName = "bad_mod",
+            Operations = new()
+            {
+                new() { SourcePath = "handling.meta", DestinationPath = @"C:\Windows\win.ini", Overwrite = true }
+            },
+            XmlPatches = new()
+        };
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            OpenIvInstallPlanValidator.Validate(plan));
+
+        Assert.Contains("Unsafe path", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     // ── Test 5: Invalid DLC Name (Reserved Name) ─────────────────────────
 
     [Fact]

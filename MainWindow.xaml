@@ -33,13 +33,101 @@
                     </StackPanel>
                 </StackPanel>
 
-                <Grid/>
+                <StackPanel Margin="16,0,16,16">
+                    <Button Content="Library"
+                            Command="{Binding NavigateCommand}"
+                            CommandParameter="Library">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsLibraryActive}" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource PanelAltBackground}"/>
+                                        <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Content="Install"
+                            Command="{Binding NavigateCommand}"
+                            CommandParameter="Install">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsInstallActive}" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource PanelAltBackground}"/>
+                                        <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Content="Config"
+                            Command="{Binding NavigateCommand}"
+                            CommandParameter="Config">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsConfigActive}" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource PanelAltBackground}"/>
+                                        <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Content="Browse"
+                            Command="{Binding NavigateCommand}"
+                            CommandParameter="Browse">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsBrowseActive}" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource PanelAltBackground}"/>
+                                        <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Content="Settings"
+                            Command="{Binding NavigateCommand}"
+                            CommandParameter="Settings">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsSettingsActive}" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource PanelAltBackground}"/>
+                                        <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </StackPanel>
 
             </DockPanel>
         </Border>
 
         <Grid Grid.Column="1" Background="{StaticResource AppBackground}">
-            <ContentControl Content="{Binding CurrentView}"/>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0"
+                    Background="{StaticResource ErrorBackground}"
+                    BorderBrush="{StaticResource ErrorBorder}"
+                    BorderThickness="0,0,0,1"
+                    Padding="16,10"
+                    Visibility="{Binding HasGlobalError, Converter={StaticResource BoolToVis}}">
+                <TextBlock Text="{Binding GlobalErrorMessage}"
+                           Foreground="{StaticResource ErrorText}"
+                           FontSize="13"
+                           TextWrapping="Wrap"/>
+            </Border>
+
+            <ContentControl Grid.Row="1" Content="{Binding CurrentView}"/>
         </Grid>
     </Grid>
 </Window>

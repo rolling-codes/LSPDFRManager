@@ -1,7 +1,7 @@
 # LSPDFRManager v1.2.0 Release Notes
 
 **Release Date:** 2026-04-25  
-**Version:** 3.2.0  
+**Version:** 1.2.0  
 **Commit:** 1cc4467
 
 ---

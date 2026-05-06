@@ -1,0 +1,33 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LSPDFRManager", "LSPDFRManager.csproj", "{6C7AF98E-8B8E-4A6B-9B37-63F0A7F6B402}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LSPDFRManager.Api", "LSPDFRManager.Api\LSPDFRManager.Api.csproj", "{8BF9A22D-C8C9-4A88-97CC-6B080450F80F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LSPDFRManager.Tests", "LSPDFRManager.Tests\LSPDFRManager.Tests.csproj", "{F0793D30-2115-4F15-97D0-5E126E4A5A41}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6C7AF98E-8B8E-4A6B-9B37-63F0A7F6B402}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C7AF98E-8B8E-4A6B-9B37-63F0A7F6B402}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C7AF98E-8B8E-4A6B-9B37-63F0A7F6B402}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C7AF98E-8B8E-4A6B-9B37-63F0A7F6B402}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8BF9A22D-C8C9-4A88-97CC-6B080450F80F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8BF9A22D-C8C9-4A88-97CC-6B080450F80F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8BF9A22D-C8C9-4A88-97CC-6B080450F80F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8BF9A22D-C8C9-4A88-97CC-6B080450F80F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F0793D30-2115-4F15-97D0-5E126E4A5A41}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F0793D30-2115-4F15-97D0-5E126E4A5A41}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F0793D30-2115-4F15-97D0-5E126E4A5A41}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F0793D30-2115-4F15-97D0-5E126E4A5A41}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

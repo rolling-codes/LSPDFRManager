@@ -3,12 +3,12 @@
 
 $ErrorActionPreference = "Stop"
 
-Write-Host "LSPDFRManager v1.4.0 Setup" -ForegroundColor Cyan
+Write-Host "LSPDFRManager v3.2.1 Setup" -ForegroundColor Cyan
 Write-Host "==========================`n"
 
 $installDir = "$env:ProgramFiles\LSPDFRManager"
-$exeZipUrl = "https://github.com/rolling-codes/LSPDFRManager/releases/download/v1.4.0/LSPDFRManager-v1.4.0.zip"
-$exeZipPath = "$env:TEMP\LSPDFRManager-v1.4.0.zip"
+$exeZipUrl = "https://github.com/rolling-codes/LSPDFRManager/releases/download/v3.2.1/LSPDFRManager-v3.2.1-win-x64.zip"
+$exeZipPath = "$env:TEMP\LSPDFRManager-v3.2.1-win-x64.zip"
 
 try {
     Write-Host "Creating installation directory: $installDir"
@@ -25,13 +25,7 @@ try {
     [System.IO.Compression.ZipFile]::ExtractToDirectory($exeZipPath, $installDir)
     Write-Host "✓ Extracted" -ForegroundColor Green
 
-    Write-Host "Downloading runtime dependencies..."
-    $depsUrl = "https://raw.githubusercontent.com/rolling-codes/LSPDFRManager/master/publish_v1.4.0"
-    # Note: Full runtime DLLs are in the publish folder. Users can:
-    # 1. Clone repo and copy publish_v1.4.0 contents, or
-    # 2. Download built artifact from repo releases
-    Write-Host "ℹ Runtime files available at: https://github.com/rolling-codes/LSPDFRManager"
-    Write-Host "  Clone repo and copy publish_v1.4.0/ contents to: $installDir`n"
+    Write-Host "Release files installed to: $installDir`n"
 
     Write-Host "Launching setup..."
     & "$installDir\run.bat"

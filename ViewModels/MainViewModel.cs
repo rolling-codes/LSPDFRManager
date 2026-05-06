@@ -13,10 +13,31 @@ public class MainViewModel : ObservableObject
     private string _statusMessage = "Ready";
     private string? _globalErrorMessage;
 
-    public LibraryViewModel  LibraryVM  { get; } = new();
-    public InstallViewModel  InstallVM  { get; } = new();
-    public ConfigViewModel   ConfigVM   { get; } = new();
-    public BrowseViewModel   BrowseVM   { get; } = new();
+    public MainViewModel()
+    {
+        _currentView = LibraryVM;
+
+        NavigateCommand = new RelayCommand(Navigate);
+        LaunchLspdfrCommand = new RelayCommand(LaunchLspdfr, () => Status.IsLspdfrInstalled);
+
+        InstallVM.LogAdded += message => UiDispatcher.Invoke(() => StatusMessage = message);
+
+        InstallQueue.Instance.InstallFailedWithResult += (mod, result) =>
+        {
+            GlobalErrorMessage = $"Install failed: {result.Error}";
+
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(TimeSpan.FromSeconds(5));
+                UiDispatcher.Invoke(() => GlobalErrorMessage = null);
+            });
+        };
+    }
+
+    public LibraryViewModel LibraryVM { get; } = new();
+    public InstallViewModel InstallVM { get; } = new();
+    public ConfigViewModel ConfigVM { get; } = new();
+    public BrowseViewModel BrowseVM { get; } = new();
     public SettingsViewModel SettingsVM { get; } = new();
 
     public LspdfrStatusService Status { get; } = LspdfrStatusService.Instance;
@@ -38,76 +59,52 @@ public class MainViewModel : ObservableObject
         get => _globalErrorMessage;
         set
         {
-            SetProperty(ref _globalErrorMessage, value);
-            OnPropertyChanged(nameof(HasGlobalError));
+            if (SetProperty(ref _globalErrorMessage, value))
+                OnPropertyChanged(nameof(HasGlobalError));
         }
     }
 
-    public bool HasGlobalError => !string.IsNullOrEmpty(GlobalErrorMessage);
+    public bool HasGlobalError => !string.IsNullOrWhiteSpace(GlobalErrorMessage);
 
-    public bool IsLibraryActive  => _activePage == "Library";
-    public bool IsInstallActive  => _activePage == "Install";
-    public bool IsConfigActive   => _activePage == "Config";
-    public bool IsBrowseActive   => _activePage == "Browse";
+    public bool IsLibraryActive => _activePage == "Library";
+    public bool IsInstallActive => _activePage == "Install";
+    public bool IsConfigActive => _activePage == "Config";
+    public bool IsBrowseActive => _activePage == "Browse";
     public bool IsSettingsActive => _activePage == "Settings";
 
     public ICommand NavigateCommand { get; }
     public ICommand LaunchLspdfrCommand { get; }
 
-    public MainViewModel()
+    private void Navigate(object? page)
     {
-        _currentView = LibraryVM;
+        _activePage = page?.ToString() ?? "Library";
 
-        NavigateCommand = new RelayCommand(page =>
+        CurrentView = _activePage switch
         {
-            _activePage = page?.ToString() ?? "Library";
-
-            CurrentView = _activePage switch
-            {
-                "Install"  => InstallVM,
-                "Config"   => ConfigVM,
-                "Browse"   => BrowseVM,
-                "Settings" => SettingsVM,
-                _           => LibraryVM,
-            };
-
-            OnPropertyChanged(nameof(IsLibraryActive));
-            OnPropertyChanged(nameof(IsInstallActive));
-            OnPropertyChanged(nameof(IsConfigActive));
-            OnPropertyChanged(nameof(IsBrowseActive));
-            OnPropertyChanged(nameof(IsSettingsActive));
-        });
-
-        LaunchLspdfrCommand = new RelayCommand(
-            () =>
-            {
-                var hook = Path.Combine(AppConfig.Instance.GtaPath, "RAGEPluginHook.exe");
-                if (File.Exists(hook))
-                {
-                    Process.Start(new ProcessStartInfo(hook)
-                    {
-                        UseShellExecute = true,
-                        WorkingDirectory = AppConfig.Instance.GtaPath,
-                    });
-                }
-            },
-            () => LspdfrStatusService.Instance.IsLspdfrInstalled);
-
-        InstallVM.LogAdded += msg => UiDispatcher.Invoke(() => StatusMessage = msg);
-
-        var queue = InstallQueue.Instance;
-        queue.InstallFailedWithResult += (mod, result) =>
-        {
-            UiDispatcher.Invoke(() =>
-            {
-                GlobalErrorMessage = $"Install failed: {result.Error}";
-            });
-
-            _ = Task.Run(async () =>
-            {
-                await Task.Delay(5000);
-                UiDispatcher.Invoke(() => GlobalErrorMessage = null);
-            });
+            "Install" => InstallVM,
+            "Config" => ConfigVM,
+            "Browse" => BrowseVM,
+            "Settings" => SettingsVM,
+            _ => LibraryVM,
         };
+
+        OnPropertyChanged(nameof(IsLibraryActive));
+        OnPropertyChanged(nameof(IsInstallActive));
+        OnPropertyChanged(nameof(IsConfigActive));
+        OnPropertyChanged(nameof(IsBrowseActive));
+        OnPropertyChanged(nameof(IsSettingsActive));
+    }
+
+    private void LaunchLspdfr()
+    {
+        var hook = Path.Combine(AppConfig.Instance.GtaPath, "RAGEPluginHook.exe");
+        if (!File.Exists(hook))
+            return;
+
+        Process.Start(new ProcessStartInfo(hook)
+        {
+            UseShellExecute = true,
+            WorkingDirectory = AppConfig.Instance.GtaPath,
+        });
     }
 }

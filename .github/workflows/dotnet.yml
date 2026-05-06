@@ -30,7 +30,7 @@ env:
 
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -46,10 +46,12 @@ jobs:
         run: dotnet restore
 
       - name: Build
-        run: dotnet build --no-restore --configuration $BUILD_CONFIGURATION
+        run: dotnet build LSPDFRManager.sln --no-restore --configuration $env:BUILD_CONFIGURATION
+        shell: pwsh
 
       - name: Test
-        run: dotnet test --no-build --configuration $BUILD_CONFIGURATION --verbosity normal
+        run: dotnet test LSPDFRManager.Tests\LSPDFRManager.Tests.csproj --no-build --configuration $env:BUILD_CONFIGURATION --verbosity normal
+        shell: pwsh
 
   release:
     if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish_release == 'true')
@@ -67,11 +69,29 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore LSPDFRManager.sln
 
       - name: Publish app
         run: dotnet publish LSPDFRManager.csproj -c $env:BUILD_CONFIGURATION -r win-x64 --self-contained false -o publish
         shell: pwsh
+
+      - name: Verify release payload
+        shell: pwsh
+        run: |
+          $required = @(
+            'publish\LSPDFRManager.exe',
+            'publish\LSPDFRManager.dll',
+            'publish\LSPDFRManager.runtimeconfig.json',
+            'publish\LSPDFRManager.deps.json',
+            'publish\SharpCompress.dll',
+            'publish\ZstdSharp.dll',
+            'publish\run.bat'
+          )
+          foreach ($path in $required) {
+            if (-not (Test-Path $path)) {
+              throw "Missing release file: $path"
+            }
+          }
 
       - name: Package release zip
         shell: pwsh

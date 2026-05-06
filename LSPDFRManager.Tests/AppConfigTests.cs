@@ -37,6 +37,13 @@ public class AppConfigTests : IDisposable
     }
 
     [Fact]
+    public void DefaultAutoLaunchAfterInstall_IsFalse()
+    {
+        var config = new AppConfig();
+        Assert.False(config.AutoLaunchAfterInstall);
+    }
+
+    [Fact]
     public void DefaultLastBackupDate_IsNull()
     {
         var config = new AppConfig();
@@ -53,11 +60,12 @@ public class AppConfigTests : IDisposable
             BackupPath = @"D:\Backups",
             AutoBackupOnInstall = false,
             ConfirmBeforeUninstall = false,
+            AutoLaunchAfterInstall = true,
             LastBackupDate = new DateTime(2026, 1, 15, 12, 0, 0, DateTimeKind.Utc),
         };
 
-        var json = System.Text.Json.JsonSerializer.Serialize(original,
-            new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        var options = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
+        var json = System.Text.Json.JsonSerializer.Serialize(original, options);
         File.WriteAllText(_tempPath, json);
 
         var loaded = System.Text.Json.JsonSerializer.Deserialize<AppConfig>(
@@ -67,6 +75,7 @@ public class AppConfigTests : IDisposable
         Assert.Equal(original.BackupPath, loaded.BackupPath);
         Assert.Equal(original.AutoBackupOnInstall, loaded.AutoBackupOnInstall);
         Assert.Equal(original.ConfirmBeforeUninstall, loaded.ConfirmBeforeUninstall);
+        Assert.Equal(original.AutoLaunchAfterInstall, loaded.AutoLaunchAfterInstall);
         Assert.Equal(original.LastBackupDate, loaded.LastBackupDate);
     }
 }

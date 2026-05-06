@@ -6,17 +6,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Build (Debug)**
 ```bash
-dotnet build
+dotnet build LSPDFRManager.sln
 ```
 
 **Run (requires GTA V path configured in settings)**
 ```bash
-dotnet run
+dotnet run --project LSPDFRManager.csproj
 ```
 
 **Build self-contained executable (Release)**
 ```bash
-dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish
+dotnet publish LSPDFRManager.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish
+```
+
+**Build release ZIP (framework-dependent)**
+```bash
+dotnet publish LSPDFRManager.csproj -c Release -r win-x64 --self-contained false -o publish/v3.2.1 -p:DebugType=None -p:DebugSymbols=false
+Compress-Archive -Path publish/v3.2.1/* -DestinationPath LSPDFRManager-v3.2.1-win-x64.zip
 ```
 
 ## Testing
@@ -43,10 +49,16 @@ dotnet test -v detailed
 ### Layer Structure
 - **Views/** — WPF UserControls, one per tab (Library, Install, Settings, Browse, Config)
 - **ViewModels/** — MVVM view models; MainViewModel orchestrates tab navigation; each tab has a dedicated VM
-- **Models/** — Data classes (InstalledMod, ModInfo, ModType, AppConfig, ModManifest)
+- **Domain/** — Data classes (InstalledMod, ModInfo, ModType, AppConfig, ModManifest)
 - **Services/** — Business logic (ModLibraryService, ModDetector, FileInstaller, ConfigManagerService, BackupService, etc.)
 - **Core/** — AppLogger (file logging), InstallQueue (background async install processor)
 - **Converters/** — WPF value converters (e.g., InverseBoolConverter, StringToBrushConverter)
+
+### Repository References
+- Repository: https://github.com/rolling-codes/LSPDFRManager
+- Current release notes: [RELEASE_v3.2.1.md](RELEASE_v3.2.1.md)
+- Desktop app project: [LSPDFRManager.csproj](LSPDFRManager.csproj)
+- Solution: [LSPDFRManager.sln](LSPDFRManager.sln)
 
 ### Key Singletons
 - **ModLibraryService** — In-memory registry of all installed mods, synced to `library.json`. Search, enable/disable, conflict detection.
@@ -255,12 +267,12 @@ All existing tests MUST pass unchanged after refactor.
 ## Common Tasks
 
 **Add a new mod type**
-- Add entry to ModType enum [Models/ModType.cs](Models/ModType.cs)
+- Add entry to ModType enum [Domain/ModType.cs](Domain/ModType.cs)
 - Update ModDetector detection logic [Services/ModDetector.cs](Services/ModDetector.cs)
 - Add UI for type filtering in LibraryView/ViewModel (search/filter dropdown)
 
 **Add app setting**
-- Add property to AppConfig [Models/AppConfig.cs](Models/AppConfig.cs)
+- Add property to AppConfig [Domain/AppConfig.cs](Domain/AppConfig.cs)
 - Update config.json schema
 - Wire UI control in SettingsView/SettingsViewModel
 

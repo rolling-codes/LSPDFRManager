@@ -3,52 +3,31 @@ using LSPDFRManager.Domain;
 
 namespace LSPDFRManager.Services;
 
-/// <summary>
-/// Creates and restores ZIP backups of the manager's application data
-/// (mod library, config snapshots, key files).  Backup archives are stored
-/// in the path configured by <see cref="AppConfig.BackupPath"/>.
-/// </summary>
 public class BackupService
 {
-    /// <summary>Creates a ZIP backup of the mod library and config data.</summary>
     public async Task<string> CreateBackupAsync(IProgress<string>? progress = null)
     {
         var config = AppConfig.Instance;
-        var backupDir = config.BackupPath;
-        Directory.CreateDirectory(backupDir);
+        Directory.CreateDirectory(config.BackupPath);
 
-        var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-        var backupPath = Path.Combine(backupDir, $"lspmanager_backup_{timestamp}.zip");
+        var backupPath = Path.Combine(
+            config.BackupPath,
+            $"lspmanager_backup_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.zip");
 
         progress?.Report("Creating backup...");
-
-        var appData = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "LSPDFRManager");
 
         await Task.Run(() =>
         {
             using var zip = ZipFile.Open(backupPath, ZipArchiveMode.Create);
 
-            foreach (var file in new[] { "library.json", "configs.json", "config.json" })
+            foreach (var filePath in GetFilesToBackup())
             {
-                var fullPath = Path.Combine(appData, file);
-                if (File.Exists(fullPath))
-                {
-                    zip.CreateEntryFromFile(fullPath, file);
-                    progress?.Report($"Backed up: {file}");
-                }
-            }
+                if (!File.Exists(filePath))
+                    continue;
 
-            // Backup keys folder
-            var keysDir = Path.Combine(appData, "keys");
-            if (Directory.Exists(keysDir))
-            {
-                foreach (var keyFile in Directory.GetFiles(keysDir))
-                {
-                    zip.CreateEntryFromFile(keyFile, Path.Combine("keys", Path.GetFileName(keyFile)));
-                }
-                progress?.Report("Backed up keys.");
+                var relativePath = Path.GetRelativePath(AppDataPaths.Root, filePath);
+                zip.CreateEntryFromFile(filePath, relativePath);
+                progress?.Report($"Backed up: {relativePath}");
             }
         });
 
@@ -60,23 +39,22 @@ public class BackupService
         return backupPath;
     }
 
-    /// <summary>Restores library and config data from a backup ZIP.</summary>
     public async Task RestoreFromBackupAsync(string backupPath, IProgress<string>? progress = null)
     {
         progress?.Report($"Restoring from {Path.GetFileName(backupPath)}...");
-
-        var appData = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "LSPDFRManager");
+        Directory.CreateDirectory(AppDataPaths.Root);
 
         await Task.Run(() =>
         {
             using var zip = ZipFile.OpenRead(backupPath);
-            foreach (var entry in zip.Entries)
+            foreach (var entry in zip.Entries.Where(entry => !string.IsNullOrWhiteSpace(entry.FullName)))
             {
-                var dest = Path.Combine(appData, entry.FullName);
-                Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
-                entry.ExtractToFile(dest, overwrite: true);
+                var destination = Path.Combine(AppDataPaths.Root, entry.FullName);
+                var directory = Path.GetDirectoryName(destination);
+                if (!string.IsNullOrWhiteSpace(directory))
+                    Directory.CreateDirectory(directory);
+
+                entry.ExtractToFile(destination, overwrite: true);
                 progress?.Report($"Restored: {entry.FullName}");
             }
         });
@@ -85,12 +63,25 @@ public class BackupService
         progress?.Report("Restore complete. Please restart the application.");
     }
 
-    /// <summary>Returns all backup files sorted newest-first.</summary>
     public IEnumerable<string> ListBackups()
     {
-        var dir = AppConfig.Instance.BackupPath;
-        if (!Directory.Exists(dir)) return [];
-        return Directory.GetFiles(dir, "lspmanager_backup_*.zip")
-                        .OrderByDescending(f => f);
+        if (!Directory.Exists(AppConfig.Instance.BackupPath))
+            return [];
+
+        return Directory.GetFiles(AppConfig.Instance.BackupPath, "lspmanager_backup_*.zip")
+            .OrderByDescending(file => file);
+    }
+
+    private static IEnumerable<string> GetFilesToBackup()
+    {
+        yield return AppDataPaths.LibraryFile;
+        yield return AppDataPaths.ConfigSnapshotsFile;
+        yield return AppDataPaths.ConfigFile;
+
+        if (!Directory.Exists(AppDataPaths.KeysDirectory))
+            yield break;
+
+        foreach (var keyFile in Directory.GetFiles(AppDataPaths.KeysDirectory))
+            yield return keyFile;
     }
 }

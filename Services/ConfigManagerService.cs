@@ -2,55 +2,58 @@ using LSPDFRManager.Core;
 
 namespace LSPDFRManager.Services;
 
-/// <summary>A captured mod config file stored by <see cref="ConfigManagerService"/>.</summary>
 public class ConfigEntry
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public string ModName { get; set; } = "";
     public string ConfigFileName { get; set; } = "";
     public string ConfigContent { get; set; } = "";
-    /// <summary>Full path to the file on disk, if it is still present.</summary>
     public string SourcePath { get; set; } = "";
     public DateTime LastModified { get; set; } = DateTime.Now;
 }
 
-/// <summary>
-/// Stores and retrieves mod config file snapshots so they can be restored when
-/// reinstalling from a <see cref="LSPDFRManager.Models.ModManifest"/>.
-/// Persisted to <c>%APPDATA%\LSPDFRManager\configs.json</c>.
-/// </summary>
 public class ConfigManagerService
 {
-    private static readonly string ConfigsPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "LSPDFRManager", "configs.json");
-
     private static ConfigManagerService? _instance;
+    private static readonly JsonFileStore<List<ConfigEntry>> Store = new(AppDataPaths.ConfigSnapshotsFile);
+
     public static ConfigManagerService Instance => _instance ??= new ConfigManagerService();
 
     public ObservableCollection<ConfigEntry> Configs { get; } = [];
 
     private ConfigManagerService() => Load();
 
-    public void AddBuiltInConfig(string modName, string fileName, string content,
-        string sourcePath = "")
+    public void AddBuiltInConfig(string modName, string fileName, string content, string sourcePath = "")
     {
-        var entry = new ConfigEntry
+        var existing = FindBySource(sourcePath) ?? FindByName(modName, fileName);
+        if (existing is not null)
         {
-            ModName        = modName,
+            existing.ConfigContent = content;
+            existing.SourcePath = string.IsNullOrWhiteSpace(sourcePath) ? existing.SourcePath : sourcePath;
+            existing.LastModified = DateTime.Now;
+            Save();
+            return;
+        }
+
+        Configs.Add(new ConfigEntry
+        {
+            ModName = modName,
             ConfigFileName = fileName,
-            ConfigContent  = content,
-            SourcePath     = sourcePath,
-        };
-        Configs.Add(entry);
+            ConfigContent = content,
+            SourcePath = sourcePath,
+            LastModified = DateTime.Now,
+        });
+
         Save();
         AppLogger.Info($"Config added: {fileName} for {modName}");
     }
 
     public void UpdateConfig(Guid id, string content)
     {
-        var entry = Configs.FirstOrDefault(c => c.Id == id);
-        if (entry is null) return;
+        var entry = Configs.FirstOrDefault(config => config.Id == id);
+        if (entry is null)
+            return;
+
         entry.ConfigContent = content;
         entry.LastModified = DateTime.Now;
         Save();
@@ -58,34 +61,31 @@ public class ConfigManagerService
 
     public void RemoveConfig(Guid id)
     {
-        var entry = Configs.FirstOrDefault(c => c.Id == id);
-        if (entry is null) return;
+        var entry = Configs.FirstOrDefault(config => config.Id == id);
+        if (entry is null)
+            return;
+
         Configs.Remove(entry);
         Save();
     }
 
+    private ConfigEntry? FindBySource(string sourcePath) =>
+        string.IsNullOrWhiteSpace(sourcePath)
+            ? null
+            : Configs.FirstOrDefault(config =>
+                config.SourcePath.Equals(sourcePath, StringComparison.OrdinalIgnoreCase));
+
+    private ConfigEntry? FindByName(string modName, string fileName) =>
+        Configs.FirstOrDefault(config =>
+            config.ModName.Equals(modName, StringComparison.OrdinalIgnoreCase) &&
+            config.ConfigFileName.Equals(fileName, StringComparison.OrdinalIgnoreCase));
+
     private void Load()
     {
-        if (!File.Exists(ConfigsPath)) return;
-        try
-        {
-            var json = File.ReadAllText(ConfigsPath);
-            var list = JsonSerializer.Deserialize<List<ConfigEntry>>(json);
-            if (list is null) return;
-            foreach (var e in list) Configs.Add(e);
-        }
-        catch (Exception ex) { AppLogger.Warning($"Configs load failed: {ex.Message}"); }
+        var items = Store.LoadOrDefault(static () => []);
+        foreach (var item in items.OrderBy(item => item.ModName).ThenBy(item => item.ConfigFileName))
+            Configs.Add(item);
     }
 
-    private void Save()
-    {
-        try
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(ConfigsPath)!);
-            var json = JsonSerializer.Serialize(Configs.ToList(),
-                new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(ConfigsPath, json);
-        }
-        catch (Exception ex) { AppLogger.Warning($"Configs save failed: {ex.Message}"); }
-    }
+    private void Save() => Store.Save(Configs.ToList());
 }

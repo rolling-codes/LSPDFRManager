@@ -4,33 +4,28 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
-    <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <AssemblyName>LSPDFRManager</AssemblyName>
     <RootNamespace>LSPDFRManager</RootNamespace>
-    <Version>1.5.0</Version>
-    <AssemblyVersion>1.5.0.0</AssemblyVersion>
-    <FileVersion>1.5.0.0</FileVersion>
-    <Platforms>x64</Platforms>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <Description>Advanced mod manager for GTA V and LSPDFR, featuring automated installation, backup management, and mod library organization.</Description>
+    <AssemblyName>LSPDFRManager</AssemblyName>
+    <Description>Desktop mod manager for GTA V LSPDFR installations.</Description>
     <Authors>rolling-codes</Authors>
-    <PackageTags>gta5;lspdfr;mod-manager;gtav;lspd-first-response;dotnet</PackageTags>
     <RepositoryUrl>https://github.com/rolling-codes/LSPDFRManager</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="LSPDFRManager.Tests\**" />
-    <EmbeddedResource Remove="LSPDFRManager.Tests\**" />
-    <None Remove="LSPDFRManager.Tests\**" />
-    <Compile Remove="LSPDFRManager.Api\**" />
-    <EmbeddedResource Remove="LSPDFRManager.Api\**" />
-    <None Remove="LSPDFRManager.Api\**" />
+    <Compile Remove="LSPDFRManager.Api\**;LSPDFRManager.Tests\**;release-worktree\**" />
+    <EmbeddedResource Remove="LSPDFRManager.Api\**;LSPDFRManager.Tests\**;release-worktree\**" />
+    <None Remove="LSPDFRManager.Api\**;LSPDFRManager.Tests\**;release-worktree\**" />
+    <Page Remove="LSPDFRManager.Api\**;LSPDFRManager.Tests\**;release-worktree\**" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="SharpCompress" Version="0.38.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="run.bat" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
   </ItemGroup>
 
 </Project>

@@ -182,6 +182,7 @@
                                 Content="&#xE896;  Download &amp; Install"
                                 FontFamily="Segoe MDL2 Assets, Segoe UI"
                                 Command="{Binding InstallCommand}"
+                                CommandParameter="{Binding SelectedResult}"
                                 HorizontalAlignment="Stretch"
                                 IsEnabled="{Binding IsIdle}"
                                 Margin="0,0,0,8"/>

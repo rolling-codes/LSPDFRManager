@@ -20,6 +20,7 @@ x86/
 publish/
 publish*/
 *.zip
+*.lscache
 
 ## OS
 .DS_Store
@@ -30,3 +31,6 @@ desktop.ini
 *.rsuser
 .idea/
 *.DotSettings.user
+.claude/
+lsp_agent_context/
+release-worktree/

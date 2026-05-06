@@ -159,6 +159,28 @@ public class OpenIvExecutorIntegrationTests : IDisposable
         Assert.Contains("not found", result.Error, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public async Task Executor_TraversalDestination_FailsWithoutWritingOutsideRoot()
+    {
+        var archive = FakeArchiveFactory.CreateCleanArchive("handling.meta");
+        var plan = new OpenIvInstallPlan
+        {
+            Type = CarInstallType.ConfigPatch,
+            TargetDlcName = "bad_mod",
+            Operations = new()
+            {
+                new() { SourcePath = "handling.meta", DestinationPath = @"mods\..\escape.meta", Overwrite = true }
+            },
+            XmlPatches = new()
+        };
+
+        var result = await _executor.ExecuteAsync(plan, archive, _tempRoot);
+
+        Assert.False(result.Success);
+        Assert.Contains("traversal", result.Error, StringComparison.OrdinalIgnoreCase);
+        Assert.False(File.Exists(Path.Combine(_tempRoot, "escape.meta")));
+    }
+
     private void SetupDlcListXml(string targetRoot)
     {
         var dlclistDir = Path.Combine(targetRoot, @"mods\update\update.rpf\common\data");

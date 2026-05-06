@@ -93,7 +93,7 @@
                     CornerRadius="12" Padding="18">
                 <Grid>
 
-                <StackPanel Visibility="{Binding HasNoDetection, Converter={StaticResource BoolToVis}}"
+                <StackPanel Visibility="{Binding ShowEmptyDetection, Converter={StaticResource BoolToVis}}"
                             VerticalAlignment="Center" HorizontalAlignment="Center">
                     <TextBlock Text="&#xE946;" FontFamily="Segoe MDL2 Assets"
                                FontSize="32" Foreground="{StaticResource TextFaint}"
@@ -101,6 +101,16 @@
                     <TextBlock Text="Detection results will&#x0a;appear here."
                                Foreground="{StaticResource TextFaint}" FontSize="13"
                                TextAlignment="Center" TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <StackPanel Visibility="{Binding IsDetecting, Converter={StaticResource BoolToVis}}"
+                            VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <TextBlock Text="&#xE9D9;" FontFamily="Segoe MDL2 Assets"
+                               FontSize="32" Foreground="{StaticResource Accent}"
+                               HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                    <TextBlock Text="Detecting archive..."
+                               Foreground="{StaticResource TextMuted}" FontSize="13"
+                               HorizontalAlignment="Center"/>
                 </StackPanel>
 
                 <DockPanel Visibility="{Binding HasDetection, Converter={StaticResource BoolToVis}}">

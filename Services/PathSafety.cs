@@ -11,18 +11,21 @@ public static class PathSafety
     /// </summary>
     public static string GetSafePath(string root, string relativePath)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(root);
+        ArgumentNullException.ThrowIfNull(relativePath);
+
+        if (Path.IsPathRooted(relativePath))
+            throw new InvalidOperationException($"Path traversal detected: {relativePath}");
+
         var sanitized = relativePath
             .Replace('/', Path.DirectorySeparatorChar)
-            .Replace('\\', Path.DirectorySeparatorChar)
-            .TrimStart(Path.DirectorySeparatorChar);
+            .Replace('\\', Path.DirectorySeparatorChar);
 
-        var fullRoot = Path.GetFullPath(root);
+        var fullRoot = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         var combined = Path.GetFullPath(Path.Combine(fullRoot, sanitized));
 
         // Normalize root for comparison: ensure trailing separator
-        var normalizedRoot = fullRoot.EndsWith(Path.DirectorySeparatorChar)
-            ? fullRoot
-            : fullRoot + Path.DirectorySeparatorChar;
+        var normalizedRoot = fullRoot + Path.DirectorySeparatorChar;
 
         // Check if combined path is root itself (empty relative path case)
         if (combined == fullRoot || combined.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase))

@@ -62,6 +62,24 @@ public class FileInstallerArchiveTests : IDisposable
     }
 
     [Fact]
+    public async Task Install_MidStreamFailure_RemovesNewDirectories()
+    {
+        var archive = new FakeArchive(new IArchiveEntry[]
+        {
+            new FakeArchiveEntry("a/b/c/first.dll", new byte[] {1, 2, 3}),
+            new FakeArchiveEntry("a/b/c/fail.dll",
+                () => new ThrowingStream(new byte[] {4, 5, 6, 7, 8, 9}, failAfter: 3),
+                size: 6)
+        });
+
+        var result = await FileInstaller.InstallAsync(archive, _tempDir);
+
+        Assert.False(result.Success);
+        Assert.True(result.IsPartial);
+        Assert.Empty(Directory.GetFileSystemEntries(_tempDir));
+    }
+
+    [Fact]
     public async Task Install_StreamOpenFailure_RollsBackPreviousFiles()
     {
         var archive = FakeArchiveFactory.CreateStreamOpenFailureArchive();
@@ -173,5 +191,25 @@ public class FileInstallerArchiveTests : IDisposable
         Assert.True(result.Success);
         var content = File.ReadAllText(existingFile);
         Assert.NotEqual("old content", content);
+    }
+
+    [Fact]
+    public async Task Install_FailureAfterOverwrite_RestoresOriginalFile()
+    {
+        var existingFile = Path.Combine(_tempDir, "existing.dll");
+        File.WriteAllText(existingFile, "old content");
+
+        var archive = new FakeArchive(new IArchiveEntry[]
+        {
+            new FakeArchiveEntry("existing.dll", new byte[] {1, 2, 3}),
+            new FakeArchiveEntry("fail.dll", () => throw new IOException("Cannot open stream"))
+        });
+
+        var result = await FileInstaller.InstallAsync(archive, _tempDir);
+
+        Assert.False(result.Success);
+        Assert.True(result.IsPartial);
+        Assert.Equal("old content", File.ReadAllText(existingFile));
+        Assert.False(File.Exists(Path.Combine(_tempDir, "fail.dll")));
     }
 }

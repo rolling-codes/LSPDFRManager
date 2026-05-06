@@ -18,9 +18,19 @@ public class SettingsViewModel : ObservableObject
     private string _statusMessage = "";
     private bool _isBusy;
 
-    public ObservableCollection<string> ProgressLog { get; } = [];
+    public SettingsViewModel()
+    {
+        BrowseGtaPathCommand = new RelayCommand(BrowseForGtaPath);
+        BrowseBackupPathCommand = new RelayCommand(BrowseForBackupPath);
+        SaveSettingsCommand = new RelayCommand(SaveSettings);
+        CreateBackupCommand = new RelayCommand(() => _ = RunAsync(() => _backup.CreateBackupAsync(CreateProgress())), () => IsIdle);
+        RestoreBackupCommand = new RelayCommand(RestoreBackup, () => IsIdle);
+        ExportManifestCommand = new RelayCommand(ExportManifest, () => IsIdle);
+        ImportManifestCommand = new RelayCommand(ImportManifest, () => IsIdle);
+        OpenLogFolderCommand = new RelayCommand(OpenLogFolder);
+    }
 
-    /// <summary>Live status service — exposed so the view can bind to it.</summary>
+    public ObservableCollection<string> ProgressLog { get; } = [];
     public LspdfrStatusService LspdfrStatus { get; } = LspdfrStatusService.Instance;
 
     public string GtaPath
@@ -28,34 +38,60 @@ public class SettingsViewModel : ObservableObject
         get => _gtaPath;
         set
         {
-            SetProperty(ref _gtaPath, value);
+            if (!SetProperty(ref _gtaPath, value))
+                return;
+
             AppConfig.Instance.GtaPath = value;
-            LspdfrStatusService.Instance.Refresh();
+            LspdfrStatus.Refresh();
         }
     }
 
     public string BackupPath
     {
         get => _backupPath;
-        set { SetProperty(ref _backupPath, value); AppConfig.Instance.BackupPath = value; }
+        set
+        {
+            if (!SetProperty(ref _backupPath, value))
+                return;
+
+            AppConfig.Instance.BackupPath = value;
+        }
     }
 
     public bool AutoBackupOnInstall
     {
         get => _autoBackup;
-        set { SetProperty(ref _autoBackup, value); AppConfig.Instance.AutoBackupOnInstall = value; }
+        set
+        {
+            if (!SetProperty(ref _autoBackup, value))
+                return;
+
+            AppConfig.Instance.AutoBackupOnInstall = value;
+        }
     }
 
     public bool ConfirmBeforeUninstall
     {
         get => _confirmUninstall;
-        set { SetProperty(ref _confirmUninstall, value); AppConfig.Instance.ConfirmBeforeUninstall = value; }
+        set
+        {
+            if (!SetProperty(ref _confirmUninstall, value))
+                return;
+
+            AppConfig.Instance.ConfirmBeforeUninstall = value;
+        }
     }
 
     public bool AutoLaunchAfterInstall
     {
         get => _autoLaunch;
-        set { SetProperty(ref _autoLaunch, value); AppConfig.Instance.AutoLaunchAfterInstall = value; }
+        set
+        {
+            if (!SetProperty(ref _autoLaunch, value))
+                return;
+
+            AppConfig.Instance.AutoLaunchAfterInstall = value;
+        }
     }
 
     public string StatusMessage
@@ -67,12 +103,16 @@ public class SettingsViewModel : ObservableObject
     public bool IsBusy
     {
         get => _isBusy;
-        set { SetProperty(ref _isBusy, value); OnPropertyChanged(nameof(IsIdle)); }
+        set
+        {
+            if (SetProperty(ref _isBusy, value))
+                OnPropertyChanged(nameof(IsIdle));
+        }
     }
 
-    public bool IsIdle => !_isBusy;
+    public bool IsIdle => !IsBusy;
 
-    public string? LastBackupDate =>
+    public string LastBackupDate =>
         AppConfig.Instance.LastBackupDate?.ToString("yyyy-MM-dd HH:mm") ?? "Never";
 
     public ICommand BrowseGtaPathCommand { get; }
@@ -84,105 +124,104 @@ public class SettingsViewModel : ObservableObject
     public ICommand ImportManifestCommand { get; }
     public ICommand OpenLogFolderCommand { get; }
 
-    public SettingsViewModel()
+    private void BrowseForGtaPath()
     {
-        BrowseGtaPathCommand = new RelayCommand(() =>
+        var dialog = new Microsoft.Win32.OpenFolderDialog
         {
-            var dlg = new Microsoft.Win32.OpenFolderDialog
-            {
-                Title = "Select GTA V installation folder",
-                InitialDirectory = GtaPath,
-            };
-            if (dlg.ShowDialog() == true)
-                GtaPath = dlg.FolderName;
-        });
+            Title = "Select GTA V installation folder",
+            InitialDirectory = GtaPath,
+        };
 
-        BrowseBackupPathCommand = new RelayCommand(() =>
-        {
-            var dlg = new Microsoft.Win32.OpenFolderDialog
-            {
-                Title = "Select backup folder",
-                InitialDirectory = BackupPath,
-            };
-            if (dlg.ShowDialog() == true)
-                BackupPath = dlg.FolderName;
-        });
-
-        SaveSettingsCommand = new RelayCommand(() =>
-        {
-            AppConfig.Instance.Save();
-            LspdfrStatusService.Instance.Refresh();
-            StatusMessage = "Settings saved.";
-        });
-
-        CreateBackupCommand = new RelayCommand(
-            () => _ = RunAsync(() => _backup.CreateBackupAsync(Progress())),
-            () => IsIdle);
-
-        RestoreBackupCommand = new RelayCommand(
-            () =>
-            {
-                var dlg = new Microsoft.Win32.OpenFileDialog
-                {
-                    Title = "Select Backup File",
-                    Filter = "Backup Files|*.zip|All Files|*.*",
-                    InitialDirectory = BackupPath,
-                };
-                if (dlg.ShowDialog() == true)
-                    _ = RunAsync(() => _backup.RestoreFromBackupAsync(dlg.FileName, Progress()));
-            },
-            () => IsIdle);
-
-        ExportManifestCommand = new RelayCommand(
-            () =>
-            {
-                var dlg = new Microsoft.Win32.SaveFileDialog
-                {
-                    Title = "Export Mod Manifest",
-                    Filter = "Manifest|*.lspmanifest|ZIP Package|*.zip",
-                    FileName = $"lsp_manifest_{DateTime.Now:yyyyMMdd}",
-                };
-                if (dlg.ShowDialog() != true) return;
-                var includeArchives = dlg.FilterIndex == 2;
-                _ = RunAsync(() => _export.ExportAsync(dlg.FileName, includeArchives, Progress()));
-            },
-            () => IsIdle);
-
-        ImportManifestCommand = new RelayCommand(
-            () =>
-            {
-                var dlg = new Microsoft.Win32.OpenFileDialog
-                {
-                    Title = "Import Mod Manifest",
-                    Filter = "Manifest|*.lspmanifest;*.json|ZIP Package|*.zip|All Files|*.*",
-                };
-                if (dlg.ShowDialog() == true)
-                    _ = RunAsync(() => _reinstall.ReinstallFromManifestAsync(dlg.FileName, Progress()));
-            },
-            () => IsIdle);
-
-        OpenLogFolderCommand = new RelayCommand(() =>
-        {
-            var logDir = System.IO.Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "LSPDFRManager");
-            if (System.IO.Directory.Exists(logDir))
-                System.Diagnostics.Process.Start("explorer.exe", logDir);
-        });
+        if (dialog.ShowDialog() == true)
+            GtaPath = dialog.FolderName;
     }
 
-    private IProgress<string> Progress() => new Progress<string>(msg =>
+    private void BrowseForBackupPath()
     {
-        ProgressLog.Add(msg);
-        StatusMessage = msg;
+        var dialog = new Microsoft.Win32.OpenFolderDialog
+        {
+            Title = "Select backup folder",
+            InitialDirectory = BackupPath,
+        };
+
+        if (dialog.ShowDialog() == true)
+            BackupPath = dialog.FolderName;
+    }
+
+    private void SaveSettings()
+    {
+        AppConfig.Instance.Save();
+        LspdfrStatus.Refresh();
+        StatusMessage = "Settings saved.";
+    }
+
+    private void RestoreBackup()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Select Backup File",
+            Filter = "Backup Files|*.zip|All Files|*.*",
+            InitialDirectory = BackupPath,
+        };
+
+        if (dialog.ShowDialog() == true)
+            _ = RunAsync(() => _backup.RestoreFromBackupAsync(dialog.FileName, CreateProgress()));
+    }
+
+    private void ExportManifest()
+    {
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "Export Mod Manifest",
+            Filter = "Manifest|*.lspmanifest|ZIP Package|*.zip",
+            FileName = $"lsp_manifest_{DateTime.Now:yyyyMMdd}",
+        };
+
+        if (dialog.ShowDialog() != true)
+            return;
+
+        var includeArchives = dialog.FilterIndex == 2;
+        _ = RunAsync(() => _export.ExportAsync(dialog.FileName, includeArchives, CreateProgress()));
+    }
+
+    private void ImportManifest()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Import Mod Manifest",
+            Filter = "Manifest|*.lspmanifest;*.json|ZIP Package|*.zip|All Files|*.*",
+        };
+
+        if (dialog.ShowDialog() == true)
+            _ = RunAsync(() => _reinstall.ReinstallFromManifestAsync(dialog.FileName, CreateProgress()));
+    }
+
+    private void OpenLogFolder()
+    {
+        if (Directory.Exists(AppDataPaths.Root))
+            System.Diagnostics.Process.Start("explorer.exe", AppDataPaths.Root);
+    }
+
+    private IProgress<string> CreateProgress() => new Progress<string>(message =>
+    {
+        ProgressLog.Add(message);
+        StatusMessage = message;
     });
 
     private async Task RunAsync(Func<Task> action)
     {
         IsBusy = true;
         ProgressLog.Clear();
-        try { await action(); }
-        catch (Exception ex) { StatusMessage = $"Error: {ex.Message}"; ProgressLog.Add($"Error: {ex.Message}"); }
+
+        try
+        {
+            await action();
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error: {ex.Message}";
+            ProgressLog.Add(StatusMessage);
+        }
         finally
         {
             IsBusy = false;

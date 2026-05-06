@@ -63,45 +63,82 @@
         <StackPanel DockPanel.Dock="Top"
                     Orientation="Horizontal"
                     Margin="0,0,0,12">
-            <StackPanel.Resources>
-                <Style x:Key="RiskFilterButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding RiskFilter}" Value="{Binding CommandParameter, RelativeSource={RelativeSource Self}}">
-                            <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
-                            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
-                            <Setter Property="Background" Value="#0F1E3D"/>
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </StackPanel.Resources>
             <TextBlock Text="Risk:"
                        Foreground="{StaticResource TextMuted}"
                        FontSize="12"
                        VerticalAlignment="Center"
                        Margin="0,0,8,0"/>
-            <Button Style="{StaticResource RiskFilterButton}"
+            <Button
                     Content="All"
                     Command="{Binding SetFilterCommand}"
                     CommandParameter="All"
                     Margin="0,0,6,0"
-                    Padding="10,6"/>
-            <Button Style="{StaticResource RiskFilterButton}"
+                    Padding="10,6">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource GhostButton}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsRiskAllActive}" Value="True">
+                                <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+                                <Setter Property="Background" Value="#0F1E3D"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <Button
                     Content="Safe"
                     Command="{Binding SetFilterCommand}"
                     CommandParameter="Safe"
                     Margin="0,0,6,0"
-                    Padding="10,6"/>
-            <Button Style="{StaticResource RiskFilterButton}"
+                    Padding="10,6">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource GhostButton}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsRiskSafeActive}" Value="True">
+                                <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+                                <Setter Property="Background" Value="#0F1E3D"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <Button
                     Content="Medium"
                     Command="{Binding SetFilterCommand}"
                     CommandParameter="Medium"
                     Margin="0,0,6,0"
-                    Padding="10,6"/>
-            <Button Style="{StaticResource RiskFilterButton}"
+                    Padding="10,6">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource GhostButton}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsRiskMediumActive}" Value="True">
+                                <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+                                <Setter Property="Background" Value="#0F1E3D"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <Button
                     Content="High"
                     Command="{Binding SetFilterCommand}"
                     CommandParameter="High"
-                    Padding="10,6"/>
+                    Padding="10,6">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource GhostButton}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsRiskHighActive}" Value="True">
+                                <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+                                <Setter Property="Background" Value="#0F1E3D"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
         </StackPanel>
 
         <StackPanel DockPanel.Dock="Top"

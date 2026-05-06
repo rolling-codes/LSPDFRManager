@@ -5,124 +5,128 @@ using LSPDFRManager.Core;
 
 namespace LSPDFRManager.Services;
 
-// ── DTOs ────────────────────────────────────────────────────────────────────
-
-/// <summary>A single mod result returned from the lcpdfr.com search API.</summary>
 public record ModSearchResult(
-    [property: JsonPropertyName("id")]          string Id,
-    [property: JsonPropertyName("title")]       string Title,
-    [property: JsonPropertyName("author")]      string Author,
-    [property: JsonPropertyName("version")]     string Version,
-    [property: JsonPropertyName("type")]        string Type,
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("title")] string Title,
+    [property: JsonPropertyName("author")] string Author,
+    [property: JsonPropertyName("version")] string Version,
+    [property: JsonPropertyName("type")] string Type,
     [property: JsonPropertyName("description")] string Description,
-    [property: JsonPropertyName("url")]         string Url,
+    [property: JsonPropertyName("url")] string Url,
     [property: JsonPropertyName("downloadUrl")] string DownloadUrl,
-    [property: JsonPropertyName("imageUrl")]    string ImageUrl,
-    [property: JsonPropertyName("updatedAt")]   string UpdatedAt
+    [property: JsonPropertyName("imageUrl")] string ImageUrl,
+    [property: JsonPropertyName("updatedAt")] string UpdatedAt
 );
 
-// ── Client ──────────────────────────────────────────────────────────────────
-
-/// <summary>
-/// HTTP client for the LSPDFR Manager API backend, which provides clean JSON
-/// access to lcpdfr.com mod data without the caller needing to scrape HTML.
-/// The API runs locally (started with the app) or can be pointed at a hosted
-/// instance via <see cref="BaseUrl"/>.
-/// </summary>
 public class LspdfrApiClient
 {
-    private static LspdfrApiClient? _instance;
-    public static LspdfrApiClient Instance => _instance ??= new();
-
-    private readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(15) };
-
-    private static readonly JsonSerializerOptions _json = new()
+    private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
     };
 
-    /// <summary>Base URL of the API server (default: local instance on port 5284).</summary>
+    private static LspdfrApiClient? _instance;
+    public static LspdfrApiClient Instance => _instance ??= new();
+
+    private readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(20) };
+
     public string BaseUrl { get; set; } = "http://localhost:5284";
 
-    // ── Public methods ───────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Searches lcpdfr.com for mods matching <paramref name="query"/>.
-    /// Returns an empty list if the API is unavailable.
-    /// </summary>
-    public async Task<List<ModSearchResult>> SearchAsync(string query,
-        string? category = null, CancellationToken ct = default)
+    public async Task<List<ModSearchResult>> SearchAsync(
+        string query,
+        string? category = null,
+        CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(query))
+            return [];
+
         try
         {
-            var url = $"{BaseUrl}/api/mods/search?q={Uri.EscapeDataString(query)}";
-            if (!string.IsNullOrWhiteSpace(category))
-                url += $"&category={Uri.EscapeDataString(category)}";
+            var parameters = new List<string> { $"q={Uri.EscapeDataString(query)}" };
+            if (!string.IsNullOrWhiteSpace(category) &&
+                !category.Equals("All", StringComparison.OrdinalIgnoreCase))
+            {
+                parameters.Add($"category={Uri.EscapeDataString(category)}");
+            }
 
-            var json    = await _http.GetStringAsync(url, ct).ConfigureAwait(false);
-            var results = JsonSerializer.Deserialize<List<ModSearchResult>>(json, _json);
-            return results ?? [];
+            var url = $"{BaseUrl}/api/mods/search?{string.Join("&", parameters)}";
+            var json = await _http.GetStringAsync(url, cancellationToken).ConfigureAwait(false);
+            return JsonSerializer.Deserialize<List<ModSearchResult>>(json, JsonOptions) ?? [];
         }
         catch (Exception ex)
         {
-            AppLogger.Warning($"Browse API unavailable: {ex.Message}");
+            AppLogger.Warning($"Browse API search failed: {ex.Message}");
             return [];
         }
     }
 
-    /// <summary>
-    /// Returns the latest version information for a specific mod by its lcpdfr.com ID.
-    /// Returns <c>null</c> if the API is unavailable or the mod is not found.
-    /// </summary>
-    public async Task<ModSearchResult?> GetModAsync(string modId,
-        CancellationToken ct = default)
+    public async Task<ModSearchResult?> GetModAsync(string modId, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(modId))
+            return null;
+
         try
         {
-            var json   = await _http.GetStringAsync($"{BaseUrl}/api/mods/{modId}", ct)
-                                    .ConfigureAwait(false);
-            return JsonSerializer.Deserialize<ModSearchResult>(json, _json);
+            var json = await _http.GetStringAsync($"{BaseUrl}/api/mods/{modId}", cancellationToken)
+                .ConfigureAwait(false);
+            return JsonSerializer.Deserialize<ModSearchResult>(json, JsonOptions);
         }
         catch (Exception ex)
         {
-            AppLogger.Warning($"Browse API — mod lookup failed: {ex.Message}");
+            AppLogger.Warning($"Browse API mod lookup failed: {ex.Message}");
             return null;
         }
     }
 
-    /// <summary>
-    /// Downloads the file at <paramref name="downloadUrl"/> to a temporary path
-    /// and returns that path, ready to pass to the install pipeline.
-    /// </summary>
-    public async Task<string?> DownloadToTempAsync(string downloadUrl, string fileName,
-        IProgress<int>? progress = null, CancellationToken ct = default)
+    public async Task<string?> DownloadToTempAsync(
+        string downloadUrl,
+        string fileName,
+        IProgress<int>? progress = null,
+        CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(downloadUrl))
+            return null;
+
         try
         {
-            var tempDir  = Path.Combine(Path.GetTempPath(), "LSPDFRManager_downloads");
+            var tempDir = Path.Combine(Path.GetTempPath(), "LSPDFRManager_downloads");
             Directory.CreateDirectory(tempDir);
-            var destPath = Path.Combine(tempDir, fileName);
 
-            using var response = await _http.GetAsync(downloadUrl,
-                HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
+            var safeFileName = string.IsNullOrWhiteSpace(fileName)
+                ? $"{Guid.NewGuid():N}.zip"
+                : string.Concat(fileName.Split(Path.GetInvalidFileNameChars()));
+
+            var destinationPath = Path.Combine(tempDir, safeFileName);
+
+            using var response = await _http.GetAsync(
+                downloadUrl,
+                HttpCompletionOption.ResponseHeadersRead,
+                cancellationToken).ConfigureAwait(false);
+
             response.EnsureSuccessStatusCode();
 
-            var total   = response.Content.Headers.ContentLength ?? -1;
-            long got    = 0;
+            var totalBytes = response.Content.Headers.ContentLength ?? -1L;
+            long bytesRead = 0;
 
-            await using var src  = await response.Content.ReadAsStreamAsync(ct);
-            await using var dest = File.Create(destPath);
+            await using var source = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+            await using var destination = File.Create(destinationPath);
 
-            var buf = new byte[81920];
-            int read;
-            while ((read = await src.ReadAsync(buf, ct)) > 0)
+            var buffer = new byte[81920];
+            while (true)
             {
-                await dest.WriteAsync(buf.AsMemory(0, read), ct);
-                got += read;
-                if (total > 0) progress?.Report((int)(got * 100 / total));
+                var read = await source.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken).ConfigureAwait(false);
+                if (read == 0)
+                    break;
+
+                await destination.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
+                bytesRead += read;
+
+                if (totalBytes > 0)
+                    progress?.Report((int)(bytesRead * 100 / totalBytes));
             }
 
-            return destPath;
+            progress?.Report(100);
+            return destinationPath;
         }
         catch (Exception ex)
         {
@@ -131,17 +135,20 @@ public class LspdfrApiClient
         }
     }
 
-    /// <summary>
-    /// Checks whether the local API server is reachable.
-    /// </summary>
-    public async Task<bool> IsAvailableAsync()
+    public async Task<bool> IsAvailableAsync(CancellationToken cancellationToken = default)
     {
         try
         {
-            var resp = await _http.GetAsync($"{BaseUrl}/health",
-                HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
-            return resp.IsSuccessStatusCode;
+            using var response = await _http.GetAsync(
+                $"{BaseUrl}/health",
+                HttpCompletionOption.ResponseHeadersRead,
+                cancellationToken).ConfigureAwait(false);
+
+            return response.IsSuccessStatusCode;
         }
-        catch { return false; }
+        catch
+        {
+            return false;
+        }
     }
 }
