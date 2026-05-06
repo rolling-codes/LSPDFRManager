@@ -24,6 +24,7 @@ v3.2.1 is a cleanup and bugfix release that restores the desktop build surface, 
 - Restored missing WPF resources for icon buttons and toggle switches.
 - Fixed Browse detail-pane downloads by passing the selected result to the install command.
 - Fixed release packaging so `run.bat` is included with the framework-dependent desktop build.
+- Changed the release ZIP to contain a top-level `LSPDFRManager-v3.2.1` folder so the executable, DLLs, and launcher stay together.
 - Updated setup, workflow, repository, and file references to use `LSPDFRManager-v3.2.1-win-x64.zip`, `LSPDFRManager.sln`, and `Domain/` model paths.
 
 ## Repository Links
@@ -31,6 +32,8 @@ v3.2.1 is a cleanup and bugfix release that restores the desktop build surface, 
 - Repository: https://github.com/rolling-codes/LSPDFRManager
 - Release download: https://github.com/rolling-codes/LSPDFRManager/releases/download/v3.2.1/LSPDFRManager-v3.2.1-win-x64.zip
 - Setup script: https://raw.githubusercontent.com/rolling-codes/LSPDFRManager/master/setup.ps1
+
+The ZIP extracts to `LSPDFRManager-v3.2.1/`. Keep all files in that folder together; the executable depends on the accompanying DLLs.
 
 ## Known Limitation
 

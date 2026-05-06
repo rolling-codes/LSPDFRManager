@@ -6,13 +6,18 @@ $ErrorActionPreference = "Stop"
 Write-Host "LSPDFRManager v3.2.1 Setup" -ForegroundColor Cyan
 Write-Host "==========================`n"
 
-$installDir = "$env:ProgramFiles\LSPDFRManager"
+$packageDirName = "LSPDFRManager-v3.2.1"
+$installParent = $env:ProgramFiles
+$installDir = Join-Path $installParent $packageDirName
 $exeZipUrl = "https://github.com/rolling-codes/LSPDFRManager/releases/download/v3.2.1/LSPDFRManager-v3.2.1-win-x64.zip"
 $exeZipPath = "$env:TEMP\LSPDFRManager-v3.2.1-win-x64.zip"
 
 try {
-    Write-Host "Creating installation directory: $installDir"
-    New-Item -ItemType Directory -Path $installDir -Force | Out-Null
+    Write-Host "Preparing installation directory: $installDir"
+    if (Test-Path $installDir) {
+        Remove-Item $installDir -Recurse -Force
+    }
+    New-Item -ItemType Directory -Path $installParent -Force | Out-Null
 
     Write-Host "Downloading executable from release..."
     $webClient = New-Object System.Net.WebClient
@@ -22,7 +27,7 @@ try {
 
     Write-Host "Extracting files..."
     Add-Type -Assembly System.IO.Compression.FileSystem
-    [System.IO.Compression.ZipFile]::ExtractToDirectory($exeZipPath, $installDir)
+    [System.IO.Compression.ZipFile]::ExtractToDirectory($exeZipPath, $installParent)
     Write-Host "✓ Extracted" -ForegroundColor Green
 
     Write-Host "Release files installed to: $installDir`n"

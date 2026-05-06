@@ -41,6 +41,8 @@ See the [v3.2.1 Release Notes](RELEASE_v3.2.1.md) for details.
 
 **Download:** [LSPDFRManager-v3.2.1-win-x64.zip](https://github.com/rolling-codes/LSPDFRManager/releases/download/v3.2.1/LSPDFRManager-v3.2.1-win-x64.zip)
 
+The ZIP extracts to a single `LSPDFRManager-v3.2.1` folder. Keep `LSPDFRManager.exe`, the DLLs, and `run.bat` together in that folder.
+
 ---
 
 ## Getting Started

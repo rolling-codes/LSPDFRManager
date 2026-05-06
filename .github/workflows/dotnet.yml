@@ -95,7 +95,14 @@ jobs:
 
       - name: Package release zip
         shell: pwsh
-        run: Compress-Archive -Path publish\* -DestinationPath LSPDFRManager-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.ref_name }}-win-x64.zip
+        run: |
+          $releaseRoot = "LSPDFRManager-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.ref_name }}"
+          if (Test-Path $releaseRoot) {
+            Remove-Item $releaseRoot -Recurse -Force
+          }
+          New-Item -ItemType Directory -Path $releaseRoot | Out-Null
+          Copy-Item -Path publish\* -Destination $releaseRoot -Recurse
+          Compress-Archive -Path $releaseRoot -DestinationPath "$releaseRoot-win-x64.zip"
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2

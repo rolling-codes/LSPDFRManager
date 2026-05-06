@@ -22,7 +22,9 @@ dotnet publish LSPDFRManager.csproj -c Release -r win-x64 --self-contained true 
 **Build release ZIP (framework-dependent)**
 ```bash
 dotnet publish LSPDFRManager.csproj -c Release -r win-x64 --self-contained false -o publish/v3.2.1 -p:DebugType=None -p:DebugSymbols=false
-Compress-Archive -Path publish/v3.2.1/* -DestinationPath LSPDFRManager-v3.2.1-win-x64.zip
+New-Item -ItemType Directory -Path release-package/LSPDFRManager-v3.2.1 -Force
+Copy-Item -Path publish/v3.2.1/* -Destination release-package/LSPDFRManager-v3.2.1 -Recurse
+Compress-Archive -Path release-package/LSPDFRManager-v3.2.1 -DestinationPath LSPDFRManager-v3.2.1-win-x64.zip
 ```
 
 ## Testing
