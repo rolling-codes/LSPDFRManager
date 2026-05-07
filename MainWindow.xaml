@@ -2,27 +2,15 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="LSPDFR Manager"
-        Height="780" Width="1180"
-        MinHeight="620" MinWidth="900"
+        Height="820" Width="1220"
+        MinHeight="640" MinWidth="960"
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource AppBackground}"
         FontFamily="Segoe UI">
 
-    <Window.Resources>
-        <!-- Nav button that highlights when its IsActive property is True -->
-        <Style x:Key="NavItem" TargetType="Button" BasedOn="{StaticResource NavButton}">
-            <Style.Triggers>
-                <Trigger Property="Tag" Value="Active">
-                    <Setter Property="Background" Value="{StaticResource PanelAltBackground}"/>
-                    <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-    </Window.Resources>
-
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="240"/>
+            <ColumnDefinition Width="220"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
@@ -34,24 +22,41 @@
             <DockPanel>
 
                 <!-- App wordmark -->
-                <StackPanel DockPanel.Dock="Top" Margin="24,32,24,24">
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                <StackPanel DockPanel.Dock="Top" Margin="20,28,20,20">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
                         <Border Background="{StaticResource AccentSecondary}" CornerRadius="4"
                                 Padding="6,2" Margin="0,0,8,0">
                             <TextBlock Text="LSPDFR" Foreground="White"
-                                       FontSize="12" FontWeight="Bold"/>
+                                       FontSize="11" FontWeight="Bold"/>
                         </Border>
                         <TextBlock Text="Manager" Foreground="{StaticResource TextStrong}"
-                                   FontSize="20" FontWeight="SemiBold"
+                                   FontSize="18" FontWeight="SemiBold"
                                    VerticalAlignment="Center"/>
                     </StackPanel>
+                    <TextBlock Text="v3.5.0 — Command Center" Foreground="{StaticResource TextMuted}" FontSize="10"/>
                 </StackPanel>
 
-                <!-- Nav items — Tag drives active highlight via NavItem style trigger -->
-                <StackPanel Margin="16,0,16,16">
+                <!-- Nav items -->
+                <StackPanel Margin="12,0,12,12">
+
+                    <!-- Home -->
+                    <Button Content="Home"
+                            Command="{Binding NavigateCommand}" CommandParameter="Home">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsHomeActive}" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource PanelAltBackground}"/>
+                                        <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <!-- Library -->
                     <Button Content="Library"
-                            Command="{Binding NavigateCommand}"
-                            CommandParameter="Library">
+                            Command="{Binding NavigateCommand}" CommandParameter="Library">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
                                 <Style.Triggers>
@@ -63,9 +68,10 @@
                             </Style>
                         </Button.Style>
                     </Button>
+
+                    <!-- Install -->
                     <Button Content="Install"
-                            Command="{Binding NavigateCommand}"
-                            CommandParameter="Install">
+                            Command="{Binding NavigateCommand}" CommandParameter="Install">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
                                 <Style.Triggers>
@@ -77,23 +83,10 @@
                             </Style>
                         </Button.Style>
                     </Button>
-                    <Button Content="Config"
-                            Command="{Binding NavigateCommand}"
-                            CommandParameter="Config">
-                        <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsConfigActive}" Value="True">
-                                        <Setter Property="Background" Value="{StaticResource PanelAltBackground}"/>
-                                        <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
+
+                    <!-- Browse -->
                     <Button Content="Browse"
-                            Command="{Binding NavigateCommand}"
-                            CommandParameter="Browse">
+                            Command="{Binding NavigateCommand}" CommandParameter="Browse">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
                                 <Style.Triggers>
@@ -105,9 +98,85 @@
                             </Style>
                         </Button.Style>
                     </Button>
+
+                    <!-- Diagnostics -->
+                    <Button Content="Diagnostics"
+                            Command="{Binding NavigateCommand}" CommandParameter="Diagnostics">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsDiagnosticsActive}" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource PanelAltBackground}"/>
+                                        <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <!-- Profiles -->
+                    <Button Content="Profiles"
+                            Command="{Binding NavigateCommand}" CommandParameter="Profiles">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsProfilesActive}" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource PanelAltBackground}"/>
+                                        <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <!-- Backups -->
+                    <Button Content="Backups"
+                            Command="{Binding NavigateCommand}" CommandParameter="Backups">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsBackupsActive}" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource PanelAltBackground}"/>
+                                        <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <!-- History -->
+                    <Button Content="History"
+                            Command="{Binding NavigateCommand}" CommandParameter="History">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsHistoryActive}" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource PanelAltBackground}"/>
+                                        <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <!-- Logs -->
+                    <Button Content="Logs"
+                            Command="{Binding NavigateCommand}" CommandParameter="Logs">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsLogViewerActive}" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource PanelAltBackground}"/>
+                                        <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <!-- Settings -->
                     <Button Content="Settings"
-                            Command="{Binding NavigateCommand}"
-                            CommandParameter="Settings">
+                            Command="{Binding NavigateCommand}" CommandParameter="Settings">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
                                 <Style.Triggers>
@@ -119,6 +188,7 @@
                             </Style>
                         </Button.Style>
                     </Button>
+
                 </StackPanel>
 
             </DockPanel>

@@ -9,13 +9,13 @@ namespace LSPDFRManager.ViewModels;
 public class MainViewModel : ObservableObject
 {
     private object _currentView;
-    private string _activePage = "Library";
+    private string _activePage = "Home";
     private string _statusMessage = "Ready";
     private string? _globalErrorMessage;
 
     public MainViewModel()
     {
-        _currentView = LibraryVM;
+        _currentView = DashboardVM;
 
         NavigateCommand = new RelayCommand(Navigate);
         LaunchLspdfrCommand = new RelayCommand(LaunchLspdfr, () => Status.IsLspdfrInstalled);
@@ -32,12 +32,22 @@ public class MainViewModel : ObservableObject
                 UiDispatcher.Invoke(() => GlobalErrorMessage = null);
             });
         };
+
+        // Load persistent services
+        ChangeHistoryService.Instance.Load();
+        RestorePointService.Instance.Load();
     }
 
+    public DashboardViewModel DashboardVM { get; } = new();
     public LibraryViewModel LibraryVM { get; } = new();
     public InstallViewModel InstallVM { get; } = new();
     public ConfigViewModel ConfigVM { get; } = new();
     public BrowseViewModel BrowseVM { get; } = new();
+    public DiagnosticsViewModel DiagnosticsVM { get; } = new();
+    public ProfilesViewModel ProfilesVM { get; } = new();
+    public BackupsViewModel BackupsVM { get; } = new();
+    public HistoryViewModel HistoryVM { get; } = new();
+    public LogViewerViewModel LogViewerVM { get; } = new();
     public SettingsViewModel SettingsVM { get; } = new();
 
     public LspdfrStatusService Status { get; } = LspdfrStatusService.Instance;
@@ -66,32 +76,48 @@ public class MainViewModel : ObservableObject
 
     public bool HasGlobalError => !string.IsNullOrWhiteSpace(GlobalErrorMessage);
 
-    public bool IsLibraryActive => _activePage == "Library";
-    public bool IsInstallActive => _activePage == "Install";
-    public bool IsConfigActive => _activePage == "Config";
-    public bool IsBrowseActive => _activePage == "Browse";
-    public bool IsSettingsActive => _activePage == "Settings";
+    public bool IsHomeActive        => _activePage == "Home";
+    public bool IsLibraryActive     => _activePage == "Library";
+    public bool IsInstallActive     => _activePage == "Install";
+    public bool IsBrowseActive      => _activePage == "Browse";
+    public bool IsDiagnosticsActive => _activePage == "Diagnostics";
+    public bool IsProfilesActive    => _activePage == "Profiles";
+    public bool IsBackupsActive     => _activePage == "Backups";
+    public bool IsHistoryActive     => _activePage == "History";
+    public bool IsLogViewerActive   => _activePage == "Logs";
+    public bool IsSettingsActive    => _activePage == "Settings";
 
     public ICommand NavigateCommand { get; }
     public ICommand LaunchLspdfrCommand { get; }
 
     private void Navigate(object? page)
     {
-        _activePage = page?.ToString() ?? "Library";
+        _activePage = page?.ToString() ?? "Home";
 
         CurrentView = _activePage switch
         {
-            "Install" => InstallVM,
-            "Config" => ConfigVM,
-            "Browse" => BrowseVM,
-            "Settings" => SettingsVM,
-            _ => LibraryVM,
+            "Library"     => LibraryVM,
+            "Install"     => InstallVM,
+            "Config"      => ConfigVM,
+            "Browse"      => BrowseVM,
+            "Diagnostics" => DiagnosticsVM,
+            "Profiles"    => ProfilesVM,
+            "Backups"     => BackupsVM,
+            "History"     => HistoryVM,
+            "Logs"        => LogViewerVM,
+            "Settings"    => SettingsVM,
+            _             => DashboardVM,
         };
 
+        OnPropertyChanged(nameof(IsHomeActive));
         OnPropertyChanged(nameof(IsLibraryActive));
         OnPropertyChanged(nameof(IsInstallActive));
-        OnPropertyChanged(nameof(IsConfigActive));
         OnPropertyChanged(nameof(IsBrowseActive));
+        OnPropertyChanged(nameof(IsDiagnosticsActive));
+        OnPropertyChanged(nameof(IsProfilesActive));
+        OnPropertyChanged(nameof(IsBackupsActive));
+        OnPropertyChanged(nameof(IsHistoryActive));
+        OnPropertyChanged(nameof(IsLogViewerActive));
         OnPropertyChanged(nameof(IsSettingsActive));
     }
 
