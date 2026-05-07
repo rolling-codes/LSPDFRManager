@@ -16,12 +16,24 @@
     <Style TargetType="TextBox">
         <Setter Property="Background"   Value="{StaticResource Surface}"/>
         <Setter Property="Foreground"   Value="{StaticResource TextPrimary}"/>
+        <Setter Property="CaretBrush"   Value="{StaticResource TextPrimary}"/>
         <Setter Property="BorderBrush"  Value="{StaticResource Border}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding"      Value="8,6"/>
         <Setter Property="FontSize"     Value="13"/>
+        <Setter Property="FontFamily"   Value="Segoe UI"/>
     </Style>
 
+
+    <Style TargetType="ComboBox">
+        <Setter Property="Background"   Value="{StaticResource Surface}"/>
+        <Setter Property="Foreground"   Value="{StaticResource TextPrimary}"/>
+        <Setter Property="BorderBrush"  Value="{StaticResource Border}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding"      Value="8,6"/>
+        <Setter Property="FontSize"     Value="13"/>
+        <Setter Property="FontFamily"   Value="Segoe UI"/>
+    </Style>
 
     <Style TargetType="ListBox">
         <Setter Property="Background"       Value="Transparent"/>

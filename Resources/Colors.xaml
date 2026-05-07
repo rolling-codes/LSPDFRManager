@@ -47,7 +47,7 @@
     <SolidColorBrush x:Key="StatusDisabled"     Color="#3D4F6A"/>
 
     <!-- ══ Console / log text ═══════════════════════════════════════ -->
-    <SolidColorBrush x:Key="ConsoleFg"          Color="#64748B"/>
+    <SolidColorBrush x:Key="ConsoleFg"          Color="#C9D1D9"/>
 
     <!-- ══ Compatibility aliases (keep existing keys working) ════════ -->
     <SolidColorBrush x:Key="Bg"          Color="#0A0C10"/>
