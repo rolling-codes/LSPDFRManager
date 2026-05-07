@@ -1,0 +1,268 @@
+<UserControl x:Class="LSPDFRManager.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{StaticResource Bg}"
+             FontFamily="Segoe UI">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="28,24,28,16">
+
+            <TextBlock Text="Settings" Style="{StaticResource SectionHeader}" Margin="0,0,0,4"/>
+            <TextBlock Text="Configure paths, backups, and mod manifest import / export."
+                       Foreground="{StaticResource TextMuted}" FontSize="13" Margin="0,0,0,24"/>
+
+            <!-- Environment Status -->
+            <TextBlock Text="ENVIRONMENT STATUS" Style="{StaticResource SectionLabel}"/>
+            <Border Style="{StaticResource SectionCard}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,7,0">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Fill" Value="{StaticResource StatusError}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding LspdfrStatus.IsGtaPathValid}" Value="True">
+                                                <Setter Property="Fill" Value="{StaticResource StatusOk}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+                            <TextBlock Text="GTA V"
+                                       Foreground="{StaticResource TextPrimary}"
+                                       FontSize="13" FontWeight="SemiBold"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding LspdfrStatus.GtaVersion}"
+                                   Foreground="{StaticResource TextMuted}" FontSize="12"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,7,0">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Fill" Value="{StaticResource StatusError}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding LspdfrStatus.IsLspdfrInstalled}" Value="True">
+                                                <Setter Property="Fill" Value="{StaticResource StatusOk}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+                            <TextBlock Text="LSPDFR"
+                                       Foreground="{StaticResource TextPrimary}"
+                                       FontSize="13" FontWeight="SemiBold"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding LspdfrStatus.LspdfrVersion}"
+                                   Foreground="{StaticResource TextMuted}" FontSize="12"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,7,0">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Fill" Value="{StaticResource StatusError}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding LspdfrStatus.IsScriptHookVInstalled}" Value="True">
+                                                <Setter Property="Fill" Value="{StaticResource StatusOk}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+                            <TextBlock Text="ScriptHookV"
+                                       Foreground="{StaticResource TextPrimary}"
+                                       FontSize="13" FontWeight="SemiBold"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding LspdfrStatus.ScriptHookVVersion}"
+                                   Foreground="{StaticResource TextMuted}" FontSize="12"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- GTA V Installation -->
+            <TextBlock Text="GTA V INSTALLATION" Style="{StaticResource SectionLabel}"/>
+            <Border Style="{StaticResource SectionCard}">
+                <StackPanel>
+                    <TextBlock Text="GTA V INSTALLATION FOLDER"
+                               Style="{StaticResource DetailLabel}"
+                               FontWeight="Bold" Margin="0,0,0,10"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0"
+                                 Text="{Binding GtaPath, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,0,12,0"/>
+                        <Button Grid.Column="1" Style="{StaticResource GhostButton}"
+                                Content="Browse"
+                                Command="{Binding BrowseGtaPathCommand}"
+                                Padding="16,8"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Behaviour -->
+            <TextBlock Text="BEHAVIOUR" Style="{StaticResource SectionLabel}"/>
+            <Border Style="{StaticResource SectionCard}">
+                <StackPanel>
+                    <TextBlock Text="APP BEHAVIOUR"
+                               Style="{StaticResource DetailLabel}"
+                               FontWeight="Bold" Margin="0,0,0,16"/>
+                    <CheckBox Style="{StaticResource ToggleSwitch}"
+                              IsChecked="{Binding AutoBackupOnInstall}"
+                              Margin="0,0,0,16">
+                        <TextBlock Foreground="{StaticResource TextPrimary}" FontSize="13" FontWeight="Medium">
+                            Auto-backup before installing a new mod
+                        </TextBlock>
+                    </CheckBox>
+                    <CheckBox Style="{StaticResource ToggleSwitch}"
+                              IsChecked="{Binding ConfirmBeforeUninstall}"
+                              Margin="0,0,0,16">
+                        <TextBlock Foreground="{StaticResource TextPrimary}" FontSize="13" FontWeight="Medium">
+                            Confirm before uninstalling a mod
+                        </TextBlock>
+                    </CheckBox>
+                    <CheckBox Style="{StaticResource ToggleSwitch}"
+                              IsChecked="{Binding AutoLaunchAfterInstall}"
+                              Margin="0,0,0,16">
+                        <TextBlock Foreground="{StaticResource TextPrimary}" FontSize="13" FontWeight="Medium">
+                            Auto-launch LSPDFR after installing a mod
+                        </TextBlock>
+                    </CheckBox>
+                    <CheckBox Style="{StaticResource ToggleSwitch}"
+                              IsChecked="{Binding AutoInstallHighConfidence}"
+                              Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Foreground="{StaticResource TextPrimary}" FontSize="13" FontWeight="Medium">
+                                Auto-install high-confidence mods
+                            </TextBlock>
+                            <TextBlock Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,2,0,0">
+                                Skips manual confirmation when detection confidence is 75% or above
+                            </TextBlock>
+                        </StackPanel>
+                    </CheckBox>
+                    <CheckBox Style="{StaticResource ToggleSwitch}"
+                              IsChecked="{Binding DeleteTempAfterInstall}">
+                        <StackPanel>
+                            <TextBlock Foreground="{StaticResource TextPrimary}" FontSize="13" FontWeight="Medium">
+                                Delete temp files after install
+                            </TextBlock>
+                            <TextBlock Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,2,0,0">
+                                Removes browser-downloaded archives from the temp folder once installed
+                            </TextBlock>
+                        </StackPanel>
+                    </CheckBox>
+                </StackPanel>
+            </Border>
+
+            <!-- Backup & Restore -->
+            <TextBlock Text="BACKUP &amp; RESTORE" Style="{StaticResource SectionLabel}"/>
+            <Border Style="{StaticResource SectionCard}">
+                <StackPanel>
+                    <TextBlock Text="BACKUP STORAGE FOLDER"
+                               Style="{StaticResource DetailLabel}"
+                               FontWeight="Bold" Margin="0,0,0,10"/>
+                    <Grid Margin="0,0,0,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0"
+                                 Text="{Binding BackupPath, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,0,12,0"/>
+                        <Button Grid.Column="1" Style="{StaticResource GhostButton}"
+                                Content="Browse"
+                                Command="{Binding BrowseBackupPathCommand}"
+                                Padding="16,8"/>
+                    </Grid>
+                    <TextBlock Foreground="{StaticResource TextMuted}" FontSize="13" Margin="0,0,0,20">
+                        Last backup: <Run Text="{Binding LastBackupDate, Mode=OneWay}"
+                                          Foreground="{StaticResource Accent}" FontWeight="Bold"/>
+                    </TextBlock>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Style="{StaticResource PrimaryButton}"
+                                Content="Create Backup Now"
+                                Command="{Binding CreateBackupCommand}"
+                                IsEnabled="{Binding IsIdle}"
+                                Margin="0,0,12,0" Padding="20,10"/>
+                        <Button Style="{StaticResource GhostButton}"
+                                Content="Restore from File"
+                                Command="{Binding RestoreBackupCommand}"
+                                IsEnabled="{Binding IsIdle}"
+                                Padding="20,10"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Manifest Import / Export -->
+            <TextBlock Text="MANIFEST IMPORT / EXPORT" Style="{StaticResource SectionLabel}"/>
+            <Border Style="{StaticResource SectionCard}">
+                <StackPanel>
+                    <TextBlock Text="MOD MANIFESTS"
+                               Style="{StaticResource DetailLabel}"
+                               FontWeight="Bold" Margin="0,0,0,10"/>
+                    <TextBlock Text="Export your installed mod list as a manifest for sharing or reinstalling on a new machine."
+                               Foreground="{StaticResource TextMuted}" FontSize="13"
+                               TextWrapping="Wrap" Margin="0,0,0,20"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Style="{StaticResource GhostButton}"
+                                Content="Export Mod List"
+                                Command="{Binding ExportManifestCommand}"
+                                IsEnabled="{Binding IsIdle}"
+                                Margin="0,0,12,0" Padding="20,10"/>
+                        <Button Style="{StaticResource GhostButton}"
+                                Content="Import &amp; Sync"
+                                Command="{Binding ImportManifestCommand}"
+                                IsEnabled="{Binding IsIdle}"
+                                Padding="20,10"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Progress log (visible only when busy) -->
+            <Border Background="{StaticResource Surface}" CornerRadius="10" Padding="16"
+                    Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"
+                    Margin="0,0,0,16">
+                <StackPanel>
+                    <ProgressBar IsIndeterminate="True" Margin="0,0,0,10"/>
+                    <ScrollViewer MaxHeight="120" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding ProgressLog}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" Style="{StaticResource ConsoleText}"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </StackPanel>
+            </Border>
+
+            <!-- Bottom actions -->
+            <StackPanel Orientation="Horizontal">
+                <Button Style="{StaticResource PrimaryButton}"
+                        Content="Save Settings"
+                        Command="{Binding SaveSettingsCommand}"
+                        Margin="0,0,10,0"/>
+                <Button Style="{StaticResource GhostButton}"
+                        Content="Open Log Folder"
+                        Command="{Binding OpenLogFolderCommand}"/>
+            </StackPanel>
+
+            <TextBlock Text="{Binding StatusMessage}"
+                       Foreground="{StaticResource TextMuted}"
+                       FontSize="12" Margin="0,10,0,0"/>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

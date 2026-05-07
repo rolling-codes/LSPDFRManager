@@ -1,0 +1,140 @@
+<UserControl x:Class="LSPDFRManager.Views.ConfigView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{StaticResource Bg}"
+             FontFamily="Segoe UI">
+
+    <DockPanel Margin="28,24,28,16">
+
+        <!-- Header -->
+        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,20">
+            <TextBlock Text="Plugin Configs" Style="{StaticResource SectionHeader}"/>
+            <TextBlock Text="View and edit configuration files (.ini, .xml, .cfg) for your installed plugins."
+                       Foreground="{StaticResource TextMuted}" FontSize="13"
+                       TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <!-- Toolbar -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,14">
+            <Button Style="{StaticResource PrimaryButton}"
+                    Content="&#xE8E5;  Add Config File"
+                    FontFamily="Segoe MDL2 Assets, Segoe UI"
+                    Command="{Binding AddFromFileCommand}"
+                    Margin="0,0,8,0"/>
+            <Button Style="{StaticResource GhostButton}"
+                    Content="&#xE72C;  Scan Installed Mods"
+                    FontFamily="Segoe MDL2 Assets, Segoe UI"
+                    Command="{Binding ExtractFromModCommand}"/>
+        </StackPanel>
+
+        <TextBlock DockPanel.Dock="Bottom"
+                   Text="{Binding StatusMessage}"
+                   Foreground="{StaticResource TextMuted}"
+                   FontSize="12" Margin="0,8,0,0"/>
+
+        <!-- Two-column layout -->
+        <Grid DockPanel.Dock="Top">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Config file list -->
+            <ListBox Grid.Column="0"
+                     ItemsSource="{Binding Configs}"
+                     SelectedItem="{Binding SelectedConfig}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource CardPanel}"
+                                CornerRadius="8" Padding="14,10" Margin="0,3">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding ConfigFileName}"
+                                               Foreground="{StaticResource TextPrimary}"
+                                               FontSize="13" FontWeight="SemiBold"/>
+                                    <TextBlock Foreground="{StaticResource TextMuted}"
+                                               FontSize="11" Margin="0,3,0,0">
+                                        <Run Text="{Binding ModName}"/>
+                                        <Run Text=" · "/>
+                                        <Run Text="{Binding LastModified,
+                                                   StringFormat='{}{0:MMM d, yyyy}'}"/>
+                                    </TextBlock>
+                                </StackPanel>
+                                <Button Grid.Column="1"
+                                        Style="{StaticResource IconButton}"
+                                        Content="&#xE74D;"
+                                        FontFamily="Segoe MDL2 Assets"
+                                        Command="{Binding DataContext.DeleteConfigCommand,
+                                            RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                        CommandParameter="{Binding}"
+                                        ToolTip="Remove config"/>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <!-- Editor panel -->
+            <Border Grid.Column="2" Style="{StaticResource CardPanel}"
+                    CornerRadius="10" Padding="16">
+                <Grid>
+
+                    <!-- No selection -->
+                    <StackPanel Style="{StaticResource EmptyState}"
+                                Visibility="{Binding HasNoSelection, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="&#xE9E9;" FontFamily="Segoe MDL2 Assets"
+                                   FontSize="32" Foreground="{StaticResource TextFaint}"
+                                   HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                        <TextBlock Text="Select a config&#x0a;to view and edit it"
+                                   Foreground="{StaticResource TextFaint}" FontSize="12"
+                                   TextAlignment="Center" TextWrapping="Wrap"/>
+                    </StackPanel>
+
+                    <!-- Editor -->
+                    <DockPanel Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}">
+
+                        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                                <Button Style="{StaticResource GhostButton}"
+                                        Content="&#xE838;  Open Location"
+                                        FontFamily="Segoe MDL2 Assets, Segoe UI"
+                                        Command="{Binding OpenInExplorerCommand}"
+                                        Padding="8,6" Margin="0,0,6,0"/>
+                                <Button Style="{StaticResource PrimaryButton}"
+                                        Content="&#xE74E;  Save"
+                                        FontFamily="Segoe MDL2 Assets, Segoe UI"
+                                        Command="{Binding SaveEditCommand}"
+                                        Padding="12,6"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="{Binding SelectedConfig.ConfigFileName}"
+                                           Foreground="{StaticResource TextPrimary}"
+                                           FontSize="14" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding SelectedConfig.SourcePath}"
+                                           Foreground="{StaticResource TextFaint}"
+                                           FontSize="10" TextTrimming="CharacterEllipsis"/>
+                            </StackPanel>
+                        </DockPanel>
+
+                        <TextBox DockPanel.Dock="Top"
+                                 Text="{Binding EditContent, UpdateSourceTrigger=PropertyChanged}"
+                                 AcceptsReturn="True"
+                                 AcceptsTab="True"
+                                 TextWrapping="NoWrap"
+                                 VerticalScrollBarVisibility="Auto"
+                                 HorizontalScrollBarVisibility="Auto"
+                                 FontFamily="Consolas"
+                                 FontSize="12"
+                                 Padding="10"
+                                 MinHeight="300"/>
+                    </DockPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </DockPanel>
+</UserControl>

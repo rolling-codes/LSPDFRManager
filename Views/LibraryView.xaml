@@ -1,0 +1,302 @@
+<UserControl x:Class="LSPDFRManager.Views.LibraryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:components="clr-namespace:LSPDFRManager.Views.Components"
+             xmlns:vm="clr-namespace:LSPDFRManager.ViewModels"
+             Background="{StaticResource Bg}"
+             FontFamily="Segoe UI">
+
+    <DockPanel Margin="28,24,28,16">
+
+        <!-- Header -->
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,16">
+            <StackPanel DockPanel.Dock="Left">
+                <TextBlock Text="Mod Library" Style="{StaticResource SectionHeader}"/>
+                <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                    <TextBlock Foreground="{StaticResource TextMuted}" FontSize="12">
+                        <Run Text="{Binding TotalMods, Mode=OneWay}"/>
+                        <Run Text=" total · "/>
+                        <Run Text="{Binding EnabledMods, Mode=OneWay}"/>
+                        <Run Text=" enabled · "/>
+                        <Run Text="{Binding DisabledMods, Mode=OneWay}"/>
+                        <Run Text=" disabled · "/>
+                        <Run Text="{Binding FilteredCount, Mode=OneWay}"/>
+                        <Run Text=" shown"/>
+                    </TextBlock>
+                </StackPanel>
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Search + filter dropdowns -->
+        <Grid DockPanel.Dock="Top" Margin="0,0,0,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="180"/>
+                <ColumnDefinition Width="180"/>
+            </Grid.ColumnDefinitions>
+            <Grid Grid.Column="0" Margin="0,0,10,0">
+                <TextBox x:Name="SearchBox"
+                         Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBlock Text="Search by name, author, or type…">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource PlaceholderText}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SearchQuery}" Value="">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Grid>
+            <ComboBox Grid.Column="1" Margin="0,0,10,0"
+                      ItemsSource="{Binding FilterOptions}"
+                      SelectedItem="{Binding SelectedFilter}"/>
+            <ComboBox Grid.Column="2"
+                      ItemsSource="{Binding SortOptions}"
+                      SelectedItem="{Binding SelectedSort}"/>
+        </Grid>
+
+        <!-- Risk filter pills + bulk actions row -->
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Style="{StaticResource GhostButton}"
+                        Content="Enable visible"
+                        Command="{Binding EnableVisibleCommand}"
+                        Margin="0,0,8,0" Padding="10,6"/>
+                <Button Style="{StaticResource GhostButton}"
+                        Content="Disable visible"
+                        Command="{Binding DisableVisibleCommand}"
+                        Padding="10,6"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="Risk:"
+                           Foreground="{StaticResource TextMuted}"
+                           FontSize="12"
+                           VerticalAlignment="Center"
+                           Margin="0,0,8,0"/>
+                <Button Content="All"
+                        Command="{Binding SetFilterCommand}" CommandParameter="All"
+                        Margin="0,0,6,0" Padding="10,6">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource GhostButton}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsRiskAllActive}" Value="True">
+                                    <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
+                                    <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+                                    <Setter Property="Background" Value="{StaticResource AccentActiveBg}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+                <Button Content="Safe"
+                        Command="{Binding SetFilterCommand}" CommandParameter="Safe"
+                        Margin="0,0,6,0" Padding="10,6">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource GhostButton}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsRiskSafeActive}" Value="True">
+                                    <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
+                                    <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+                                    <Setter Property="Background" Value="{StaticResource AccentActiveBg}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+                <Button Content="Medium"
+                        Command="{Binding SetFilterCommand}" CommandParameter="Medium"
+                        Margin="0,0,6,0" Padding="10,6">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource GhostButton}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsRiskMediumActive}" Value="True">
+                                    <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
+                                    <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+                                    <Setter Property="Background" Value="{StaticResource AccentActiveBg}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+                <Button Content="High"
+                        Command="{Binding SetFilterCommand}" CommandParameter="High"
+                        Padding="10,6">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource GhostButton}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsRiskHighActive}" Value="True">
+                                    <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
+                                    <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+                                    <Setter Property="Background" Value="{StaticResource AccentActiveBg}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+            </StackPanel>
+
+        </DockPanel>
+
+        <!-- Main two-column layout -->
+        <Grid DockPanel.Dock="Top">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="14"/>
+                <ColumnDefinition Width="270"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Mod list -->
+            <Grid Grid.Column="0">
+                <ListBox ItemsSource="{Binding FilteredMods}"
+                         SelectedItem="{Binding SelectedMod}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:ModItemViewModel}">
+                            <components:ModCard />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <!-- Empty state -->
+                <Border Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}"
+                        Background="{StaticResource Bg}">
+                    <StackPanel Style="{StaticResource EmptyState}">
+                        <TextBlock Text="&#xE8F1;" FontFamily="Segoe MDL2 Assets"
+                                   FontSize="40" Foreground="{StaticResource TextFaint}"
+                                   HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                        <TextBlock Text="No mods found"
+                                   Foreground="{StaticResource TextMuted}" FontSize="16"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="Install mods from the Install tab."
+                                   Foreground="{StaticResource TextFaint}" FontSize="13"
+                                   HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Detail panel -->
+            <Border Grid.Column="2" Style="{StaticResource CardPanel}"
+                    CornerRadius="12" Padding="20">
+                <Grid>
+
+                    <!-- No selection -->
+                    <StackPanel Style="{StaticResource EmptyState}"
+                                Visibility="{Binding HasNoSelectedMod, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="&#xE8F1;" FontFamily="Segoe MDL2 Assets"
+                                   FontSize="48" Foreground="{StaticResource TextFaint}"
+                                   HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                        <TextBlock Text="Select a mod to&#x0a;view details"
+                                   Foreground="{StaticResource TextMuted}" FontSize="14"
+                                   TextAlignment="Center" TextWrapping="Wrap"
+                                   FontWeight="Medium"/>
+                    </StackPanel>
+
+                    <!-- Mod details -->
+                    <DockPanel Visibility="{Binding HasSelectedMod, Converter={StaticResource BoolToVis}}">
+
+                        <StackPanel DockPanel.Dock="Bottom" Margin="0,16,0,0">
+                            <Button Style="{StaticResource GhostButton}"
+                                    Content="&#xE838;  Open Folder"
+                                    FontFamily="Segoe MDL2 Assets, Segoe UI"
+                                    Command="{Binding OpenModFolderCommand}"
+                                    HorizontalAlignment="Stretch"
+                                    Padding="10,10"/>
+                        </StackPanel>
+
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <!-- Type badge -->
+                                <Border CornerRadius="8" Padding="12,5" Margin="0,0,0,20"
+                                        HorizontalAlignment="Left"
+                                        Background="{Binding SelectedMod.TypeColor,
+                                            Converter={StaticResource StringToBrush}}">
+                                    <TextBlock Text="{Binding SelectedMod.TypeLabel}"
+                                               Foreground="White" FontSize="11"
+                                               FontWeight="ExtraBold"/>
+                                </Border>
+
+                                <TextBlock Style="{StaticResource DetailLabel}" Text="NAME"/>
+                                <TextBlock Style="{StaticResource DetailValue}"
+                                           Text="{Binding SelectedMod.Name}"
+                                           FontSize="16" FontWeight="Bold"/>
+
+                                <!-- Conflict list -->
+                                <ItemsControl ItemsSource="{Binding SelectedMod.ConflictDetails}"
+                                              Visibility="{Binding SelectedMod.HasConflict, Converter={StaticResource BoolToVis}}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Style="{StaticResource ErrorPill}">
+                                                <TextBlock Text="{Binding}"
+                                                           Foreground="{StaticResource DangerBrush}"
+                                                           FontSize="11" FontWeight="SemiBold"/>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Style="{StaticResource DetailLabel}" Text="VERSION"/>
+                                        <TextBlock Style="{StaticResource DetailValue}"
+                                                   Text="{Binding SelectedMod.Version, FallbackValue='—'}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Style="{StaticResource DetailLabel}" Text="AUTHOR"/>
+                                        <TextBlock Style="{StaticResource DetailValue}"
+                                                   Text="{Binding SelectedMod.Author, FallbackValue='—'}"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <TextBlock Style="{StaticResource DetailLabel}" Text="INSTALLED ON"/>
+                                <TextBlock Style="{StaticResource DetailValue}"
+                                           Text="{Binding SelectedMod.InstalledAt,
+                                               StringFormat='{}{0:MMM d, yyyy · HH:mm}'}"/>
+
+                                <TextBlock Style="{StaticResource DetailLabel}" Text="DLC PACK NAME"
+                                           Visibility="{Binding SelectedMod.DlcPackName, Converter={StaticResource StringToVis}, FallbackValue=Collapsed}"/>
+                                <TextBlock Style="{StaticResource DetailValue}"
+                                           Text="{Binding SelectedMod.DlcPackName}"
+                                           Visibility="{Binding SelectedMod.DlcPackName, Converter={StaticResource StringToVis}, FallbackValue=Collapsed}"/>
+
+                                <TextBlock Style="{StaticResource DetailLabel}" Text="NOTES"/>
+                                <TextBox Text="{Binding SelectedMod.Notes, UpdateSourceTrigger=PropertyChanged}"
+                                         AcceptsReturn="True" TextWrapping="Wrap" MinHeight="60"
+                                         Margin="0,0,0,16"/>
+
+                                <TextBlock Style="{StaticResource DetailLabel}" Text="INSTALLED FILES"/>
+                                <Border Background="{StaticResource Bg}" CornerRadius="8" Padding="12" Margin="0,4,0,0">
+                                    <StackPanel>
+                                        <ItemsControl ItemsSource="{Binding SelectedModFilesSample}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding}"
+                                                               Style="{StaticResource ConsoleText}"
+                                                               FontSize="11"
+                                                               TextTrimming="CharacterEllipsis"/>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <TextBlock Text="{Binding SelectedModFilesMoreText}"
+                                                   Foreground="{StaticResource TextFaint}"
+                                                   FontSize="11" Margin="0,6,0,0"
+                                                   FontStyle="Italic"
+                                                   Visibility="{Binding HasMoreSelectedFiles,
+                                                       Converter={StaticResource BoolToVis}}"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </DockPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+    </DockPanel>
+</UserControl>

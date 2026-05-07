@@ -1,0 +1,114 @@
+<UserControl x:Class="LSPDFRManager.Views.BrowseView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+             Background="{StaticResource Bg}"
+             FontFamily="Segoe UI"
+             Loaded="BrowseView_Loaded">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>  <!-- header -->
+            <RowDefinition Height="Auto"/>  <!-- toolbar -->
+            <RowDefinition Height="*"/>     <!-- browser fills everything else -->
+            <RowDefinition Height="Auto"/>  <!-- status bar -->
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="20,16,20,8">
+            <TextBlock Text="Browse Mods" Style="{StaticResource SectionHeader}"/>
+            <TextBlock Text="Browse lcpdfr.com and install mods directly."
+                       Foreground="{StaticResource TextMuted}" FontSize="13"/>
+        </StackPanel>
+
+        <!-- Toolbar -->
+        <Border Grid.Row="1"
+                Background="{StaticResource Surface}"
+                BorderBrush="{StaticResource Border}"
+                BorderThickness="1" CornerRadius="8"
+                Padding="6,5" Margin="20,0,20,8">
+            <DockPanel>
+                <Button x:Name="BackButton"
+                        DockPanel.Dock="Left"
+                        Style="{StaticResource IconButton}"
+                        Content="&#xE76B;" FontFamily="Segoe MDL2 Assets"
+                        ToolTip="Back" Click="BackButton_Click"
+                        Margin="0,0,3,0"/>
+                <Button x:Name="ForwardButton"
+                        DockPanel.Dock="Left"
+                        Style="{StaticResource IconButton}"
+                        Content="&#xE76C;" FontFamily="Segoe MDL2 Assets"
+                        ToolTip="Forward" Click="ForwardButton_Click"
+                        Margin="0,0,3,0"/>
+                <Button x:Name="RefreshButton"
+                        DockPanel.Dock="Left"
+                        Style="{StaticResource IconButton}"
+                        Content="&#xE72C;" FontFamily="Segoe MDL2 Assets"
+                        ToolTip="Refresh" Click="RefreshButton_Click"
+                        Margin="0,0,6,0"/>
+
+                <Button DockPanel.Dock="Right"
+                        Style="{StaticResource PrimaryButton}"
+                        Content="&#xE896;  Install This Mod"
+                        FontFamily="Segoe MDL2 Assets, Segoe UI"
+                        ToolTip="Click the download button on this mod page and queue for install"
+                        Click="InstallButton_Click"
+                        Margin="6,0,0,0" Padding="12,5"/>
+
+                <Grid>
+                    <TextBox x:Name="AddressBar"
+                             Text="{Binding CurrentUrl, UpdateSourceTrigger=PropertyChanged}"
+                             FontFamily="Consolas" FontSize="12"
+                             VerticalContentAlignment="Center">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Return" Command="{Binding NavigateCommand}"/>
+                        </TextBox.InputBindings>
+                    </TextBox>
+                    <TextBlock Text="https://www.lcpdfr.com/files/">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource PlaceholderText}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding CurrentUrl}" Value="">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
+            </DockPanel>
+        </Border>
+
+        <!-- WebView2 — Row 2 fills all remaining vertical space -->
+        <Border Grid.Row="2"
+                BorderBrush="{StaticResource Border}"
+                BorderThickness="1" CornerRadius="8"
+                Margin="20,0,20,0"
+                ClipToBounds="True">
+            <wv2:WebView2 x:Name="WebView"
+                          Source="https://www.lcpdfr.com/files/"
+                          NavigationStarting="WebView_NavigationStarting"
+                          NavigationCompleted="WebView_NavigationCompleted"/>
+        </Border>
+
+        <!-- Status bar -->
+        <Border Grid.Row="3"
+                Background="{StaticResource Surface}"
+                BorderBrush="{StaticResource Border}"
+                BorderThickness="0,1,0,0"
+                Padding="10,4" Margin="20,6,20,8">
+            <DockPanel>
+                <ProgressBar DockPanel.Dock="Right"
+                             Width="120" Height="4"
+                             Value="{Binding LoadProgress}" Maximum="100"
+                             Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}"
+                             Margin="8,0,0,0"/>
+                <TextBlock Text="{Binding StatusMessage}"
+                           Foreground="{StaticResource TextMuted}"
+                           FontSize="11" VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"/>
+            </DockPanel>
+        </Border>
+
+    </Grid>
+</UserControl>

@@ -1,0 +1,48 @@
+## .NET / WPF
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.swp
+*.orig
+
+## NuGet
+packages/
+*.nupkg
+
+## Build output
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Bb]uild*/
+publish/
+publish*/
+*.zip
+*.lscache
+
+## OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+## User-specific
+*.rsuser
+.idea/
+*.DotSettings.user
+.claude/
+lsp_agent_context/
+release-worktree/
+
+## Release artifacts (built locally, uploaded via GitHub Actions)
+release-package/
+zip-smoke/
+
+## Internal dev/planning docs (not for public repo)
+PHASE_C_STREAMING.md
+REFACTOR_SUMMARY.md
+
+## Test artifacts
+*.log
+test.log

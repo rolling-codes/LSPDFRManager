@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>LSPDFRManager</RootNamespace>
+    <AssemblyName>LSPDFRManager</AssemblyName>
+    <Description>Desktop mod manager for GTA V LSPDFR installations.</Description>
+    <Authors>rolling-codes</Authors>
+    <RepositoryUrl>https://github.com/rolling-codes/LSPDFRManager</RepositoryUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="LSPDFRManager.Api\**;LSPDFRManager.Tests\**;release-worktree\**" />
+    <EmbeddedResource Remove="LSPDFRManager.Api\**;LSPDFRManager.Tests\**;release-worktree\**" />
+    <None Remove="LSPDFRManager.Api\**;LSPDFRManager.Tests\**;release-worktree\**" />
+    <Page Remove="LSPDFRManager.Api\**;LSPDFRManager.Tests\**;release-worktree\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SharpCompress" Version="0.38.0" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2739.15" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="run.bat" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
+  </ItemGroup>
+
+</Project>
