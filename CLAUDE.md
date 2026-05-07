@@ -21,10 +21,10 @@ dotnet publish LSPDFRManager.csproj -c Release -r win-x64 --self-contained true 
 
 **Build release ZIP (framework-dependent)**
 ```bash
-dotnet publish LSPDFRManager.csproj -c Release -r win-x64 --self-contained false -o publish/v3.2.1 -p:DebugType=None -p:DebugSymbols=false
-New-Item -ItemType Directory -Path release-package/LSPDFRManager-v3.2.1 -Force
-Copy-Item -Path publish/v3.2.1/* -Destination release-package/LSPDFRManager-v3.2.1 -Recurse
-Compress-Archive -Path release-package/LSPDFRManager-v3.2.1 -DestinationPath LSPDFRManager-v3.2.1-win-x64.zip
+dotnet publish LSPDFRManager.csproj -c Release -r win-x64 --self-contained false -o publish/v3.5.0 -p:DebugType=None -p:DebugSymbols=false
+New-Item -ItemType Directory -Path release-package/LSPDFRManager-v3.5.0 -Force
+Copy-Item -Path publish/v3.5.0/* -Destination release-package/LSPDFRManager-v3.5.0 -Recurse
+Compress-Archive -Path release-package/LSPDFRManager-v3.5.0 -DestinationPath LSPDFRManager-v3.5.0-win-x64.zip
 ```
 
 ## Testing
@@ -58,7 +58,7 @@ dotnet test -v detailed
 
 ### Repository References
 - Repository: https://github.com/rolling-codes/LSPDFRManager
-- Current release notes: [RELEASE_v3.2.1.md](RELEASE_v3.2.1.md)
+- Current release notes: [RELEASE_v3.5.0.md](RELEASE_v3.5.0.md)
 - Desktop app project: [LSPDFRManager.csproj](LSPDFRManager.csproj)
 - Solution: [LSPDFRManager.sln](LSPDFRManager.sln)
 
