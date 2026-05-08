@@ -29,7 +29,7 @@
                                 <TextBlock Text="{Binding Name}" Foreground="{StaticResource TextPrimary}" FontSize="13" FontWeight="Medium"/>
                                 <TextBlock Foreground="{StaticResource TextMuted}" FontSize="11">
                                     <Run Text="Last used: "/>
-                                    <Run Text="{Binding LastUsedAt, TargetNullValue='Never', StringFormat='{}{0:yyyy-MM-dd}'}"/>
+                                    <Run Text="{Binding LastUsedAt, Mode=OneWay, TargetNullValue='Never', StringFormat='{}{0:yyyy-MM-dd}'}"/>
                                 </TextBlock>
                             </StackPanel>
                         </DataTemplate>

@@ -58,12 +58,12 @@
                         <TextBlock Text="Mods" Foreground="{StaticResource TextPrimary}" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,4"/>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Foreground="{StaticResource StatusOk}" FontSize="12" FontWeight="Bold">
-                                <Run Text="{Binding Status.EnabledModCount}"/>
+                                <Run Text="{Binding Status.EnabledModCount, Mode=OneWay}"/>
                                 <Run Text=" enabled"/>
                             </TextBlock>
                             <TextBlock Text=" · " Foreground="{StaticResource TextMuted}" FontSize="12"/>
                             <TextBlock Foreground="{StaticResource TextMuted}" FontSize="12">
-                                <Run Text="{Binding Status.DisabledModCount}"/>
+                                <Run Text="{Binding Status.DisabledModCount, Mode=OneWay}"/>
                                 <Run Text=" disabled"/>
                             </TextBlock>
                         </StackPanel>

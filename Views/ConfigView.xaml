@@ -59,9 +59,9 @@
                                                FontSize="13" FontWeight="SemiBold"/>
                                     <TextBlock Foreground="{StaticResource TextMuted}"
                                                FontSize="11" Margin="0,3,0,0">
-                                        <Run Text="{Binding ModName}"/>
+                                        <Run Text="{Binding ModName, Mode=OneWay}"/>
                                         <Run Text=" · "/>
-                                        <Run Text="{Binding LastModified,
+                                        <Run Text="{Binding LastModified, Mode=OneWay,
                                                    StringFormat='{}{0:MMM d, yyyy}'}"/>
                                     </TextBlock>
                                 </StackPanel>
