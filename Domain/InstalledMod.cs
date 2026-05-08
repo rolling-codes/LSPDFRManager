@@ -49,6 +49,9 @@ public class InstalledMod
     /// <summary>UTC timestamp of when the mod was installed.</summary>
     public DateTime InstalledAt { get; set; } = DateTime.Now;
 
+    /// <summary>Lower values load first when the user selects load-order sorting.</summary>
+    public int LoadOrderPriority { get; set; }
+
     /// <summary>Whether this mod has file conflicts with other installed mods.</summary>
     public bool HasConflict { get; set; }
 

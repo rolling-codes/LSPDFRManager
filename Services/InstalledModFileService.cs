@@ -70,13 +70,16 @@ public class InstalledModFileService
         }
 
         var installedFiles = otherMods
-            .SelectMany(mod => mod.InstalledFiles)
+            .SelectMany(mod => mod.InstalledFiles.Select(NormalizeDisabledPath))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         foreach (var file in candidate.InstalledFiles.Distinct(StringComparer.OrdinalIgnoreCase))
         {
-            if (installedFiles.Contains(file))
+            var normalized = NormalizeDisabledPath(file);
+            if (installedFiles.Contains(normalized))
                 conflicts.Add($"File conflict: {Path.GetFileName(file)}");
+            else if (File.Exists(normalized + ".disabled"))
+                conflicts.Add($"Disabled file conflict: {Path.GetFileName(file)}");
         }
 
         return conflicts;
@@ -106,6 +109,11 @@ public class InstalledModFileService
     }
 
     private static string GetDisabledPath(string file) => file + ".disabled";
+
+    private static string NormalizeDisabledPath(string path) =>
+        path.EndsWith(".disabled", StringComparison.OrdinalIgnoreCase)
+            ? path[..^".disabled".Length]
+            : path;
 
     private static void DeleteIfExists(string path)
     {

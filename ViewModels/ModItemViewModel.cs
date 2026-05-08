@@ -7,8 +7,11 @@ namespace LSPDFRManager.ViewModels;
 
 public class ModItemViewModel : ObservableObject
 {
+    private static readonly TimeSpan NotesSaveDelay = TimeSpan.FromMilliseconds(700);
+
     private readonly InstalledMod _mod;
     private readonly ModLibraryService _library;
+    private CancellationTokenSource? _notesSaveCts;
     private Brush _statusBrush;
     private bool _isInstalling;
     private bool _hasError;
@@ -144,7 +147,7 @@ public class ModItemViewModel : ObservableObject
 
             _mod.Notes = value;
             OnPropertyChanged(nameof(Notes));
-            _library.SaveProxy();
+            QueueNotesSave();
         }
     }
 
@@ -193,6 +196,26 @@ public class ModItemViewModel : ObservableObject
         }
 
         _library.Uninstall(_mod.Id);
+    }
+
+    private void QueueNotesSave()
+    {
+        _notesSaveCts?.Cancel();
+        _notesSaveCts?.Dispose();
+        var cts = new CancellationTokenSource();
+        _notesSaveCts = cts;
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(NotesSaveDelay, cts.Token).ConfigureAwait(false);
+                _library.SaveProxy();
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        }, cts.Token);
     }
 
     private void NotifyVisualStateChanged()

@@ -60,6 +60,16 @@ public partial class App : Application
         {
             issues.Add($"GTA V installation folder not found:\n  {gtaPath}\n  Open Settings to set the correct path.");
         }
+        else
+        {
+            var exePath = Path.Combine(gtaPath, "GTA5.exe");
+            if (!File.Exists(exePath))
+                issues.Add($"GTA5.exe was not found in:\n  {gtaPath}\n  Verify Settings points at the GTA V installation folder.");
+        }
+
+        AddDiskSpaceIssueIfNeeded(issues, AppDataPaths.Root, "App data");
+        if (!string.IsNullOrWhiteSpace(gtaPath) && Directory.Exists(gtaPath))
+            AddDiskSpaceIssueIfNeeded(issues, gtaPath, "GTA V install");
 
         if (issues.Count == 0)
             return;
@@ -69,5 +79,27 @@ public partial class App : Application
 
         MessageBox.Show(message, "LSPDFR Manager — Startup Issues",
             MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
+
+    private static void AddDiskSpaceIssueIfNeeded(List<string> issues, string path, string label)
+    {
+        try
+        {
+            var root = Path.GetPathRoot(Path.GetFullPath(path));
+            if (string.IsNullOrWhiteSpace(root))
+                return;
+
+            var drive = new DriveInfo(root);
+            var requiredBytes = (long)AppConfig.Instance.MinimumFreeDiskSpaceMb * 1024 * 1024;
+            if (drive.AvailableFreeSpace < requiredBytes)
+            {
+                issues.Add(
+                    $"{label} drive is low on free space:\n  {root}\n  Available: {drive.AvailableFreeSpace / 1024 / 1024:N0} MB; required: {AppConfig.Instance.MinimumFreeDiskSpaceMb:N0} MB.");
+            }
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Warning($"Disk-space check failed for '{path}': {ex.Message}");
+        }
     }
 }

@@ -16,6 +16,7 @@ public class InstallViewModel : ObservableObject
     private bool _isInstalling;
     private string _authorOverride = "";
     private string _nameOverride = "";
+    private string? _lastErrorMessage;
 
     public InstallViewModel()
     {
@@ -33,6 +34,7 @@ public class InstallViewModel : ObservableObject
         _queue.InstallFailed += (mod, error) =>
         {
             IsInstalling = false;
+            LastErrorMessage = $"Install failed: {error}";
             AddLog($"✗ Failed: {mod.Name} — {error}");
         };
 
@@ -96,6 +98,17 @@ public class InstallViewModel : ObservableObject
     public bool HasDetection => DetectedMod is not null;
     public bool HasNoDetection => DetectedMod is null;
     public bool ShowEmptyDetection => DetectedMod is null && !IsDetecting;
+    public bool HasLastError => !string.IsNullOrWhiteSpace(LastErrorMessage);
+
+    public string? LastErrorMessage
+    {
+        get => _lastErrorMessage;
+        set
+        {
+            if (SetProperty(ref _lastErrorMessage, value))
+                OnPropertyChanged(nameof(HasLastError));
+        }
+    }
 
     public string AuthorOverride
     {
@@ -214,8 +227,12 @@ public class InstallViewModel : ObservableObject
         if (DetectedMod is null)
             return;
 
+        LastErrorMessage = null;
         DetectedMod.Name = string.IsNullOrWhiteSpace(NameOverride) ? DetectedMod.Name : NameOverride.Trim();
         DetectedMod.Author = string.IsNullOrWhiteSpace(AuthorOverride) ? null : AuthorOverride.Trim();
+
+        if (!ResolveDuplicateBeforeInstall())
+            return;
 
         // Pre-install conflict check — includes disabled mods (their InstalledFiles store original paths)
         var gtaPath = AppConfig.Instance.GtaPath;
@@ -225,9 +242,17 @@ public class InstallViewModel : ObservableObject
 
         var conflictingMods = ModLibraryService.Instance.Mods
             .Where(mod => mod.InstalledFiles.Any(file =>
-                incomingPaths.Contains(Path.GetFullPath(file))))
+                incomingPaths.Contains(Path.GetFullPath(NormalizeDisabledPath(file)))))
             .Select(mod => $"  • {mod.Name}{(mod.IsEnabled ? "" : " (disabled)") }")
             .ToList();
+
+        var disabledFileConflicts = incomingPaths
+            .Where(path => File.Exists(path + ".disabled"))
+            .Select(path => $"  • {Path.GetFileName(path)} (disabled file exists)")
+            .Except(conflictingMods, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        conflictingMods.AddRange(disabledFileConflicts);
 
         if (conflictingMods.Count > 0)
         {
@@ -247,6 +272,55 @@ public class InstallViewModel : ObservableObject
 
         await Task.CompletedTask;
     }
+
+    private bool ResolveDuplicateBeforeInstall()
+    {
+        if (DetectedMod is null)
+            return false;
+
+        var duplicates = ModLibraryService.Instance.Mods
+            .Where(mod => mod.Name.Equals(DetectedMod.Name, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (duplicates.Count == 0)
+            return true;
+
+        var duplicateList = string.Join("\n", duplicates.Select(mod => $"  • {mod.Name} ({mod.TypeLabel})"));
+        var message =
+            $"A mod with this name is already installed:\n\n{duplicateList}\n\n" +
+            "Choose Yes to replace the installed copy, No to install this as a separate entry, or Cancel to skip.";
+
+        var result = System.Windows.MessageBox.Show(
+            message,
+            "Duplicate Mod Detected",
+            System.Windows.MessageBoxButton.YesNoCancel,
+            System.Windows.MessageBoxImage.Question);
+
+        if (result == System.Windows.MessageBoxResult.Cancel)
+        {
+            AddLog($"Skipped duplicate: {DetectedMod.Name}");
+            return false;
+        }
+
+        if (result == System.Windows.MessageBoxResult.Yes)
+        {
+            foreach (var duplicate in duplicates)
+                ModLibraryService.Instance.Uninstall(duplicate.Id);
+
+            AddLog($"Replacing duplicate install: {DetectedMod.Name}");
+        }
+        else
+        {
+            AddLog($"Installing duplicate as separate entry: {DetectedMod.Name}");
+        }
+
+        return true;
+    }
+
+    private static string NormalizeDisabledPath(string path) =>
+        path.EndsWith(".disabled", StringComparison.OrdinalIgnoreCase)
+            ? path[..^".disabled".Length]
+            : path;
 
     private void BrowseForArchive()
     {
@@ -271,11 +345,11 @@ public class InstallViewModel : ObservableObject
 
     private void AddLog(string message)
     {
-        const int MaxLogEntries = 500;
+        var maxLogEntries = Math.Max(25, AppConfig.Instance.MaxInstallLogEntries);
         UiDispatcher.Invoke(() =>
         {
             Log.Add($"[{DateTime.Now:HH:mm:ss}] {message}");
-            while (Log.Count > MaxLogEntries)
+            while (Log.Count > maxLogEntries)
                 Log.RemoveAt(0);
             LogAdded?.Invoke(message);
         });

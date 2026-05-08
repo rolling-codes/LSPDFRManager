@@ -76,17 +76,31 @@ public class ConfigViewModel : ObservableObject
             () =>
             {
                 if (_selectedConfig is null) return;
-                _configs.UpdateConfig(_selectedConfig.Id, EditContent);
+                var validationError = ValidateConfigContent(_selectedConfig.ConfigFileName, EditContent);
+                if (validationError is not null)
+                {
+                    StatusMessage = validationError;
+                    return;
+                }
 
                 // Write back to source file if it still exists
                 if (!string.IsNullOrEmpty(_selectedConfig.SourcePath) &&
                     File.Exists(_selectedConfig.SourcePath))
                 {
-                    File.WriteAllText(_selectedConfig.SourcePath, EditContent);
-                    StatusMessage = $"Saved to {System.IO.Path.GetFileName(_selectedConfig.SourcePath)}";
+                    try
+                    {
+                        WriteSourceConfigWithRollback(_selectedConfig.SourcePath, EditContent);
+                        _configs.UpdateConfig(_selectedConfig.Id, EditContent);
+                        StatusMessage = $"Saved to {System.IO.Path.GetFileName(_selectedConfig.SourcePath)}";
+                    }
+                    catch (Exception ex)
+                    {
+                        StatusMessage = $"Save failed and was rolled back: {ex.Message}";
+                    }
                 }
                 else
                 {
+                    _configs.UpdateConfig(_selectedConfig.Id, EditContent);
                     StatusMessage = "Config snapshot updated.";
                 }
             },
@@ -144,5 +158,54 @@ public class ConfigViewModel : ObservableObject
                 ? $"Extracted {added} config file(s) from installed mods."
                 : "No new config files found in installed mods.";
         });
+    }
+
+    private static string? ValidateConfigContent(string fileName, string content)
+    {
+        var extension = System.IO.Path.GetExtension(fileName);
+        try
+        {
+            if (extension.Equals(".json", StringComparison.OrdinalIgnoreCase))
+                using (JsonDocument.Parse(content)) { }
+            else if (extension.Equals(".xml", StringComparison.OrdinalIgnoreCase) ||
+                     extension.Equals(".meta", StringComparison.OrdinalIgnoreCase))
+                System.Xml.Linq.XDocument.Parse(content);
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            return $"Validation failed: {ex.Message}";
+        }
+    }
+
+    private static void WriteSourceConfigWithRollback(string sourcePath, string content)
+    {
+        var directory = System.IO.Path.GetDirectoryName(sourcePath)
+            ?? throw new InvalidOperationException("Config file has no parent folder.");
+        Directory.CreateDirectory(directory);
+
+        var backupPath = $"{sourcePath}.lspdfrmanager.bak";
+        var tempPath = System.IO.Path.Combine(directory, $".{System.IO.Path.GetFileName(sourcePath)}.{Guid.NewGuid():N}.tmp");
+
+        File.Copy(sourcePath, backupPath, overwrite: true);
+        File.WriteAllText(tempPath, content);
+
+        try
+        {
+            File.Move(tempPath, sourcePath, overwrite: true);
+            File.Delete(backupPath);
+        }
+        catch
+        {
+            if (File.Exists(backupPath))
+                File.Move(backupPath, sourcePath, overwrite: true);
+            throw;
+        }
+        finally
+        {
+            if (File.Exists(tempPath))
+                File.Delete(tempPath);
+        }
     }
 }

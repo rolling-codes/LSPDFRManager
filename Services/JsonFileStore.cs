@@ -2,6 +2,7 @@ namespace LSPDFRManager.Services;
 
 public sealed class JsonFileStore<T>
 {
+    private static readonly object FileLock = new();
     private readonly string _path;
     private readonly JsonSerializerOptions _serializerOptions = new()
     {
@@ -41,7 +42,17 @@ public sealed class JsonFileStore<T>
                 Directory.CreateDirectory(directory);
 
             var json = JsonSerializer.Serialize(value, _serializerOptions);
-            File.WriteAllText(_path, json);
+            var tempPath = $"{_path}.{Guid.NewGuid():N}.tmp";
+
+            lock (FileLock)
+            {
+                File.WriteAllText(tempPath, json);
+
+                if (File.Exists(_path))
+                    File.Replace(tempPath, _path, null);
+                else
+                    File.Move(tempPath, _path);
+            }
         }
         catch (Exception ex)
         {

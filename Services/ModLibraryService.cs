@@ -9,6 +9,7 @@ public class ModLibraryService
     private static ModLibraryService? _instance;
 
     private readonly InstalledModFileService _fileService = new();
+    private readonly object _mutationLock = new();
 
     public static ModLibraryService Instance => _instance ??= new ModLibraryService();
 
@@ -20,20 +21,29 @@ public class ModLibraryService
     public void Add(InstalledMod mod)
     {
         ArgumentNullException.ThrowIfNull(mod);
-        UiDispatcher.Invoke(() => Mods.Add(mod));
-        Save();
+        lock (_mutationLock)
+        {
+            if (mod.LoadOrderPriority <= 0)
+                mod.LoadOrderPriority = NextLoadOrderPriority();
+
+            UiDispatcher.Invoke(() => Mods.Add(mod));
+            Save();
+        }
     }
 
     public void Remove(Guid id)
     {
-        UiDispatcher.Invoke(() =>
+        lock (_mutationLock)
         {
-            var mod = Mods.FirstOrDefault(item => item.Id == id);
-            if (mod is not null)
-                Mods.Remove(mod);
-        });
+            UiDispatcher.Invoke(() =>
+            {
+                var mod = Mods.FirstOrDefault(item => item.Id == id);
+                if (mod is not null)
+                    Mods.Remove(mod);
+            });
 
-        Save();
+            Save();
+        }
     }
 
     public void SaveProxy() => Save();
@@ -50,9 +60,12 @@ public class ModLibraryService
         if (target is null || target.IsEnabled == enabled)
             return;
 
-        _fileService.SetEnabled(target, enabled);
-        ModUpdated?.Invoke(target);
-        Save();
+        lock (_mutationLock)
+        {
+            _fileService.SetEnabled(target, enabled);
+            ModUpdated?.Invoke(target);
+            Save();
+        }
     }
 
     public void SetEnabledBatch(IEnumerable<Guid> ids, bool enabled)
@@ -65,14 +78,52 @@ public class ModLibraryService
             targets = Mods.Where(mod => idSet.Contains(mod.Id) && mod.IsEnabled != enabled).ToList();
         });
 
-        foreach (var target in targets)
+        lock (_mutationLock)
         {
-            _fileService.SetEnabled(target, enabled);
-            ModUpdated?.Invoke(target);
-        }
+            foreach (var target in targets)
+            {
+                _fileService.SetEnabled(target, enabled);
+                ModUpdated?.Invoke(target);
+            }
 
-        if (targets.Count > 0)
+            if (targets.Count > 0)
+                Save();
+        }
+    }
+
+    public void SetLoadOrder(Guid id, int priority)
+    {
+        lock (_mutationLock)
+        {
+            var target = Mods.FirstOrDefault(mod => mod.Id == id);
+            if (target is null)
+                return;
+
+            target.LoadOrderPriority = priority;
+            ModUpdated?.Invoke(target);
             Save();
+        }
+    }
+
+    public void Reorder(Guid id, int direction)
+    {
+        lock (_mutationLock)
+        {
+            var ordered = Mods
+                .OrderBy(mod => mod.LoadOrderPriority == 0 ? int.MaxValue : mod.LoadOrderPriority)
+                .ThenBy(mod => mod.InstalledAt)
+                .ToList();
+            var index = ordered.FindIndex(mod => mod.Id == id);
+            var swapIndex = index + direction;
+
+            if (index < 0 || swapIndex < 0 || swapIndex >= ordered.Count)
+                return;
+
+            (ordered[index].LoadOrderPriority, ordered[swapIndex].LoadOrderPriority) =
+                (NormalizePriority(ordered[swapIndex], swapIndex), NormalizePriority(ordered[index], index));
+
+            Save();
+        }
     }
 
     public IEnumerable<InstalledMod> Search(string query)
@@ -104,8 +155,11 @@ public class ModLibraryService
         if (target is null)
             return;
 
-        _fileService.Uninstall(target, Mods);
-        Remove(id);
+        lock (_mutationLock)
+        {
+            _fileService.Uninstall(target, Mods);
+            Remove(id);
+        }
     }
 
     private void Load()
@@ -118,6 +172,12 @@ public class ModLibraryService
                 Mods.Add(item);
         });
     }
+
+    private int NextLoadOrderPriority() =>
+        Mods.Count == 0 ? 1 : Mods.Max(mod => mod.LoadOrderPriority) + 1;
+
+    private static int NormalizePriority(InstalledMod mod, int fallbackIndex) =>
+        mod.LoadOrderPriority == 0 ? fallbackIndex + 1 : mod.LoadOrderPriority;
 
     private void Save() => Store.Save(Mods.ToList());
 }

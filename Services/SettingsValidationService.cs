@@ -24,6 +24,10 @@ public class SettingsValidationService
         if (!IsWritable(AppDataPaths.Root))
             results.Add(new SettingsValidationResult { SettingName = "App Data Folder", Issue = "App data folder is not writable.", SuggestedFix = "Run as administrator or check permissions.", IsBlocking = true });
 
+        AddDiskSpaceResult(results, AppDataPaths.Root, "App Data Folder", true);
+        if (!string.IsNullOrWhiteSpace(cfg.GtaPath) && Directory.Exists(cfg.GtaPath))
+            AddDiskSpaceResult(results, cfg.GtaPath, "GTA V Path", true);
+
         if (cfg.AutoStartBrowseApi && !string.IsNullOrWhiteSpace(cfg.BrowseApiPath) && !File.Exists(cfg.BrowseApiPath))
             results.Add(new SettingsValidationResult { SettingName = "Browse API Path", Issue = "Configured executable not found.", SuggestedFix = "Check the Browse API path in Settings.", IsBlocking = false });
 
@@ -44,5 +48,31 @@ public class SettingsValidationService
             return true;
         }
         catch { return false; }
+    }
+
+    private static void AddDiskSpaceResult(List<SettingsValidationResult> results, string path, string settingName, bool isBlocking)
+    {
+        try
+        {
+            var root = Path.GetPathRoot(Path.GetFullPath(path));
+            if (string.IsNullOrWhiteSpace(root))
+                return;
+
+            var drive = new DriveInfo(root);
+            var requiredBytes = (long)AppConfig.Instance.MinimumFreeDiskSpaceMb * 1024 * 1024;
+            if (drive.AvailableFreeSpace < requiredBytes)
+            {
+                results.Add(new SettingsValidationResult
+                {
+                    SettingName = settingName,
+                    Issue = $"Only {drive.AvailableFreeSpace / 1024 / 1024:N0} MB free.",
+                    SuggestedFix = $"Free at least {AppConfig.Instance.MinimumFreeDiskSpaceMb:N0} MB before installing or backing up mods.",
+                    IsBlocking = isBlocking
+                });
+            }
+        }
+        catch
+        {
+        }
     }
 }

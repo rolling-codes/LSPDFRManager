@@ -68,6 +68,16 @@
                 <Button Style="{StaticResource GhostButton}"
                         Content="Disable visible"
                         Command="{Binding DisableVisibleCommand}"
+                        Margin="0,0,8,0"
+                        Padding="10,6"/>
+                <Button Style="{StaticResource GhostButton}"
+                        Content="Undo"
+                        Command="{Binding UndoBulkToggleCommand}"
+                        Margin="0,0,8,0"
+                        Padding="10,6"/>
+                <Button Style="{StaticResource GhostButton}"
+                        Content="Export enabled"
+                        Command="{Binding ExportEnabledModsCommand}"
                         Padding="10,6"/>
             </StackPanel>
 
@@ -198,6 +208,27 @@
                     <DockPanel Visibility="{Binding HasSelectedMod, Converter={StaticResource BoolToVis}}">
 
                         <StackPanel DockPanel.Dock="Bottom" Margin="0,16,0,0">
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0"
+                                        Style="{StaticResource GhostButton}"
+                                        Content="&#xE70E;  Up"
+                                        FontFamily="Segoe MDL2 Assets, Segoe UI"
+                                        Command="{Binding MoveSelectedUpCommand}"
+                                        HorizontalAlignment="Stretch"
+                                        Padding="10,8"/>
+                                <Button Grid.Column="2"
+                                        Style="{StaticResource GhostButton}"
+                                        Content="&#xE70D;  Down"
+                                        FontFamily="Segoe MDL2 Assets, Segoe UI"
+                                        Command="{Binding MoveSelectedDownCommand}"
+                                        HorizontalAlignment="Stretch"
+                                        Padding="10,8"/>
+                            </Grid>
                             <Button Style="{StaticResource GhostButton}"
                                     Content="&#xE838;  Open Folder"
                                     FontFamily="Segoe MDL2 Assets, Segoe UI"

@@ -50,7 +50,11 @@ public class ProfileManager
 
     public ModProfile Create(string name)
     {
-        var profile = new ModProfile { Name = name };
+        var profile = new ModProfile
+        {
+            Name = name,
+            Entries = SnapshotCurrentLibrary()
+        };
         _profiles.Add(profile);
         SaveProfile(profile);
         return profile;
@@ -62,7 +66,7 @@ public class ProfileManager
         {
             Name = $"{source.Name} (Copy)",
             Notes = source.Notes,
-            Entries = source.Entries.Select(e => new ProfileEntry { RelativePath = e.RelativePath, Enabled = e.Enabled }).ToList(),
+            Entries = source.Entries.Select(e => new ProfileEntry { RelativePath = e.RelativePath, Enabled = e.Enabled, LoadOrderPriority = e.LoadOrderPriority }).ToList(),
         };
         _profiles.Add(copy);
         SaveProfile(copy);
@@ -92,7 +96,8 @@ public class ProfileManager
             foreach (var entry in profile.Entries)
             {
                 var fullPath = Path.Combine(gtaPath, entry.RelativePath);
-                var isCurrentlyEnabled = File.Exists(fullPath) && !fullPath.EndsWith(".disabled");
+                var disabledPath = fullPath + ".disabled";
+                var isCurrentlyEnabled = File.Exists(fullPath) && !File.Exists(disabledPath);
                 if (isCurrentlyEnabled != entry.Enabled)
                 {
                     changes.Add(new SafeLaunchChange
@@ -124,10 +129,11 @@ public class ProfileManager
         {
             try
             {
-                if (change.WillBeEnabled && change.FilePath.EndsWith(".disabled"))
-                    File.Move(change.FilePath, change.FilePath[..^".disabled".Length]);
-                else if (!change.WillBeEnabled && !change.FilePath.EndsWith(".disabled"))
-                    File.Move(change.FilePath, change.FilePath + ".disabled");
+                var disabledPath = change.FilePath + ".disabled";
+                if (change.WillBeEnabled && File.Exists(disabledPath) && !File.Exists(change.FilePath))
+                    File.Move(disabledPath, change.FilePath);
+                else if (!change.WillBeEnabled && File.Exists(change.FilePath) && !File.Exists(disabledPath))
+                    File.Move(change.FilePath, disabledPath);
 
                 progress?.Report($"{(change.WillBeEnabled ? "Enabled" : "Disabled")}: {Path.GetFileName(change.FilePath)}");
             }
@@ -138,6 +144,7 @@ public class ProfileManager
         }
 
         profile.LastUsedAt = DateTime.UtcNow;
+        ApplyProfileStateToLibrary(profile);
         AppConfig.Instance.ActiveProfileId = profile.Id;
         AppConfig.Instance.Save();
         SaveProfile(profile);
@@ -177,6 +184,49 @@ public class ProfileManager
         var json = System.Text.Json.JsonSerializer.Serialize(profile, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(path, json);
     }
+
+    private static List<ProfileEntry> SnapshotCurrentLibrary()
+    {
+        var gtaPath = AppConfig.Instance.GtaPath;
+        return ModLibraryService.Instance.Mods
+            .SelectMany(mod => mod.InstalledFiles.Select(file => new ProfileEntry
+            {
+                RelativePath = Path.GetRelativePath(gtaPath, NormalizeDisabledPath(file)),
+                Enabled = mod.IsEnabled,
+                LoadOrderPriority = mod.LoadOrderPriority,
+            }))
+            .ToList();
+    }
+
+    private static void ApplyProfileStateToLibrary(ModProfile profile)
+    {
+        var entries = profile.Entries
+            .GroupBy(entry => entry.RelativePath, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
+
+        foreach (var mod in ModLibraryService.Instance.Mods)
+        {
+            var matched = mod.InstalledFiles
+                .Select(file => Path.GetRelativePath(AppConfig.Instance.GtaPath, NormalizeDisabledPath(file)))
+                .Select(relative => entries.TryGetValue(relative, out var entry) ? entry : null)
+                .Where(entry => entry is not null)
+                .ToList();
+
+            if (matched.Count == 0)
+                continue;
+
+            mod.IsEnabled = matched.Any(entry => entry!.Enabled);
+            var priority = matched.Where(entry => entry!.LoadOrderPriority > 0).Select(entry => entry!.LoadOrderPriority).DefaultIfEmpty(mod.LoadOrderPriority).Min();
+            mod.LoadOrderPriority = priority;
+        }
+
+        ModLibraryService.Instance.SaveProxy();
+    }
+
+    private static string NormalizeDisabledPath(string path) =>
+        path.EndsWith(".disabled", StringComparison.OrdinalIgnoreCase)
+            ? path[..^".disabled".Length]
+            : path;
 
     private static string ProfilePath(ModProfile profile) =>
         Path.Combine(AppDataPaths.ProfilesDirectory, $"{profile.Id}.json");

@@ -9,15 +9,13 @@ Designed for **LSPDFR plugins**, **vehicle add-ons**, and **GTA V script install
 
 ---
 
-## Current Release: v3.5.1 — Patch
+## Current Release: v3.5.2 — Safety and Profiles Patch
 
-v3.5.1 is a bug-fix patch for the v3.5.0 Command Center release. It fixes five reported issues: unbounded install log growth, slow bulk enable/disable operations, missing startup validation, disabled-mod conflict detection gaps, and unclear visual distinction for disabled mods.
+v3.5.2 is a patch release focused on safer installs, atomic library/config saves, debounced notes autosave, stronger startup validation, duplicate/conflict handling, profile/load-order improvements, and clearer troubleshooting.
 
-**Download:** [LSPDFRManager-v3.5.1-win-x64.zip](https://github.com/rolling-codes/LSPDFRManager/releases/download/v3.5.1/LSPDFRManager-v3.5.1-win-x64.zip)
+**Download:** [LSPDFRManager-v3.5.2-win-x64.zip](https://github.com/rolling-codes/LSPDFRManager/releases/download/v3.5.2/LSPDFRManager-v3.5.2-win-x64.zip)
 
-See the [v3.5.1 Release Notes](RELEASE_v3.5.1.md) for full details.
-
-> Previous major release: [v3.5.0 — Command Center Update](RELEASE_v3.5.0.md)
+See the [v3.5.2 Release Notes](RELEASE_v3.5.2.md) for full details.
 
 ---
 
@@ -70,9 +68,7 @@ See the [v3.5.1 Release Notes](RELEASE_v3.5.1.md) for full details.
 | **Pre-Launch Checklist** | Quick go/no-go check before launching GTA V or RPH. |
 | **Emergency Recovery Mode** | Disable all optional plugins, non-essential ASI, or scripts — always creates a restore point first. |
 | **Settings Validation** | Detects invalid paths, unwritable folders, and misconfigured Browse API settings. |
-| **Conflict-aware install** | Pre-install warning if incoming files clash with any mod — including disabled ones. |
-| **Startup validation** | Friendly dialog on launch if AppData is unwritable or GTA V path is missing. |
-| **220 tests, 0 failures.** | Full xUnit suite covering all core services and all new Command Center features. |
+| **223 tests, 0 failures.** | Full xUnit suite covering core services, install safety, library workflows, persistence, and conflict checks. |
 
 ### Supported GTA V Mod Types
 
@@ -102,7 +98,7 @@ powershell -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClie
 
 ### Manual Install
 
-1. Download `LSPDFRManager-v3.5.1-win-x64.zip` from the [Releases](https://github.com/rolling-codes/LSPDFRManager/releases) page.
+1. Download `LSPDFRManager-v3.5.2-win-x64.zip` from the [Releases](https://github.com/rolling-codes/LSPDFRManager/releases) page.
 2. Extract to any folder.
 3. Run `LSPDFRManager.exe` (or `run.bat` which also starts the API service).
 

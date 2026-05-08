@@ -70,6 +70,19 @@ public class InstallQueue : IDisposable
             var gtaPath = AppConfig.Instance.GtaPath;
             AppLogger.Info($"[INSTALL_START] {mod.Name} | source={mod.SourcePath} | target={gtaPath}");
 
+            if (AppConfig.Instance.AutoBackupOnInstall)
+            {
+                try
+                {
+                    var backupPath = await new BackupService().CreateBackupAsync().ConfigureAwait(false);
+                    AppLogger.Info($"[INSTALL_BACKUP] {mod.Name} | backup={backupPath}");
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.Warning($"Pre-install backup failed for '{mod.Name}': {ex.Message}");
+                }
+            }
+
             var result = await FileInstaller.InstallAsync(mod, gtaPath).ConfigureAwait(false);
             if (!result.Success)
             {

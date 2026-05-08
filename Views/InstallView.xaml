@@ -118,9 +118,11 @@
                         <TextBlock Text="&#xE9D9;" FontFamily="Segoe MDL2 Assets"
                                    FontSize="32" Foreground="{StaticResource Accent}"
                                    HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                        <TextBlock Text="Detecting archive..."
+                        <TextBlock Text="Reading archive and scanning install layout..."
                                    Foreground="{StaticResource TextMuted}" FontSize="13"
-                                   HorizontalAlignment="Center"/>
+                                   HorizontalAlignment="Center"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap"/>
                     </StackPanel>
 
                     <!-- Detection results -->
@@ -141,6 +143,15 @@
 
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel>
+                                <Border Style="{StaticResource ErrorPill}"
+                                        Visibility="{Binding HasLastError, Converter={StaticResource BoolToVis}}"
+                                        Margin="0,0,0,12">
+                                    <TextBlock Text="{Binding LastErrorMessage, Mode=OneWay}"
+                                               Foreground="{StaticResource DangerBrush}"
+                                               FontSize="12"
+                                               TextWrapping="Wrap"/>
+                                </Border>
+
                                 <!-- Type + confidence badges -->
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                                     <Border CornerRadius="6" Padding="10,4"

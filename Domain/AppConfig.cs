@@ -30,6 +30,8 @@ public class AppConfig
     /// after a successful install.
     /// </summary>
     public bool DeleteTempAfterInstall { get; set; } = true;
+    public int MaxInstallLogEntries { get; set; } = 500;
+    public int MinimumFreeDiskSpaceMb { get; set; } = 1024;
 
     // Browse API
     public bool AutoStartBrowseApi { get; set; }
@@ -44,6 +46,7 @@ public class AppConfig
 
     // Profiles
     public string? ActiveProfileId { get; set; }
+    public List<string> LibrarySearchHistory { get; set; } = [];
 
     // Setup Wizard
     public bool ShowSetupWizardOnStartup { get; set; } = true;

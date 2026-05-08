@@ -4,4 +4,5 @@ public class ProfileEntry
 {
     public string RelativePath { get; init; } = "";
     public bool Enabled { get; init; }
+    public int LoadOrderPriority { get; init; }
 }

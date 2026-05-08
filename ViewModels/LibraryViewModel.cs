@@ -17,6 +17,7 @@ public class LibraryViewModel : ObservableObject
     private string _selectedSort = "Installed: Newest first";
     private string _riskFilter = "All";
     private ModItemViewModel? _selectedMod;
+    private List<(Guid Id, bool WasEnabled)>? _lastBulkToggle;
 
     public LibraryViewModel()
     {
@@ -33,6 +34,10 @@ public class LibraryViewModel : ObservableObject
             () => FilteredMods.Any(mod => mod.IsEnabled));
 
         OpenModFolderCommand = new RelayCommand(OpenModFolder);
+        MoveSelectedUpCommand = new RelayCommand(() => MoveSelected(-1), () => SelectedMod is not null);
+        MoveSelectedDownCommand = new RelayCommand(() => MoveSelected(1), () => SelectedMod is not null);
+        UndoBulkToggleCommand = new RelayCommand(UndoBulkToggle, () => _lastBulkToggle?.Count > 0);
+        ExportEnabledModsCommand = new RelayCommand(ExportEnabledMods, () => _library.Mods.Any(mod => mod.IsEnabled));
         SetFilterCommand = new RelayCommand(filter =>
         {
             if (filter is string risk)
@@ -51,7 +56,10 @@ public class LibraryViewModel : ObservableObject
         set
         {
             if (SetProperty(ref _searchQuery, value))
+            {
+                RecordSearchHistory(value);
                 RefreshFiltered();
+            }
         }
     }
 
@@ -104,6 +112,7 @@ public class LibraryViewModel : ObservableObject
             OnPropertyChanged(nameof(SelectedModFilesSample));
             OnPropertyChanged(nameof(HasMoreSelectedFiles));
             OnPropertyChanged(nameof(SelectedModFilesMoreText));
+            CommandManager.InvalidateRequerySuggested();
         }
     }
 
@@ -112,6 +121,7 @@ public class LibraryViewModel : ObservableObject
     public int DisabledMods => _library.Mods.Count(mod => !mod.IsEnabled);
     public int FilteredCount => FilteredMods.Count;
     public bool IsEmpty => FilteredMods.Count == 0;
+    public IReadOnlyList<string> SearchHistory => AppConfig.Instance.LibrarySearchHistory;
 
     public bool HasSelectedMod => SelectedMod is not null;
     public bool HasNoSelectedMod => SelectedMod is null;
@@ -156,6 +166,7 @@ public class LibraryViewModel : ObservableObject
         "Name: Z to A",
         "Author: A to Z",
         "Enabled first",
+        "Load order",
     ];
 
     public ICommand ToggleEnabledCommand { get; }
@@ -164,6 +175,10 @@ public class LibraryViewModel : ObservableObject
     public ICommand OpenModFolderCommand { get; }
     public ICommand EnableVisibleCommand { get; }
     public ICommand DisableVisibleCommand { get; }
+    public ICommand UndoBulkToggleCommand { get; }
+    public ICommand MoveSelectedUpCommand { get; }
+    public ICommand MoveSelectedDownCommand { get; }
+    public ICommand ExportEnabledModsCommand { get; }
     public ICommand SetFilterCommand { get; }
 
     private void Refresh()
@@ -174,9 +189,57 @@ public class LibraryViewModel : ObservableObject
 
     private void SetVisibleModsEnabled(bool enabled)
     {
-        var ids = FilteredMods.Where(mod => mod.IsEnabled != enabled).Select(mod => mod.Id);
+        var targets = FilteredMods.Where(mod => mod.IsEnabled != enabled).ToList();
+        _lastBulkToggle = targets.Select(mod => (mod.Id, mod.IsEnabled)).ToList();
+        var ids = targets.Select(mod => mod.Id);
         _library.SetEnabledBatch(ids, enabled);
         Refresh();
+        CommandManager.InvalidateRequerySuggested();
+    }
+
+    private void UndoBulkToggle()
+    {
+        if (_lastBulkToggle is null || _lastBulkToggle.Count == 0)
+            return;
+
+        foreach (var (id, wasEnabled) in _lastBulkToggle)
+            _library.SetEnabled(id, wasEnabled);
+
+        _lastBulkToggle = null;
+        Refresh();
+        CommandManager.InvalidateRequerySuggested();
+    }
+
+    private void MoveSelected(int direction)
+    {
+        if (SelectedMod is null)
+            return;
+
+        var selectedId = SelectedMod.Id;
+        _library.Reorder(selectedId, direction);
+        RefreshFiltered();
+        SelectedMod = FilteredMods.FirstOrDefault(mod => mod.Id == selectedId);
+    }
+
+    private void ExportEnabledMods()
+    {
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "Export Enabled Mods",
+            Filter = "Markdown|*.md|Text|*.txt",
+            FileName = $"enabled-mods-{DateTime.Now:yyyy-MM-dd}.md",
+        };
+
+        if (dialog.ShowDialog() != true)
+            return;
+
+        var lines = _library.Mods
+            .Where(mod => mod.IsEnabled)
+            .OrderBy(mod => mod.LoadOrderPriority == 0 ? int.MaxValue : mod.LoadOrderPriority)
+            .ThenBy(mod => mod.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(mod => $"- {mod.Name} ({mod.TypeLabel}){(string.IsNullOrWhiteSpace(mod.Version) ? "" : $" v{mod.Version}")}");
+
+        File.WriteAllLines(dialog.FileName, ["# Enabled LSPDFR Mods", "", .. lines]);
     }
 
     private void OpenModFolder(object? parameter)
@@ -243,8 +306,25 @@ public class LibraryViewModel : ObservableObject
             "Name: Z to A" => mods.OrderByDescending(mod => mod.Name, StringComparer.OrdinalIgnoreCase),
             "Author: A to Z" => mods.OrderBy(mod => mod.Author, StringComparer.OrdinalIgnoreCase),
             "Enabled first" => mods.OrderByDescending(mod => mod.IsEnabled).ThenByDescending(mod => mod.InstalledAt),
+            "Load order" => mods.OrderBy(mod => mod.LoadOrderPriority == 0 ? int.MaxValue : mod.LoadOrderPriority).ThenBy(mod => mod.InstalledAt),
             _ => mods.OrderByDescending(mod => mod.InstalledAt),
         };
+    }
+
+    private void RecordSearchHistory(string value)
+    {
+        var query = value.Trim();
+        if (query.Length < 2)
+            return;
+
+        var history = AppConfig.Instance.LibrarySearchHistory;
+        history.RemoveAll(item => item.Equals(query, StringComparison.OrdinalIgnoreCase));
+        history.Insert(0, query);
+        if (history.Count > 10)
+            history.RemoveRange(10, history.Count - 10);
+
+        AppConfig.Instance.Save();
+        OnPropertyChanged(nameof(SearchHistory));
     }
 
     private void RaiseCountsChanged()

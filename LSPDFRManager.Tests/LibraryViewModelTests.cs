@@ -30,6 +30,21 @@ public class LibraryViewModelTests
     }
 
     [Fact]
+    public void SelectedSort_LoadOrder_UsesPersistentPriority()
+    {
+        _library.Mods.Add(new InstalledMod { Name = "Second", TypeLabel = "LSPDFR Plugin", LoadOrderPriority = 20, InstalledAt = DateTime.UtcNow });
+        _library.Mods.Add(new InstalledMod { Name = "First", TypeLabel = "LSPDFR Plugin", LoadOrderPriority = 10, InstalledAt = DateTime.UtcNow.AddMinutes(-2) });
+
+        var vm = new LibraryViewModel
+        {
+            SelectedSort = "Load order",
+        };
+
+        Assert.Equal("First", vm.FilteredMods[0].Name);
+        Assert.Equal("Second", vm.FilteredMods[1].Name);
+    }
+
+    [Fact]
     public void DisableVisibleCommand_DisablesOnlyFilteredMods()
     {
         var plugin = new InstalledMod { Name = "A", TypeLabel = "LSPDFR Plugin", IsEnabled = true };
