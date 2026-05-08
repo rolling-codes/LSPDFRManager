@@ -174,9 +174,8 @@ public class LibraryViewModel : ObservableObject
 
     private void SetVisibleModsEnabled(bool enabled)
     {
-        foreach (var mod in FilteredMods.Where(mod => mod.IsEnabled != enabled).ToList())
-            _library.SetEnabled(mod.Id, enabled);
-
+        var ids = FilteredMods.Where(mod => mod.IsEnabled != enabled).Select(mod => mod.Id);
+        _library.SetEnabledBatch(ids, enabled);
         Refresh();
     }
 

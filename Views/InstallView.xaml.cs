@@ -31,7 +31,11 @@ public partial class InstallView : UserControl
 
         if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
         var files = (string[])e.Data.GetData(DataFormats.FileDrop);
-        if (files.Length > 0 && VM is not null)
+        if (files.Length == 0 || VM is null) return;
+
+        if (files.Length == 1)
             _ = VM.DetectAsync(files[0]);
+        else
+            _ = VM.DetectBatchAsync(files);
     }
 }

@@ -7,28 +7,33 @@
 
     <DockPanel Margin="28,24,28,16">
 
+        <!-- Header -->
         <StackPanel DockPanel.Dock="Top" Margin="0,0,0,20">
             <TextBlock Text="Install Mod" Style="{StaticResource SectionHeader}"/>
             <TextBlock Text="Drop a .zip / .rar / .7z archive or browse to select one."
                        Foreground="{StaticResource TextMuted}" FontSize="13"/>
         </StackPanel>
 
+        <!-- Install log (docked bottom) -->
         <Border DockPanel.Dock="Bottom"
                 Background="{StaticResource Sidebar}"
                 BorderThickness="1" BorderBrush="{StaticResource Border}"
                 CornerRadius="12" Margin="0,20,0,0" Height="160">
             <DockPanel Margin="16,12">
-                <TextBlock DockPanel.Dock="Top" Text="INSTALLATION LOG"
-                           Foreground="{StaticResource TextFaint}"
-                           FontSize="10" FontWeight="Bold" Margin="0,0,0,10"/>
-                <ScrollViewer x:Name="LogScroller" VerticalScrollBarVisibility="Auto">
+                <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                    <Button DockPanel.Dock="Right"
+                            Style="{StaticResource GhostButton}"
+                            Content="Clear"
+                            Command="{Binding ClearLogCommand}"
+                            Padding="8,3" FontSize="11"/>
+                    <TextBlock Text="INSTALLATION LOG" Style="{StaticResource SectionLabel}"
+                               VerticalAlignment="Center"/>
+                </DockPanel>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <ItemsControl ItemsSource="{Binding Log}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding}"
-                                           Foreground="{StaticResource TextMuted}"
-                                           FontFamily="Consolas" FontSize="12"
-                                           Margin="0,2"/>
+                                <TextBlock Text="{Binding}" Style="{StaticResource ConsoleText}"/>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
@@ -36,6 +41,7 @@
             </DockPanel>
         </Border>
 
+        <!-- Two-column: drop zone + detection panel -->
         <Grid DockPanel.Dock="Top">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -43,6 +49,7 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
+            <!-- Drop zone -->
             <Border Grid.Column="0"
                     x:Name="DropZone"
                     Background="{StaticResource Surface}"
@@ -89,128 +96,122 @@
                 </Grid>
             </Border>
 
-            <Border Grid.Column="2" Background="{StaticResource Surface}"
+            <!-- Detection results panel -->
+            <Border Grid.Column="2" Style="{StaticResource CardPanel}"
                     CornerRadius="12" Padding="18">
                 <Grid>
 
-                <StackPanel Visibility="{Binding ShowEmptyDetection, Converter={StaticResource BoolToVis}}"
-                            VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <TextBlock Text="&#xE946;" FontFamily="Segoe MDL2 Assets"
-                               FontSize="32" Foreground="{StaticResource TextFaint}"
-                               HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                    <TextBlock Text="Detection results will&#x0a;appear here."
-                               Foreground="{StaticResource TextFaint}" FontSize="13"
-                               TextAlignment="Center" TextWrapping="Wrap"/>
-                </StackPanel>
-
-                <StackPanel Visibility="{Binding IsDetecting, Converter={StaticResource BoolToVis}}"
-                            VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <TextBlock Text="&#xE9D9;" FontFamily="Segoe MDL2 Assets"
-                               FontSize="32" Foreground="{StaticResource Accent}"
-                               HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                    <TextBlock Text="Detecting archive..."
-                               Foreground="{StaticResource TextMuted}" FontSize="13"
-                               HorizontalAlignment="Center"/>
-                </StackPanel>
-
-                <DockPanel Visibility="{Binding HasDetection, Converter={StaticResource BoolToVis}}">
-
-                    <StackPanel DockPanel.Dock="Top"
-                                Visibility="{Binding IsDetecting, Converter={StaticResource BoolToVis}}"
-                                Orientation="Horizontal" Margin="0,0,0,8">
-                        <TextBlock Text="Detecting…"
-                                   Foreground="{StaticResource TextMuted}" FontSize="12"/>
+                    <!-- Empty state -->
+                    <StackPanel Style="{StaticResource EmptyState}"
+                                Visibility="{Binding ShowEmptyDetection, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="&#xE946;" FontFamily="Segoe MDL2 Assets"
+                                   FontSize="32" Foreground="{StaticResource TextFaint}"
+                                   HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        <TextBlock Text="Detection results will&#x0a;appear here."
+                                   Foreground="{StaticResource TextFaint}" FontSize="13"
+                                   TextAlignment="Center" TextWrapping="Wrap"/>
                     </StackPanel>
 
-                    <StackPanel DockPanel.Dock="Bottom" Margin="0,14,0,0">
-                        <Button Style="{StaticResource PrimaryButton}"
-                                Content="Install Mod"
-                                Command="{Binding InstallCommand}"
-                                HorizontalAlignment="Stretch"
-                                IsEnabled="{Binding IsIdle}"/>
-                        <Button Style="{StaticResource GhostButton}"
-                                Content="Clear"
-                                Command="{Binding ClearCommand}"
-                                HorizontalAlignment="Stretch"
-                                Margin="0,8,0,0"/>
+                    <!-- Detecting spinner -->
+                    <StackPanel Style="{StaticResource EmptyState}"
+                                Visibility="{Binding IsDetecting, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="&#xE9D9;" FontFamily="Segoe MDL2 Assets"
+                                   FontSize="32" Foreground="{StaticResource Accent}"
+                                   HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        <TextBlock Text="Detecting archive..."
+                                   Foreground="{StaticResource TextMuted}" FontSize="13"
+                                   HorizontalAlignment="Center"/>
                     </StackPanel>
 
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                <Border CornerRadius="6" Padding="10,4"
-                                        Background="{Binding DetectedMod.TypeColor,
-                                            Converter={StaticResource StringToBrush}}">
-                                    <TextBlock Text="{Binding DetectedMod.TypeLabel}"
-                                               Foreground="White" FontSize="12"
-                                               FontWeight="SemiBold"/>
-                                </Border>
-                                <Border CornerRadius="6" Padding="8,4" Margin="8,0,0,0"
-                                        Background="{StaticResource Surface2}">
-                                    <TextBlock Foreground="{StaticResource TextMuted}" FontSize="12">
-                                        <Run Text="{Binding DetectedMod.ConfidenceLabel, Mode=OneWay}"/>
-                                        <Run Text=" confidence"/>
-                                    </TextBlock>
-                                </Border>
-                            </StackPanel>
+                    <!-- Detection results -->
+                    <DockPanel Visibility="{Binding HasDetection, Converter={StaticResource BoolToVis}}">
 
-                            <TextBlock Style="{StaticResource DetailLabel}" Text="MOD NAME"/>
-                            <TextBox Text="{Binding NameOverride, UpdateSourceTrigger=PropertyChanged}"
-                                     Margin="0,0,0,10"/>
-
-                            <TextBlock Style="{StaticResource DetailLabel}" Text="DETECTED VERSION"/>
-                            <TextBlock Foreground="{StaticResource TextPrimary}" FontSize="13"
-                                       Margin="0,0,0,10">
-                                <Run Text="{Binding DetectedMod.Version, Mode=OneWay, FallbackValue='—'}"/>
-                            </TextBlock>
-
-                            <TextBlock Style="{StaticResource DetailLabel}" Text="AUTHOR (OPTIONAL)"/>
-                            <TextBox Text="{Binding AuthorOverride, UpdateSourceTrigger=PropertyChanged}"
-                                     Margin="0,0,0,10"/>
-
-                            <TextBlock Style="{StaticResource DetailLabel}" Text="DLC PACK NAME"
-                                       Visibility="{Binding DetectedMod.IsAddon,
-                                           Converter={StaticResource BoolToVis}}"/>
-                            <TextBlock Foreground="{StaticResource TextMuted}" FontSize="12"
-                                       Margin="0,0,0,10" FontFamily="Consolas"
-                                       Text="{Binding DetectedMod.DlcPackName}"
-                                       Visibility="{Binding DetectedMod.IsAddon,
-                                           Converter={StaticResource BoolToVis}}"/>
-
-                            <TextBlock Style="{StaticResource DetailLabel}" Text="FILES DETECTED"/>
-                            <ItemsControl ItemsSource="{Binding DetectedFilesSample}"
-                                          Margin="0,2,0,0">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding}"
-                                                   Foreground="{StaticResource TextMuted}"
-                                                   FontFamily="Consolas" FontSize="11"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   Margin="0,1"/>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                            <TextBlock Text="{Binding DetectedFilesMoreText}"
-                                       Foreground="{StaticResource TextFaint}"
-                                       FontSize="11" Margin="0,3,0,8"
-                                       Visibility="{Binding HasMoreDetectedFiles,
-                                           Converter={StaticResource BoolToVis}}"/>
-
-                            <ItemsControl ItemsSource="{Binding DetectedMod.Warnings}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Background="#1C1200" CornerRadius="6"
-                                                Padding="10,6" Margin="0,2">
-                                            <TextBlock Text="{Binding}"
-                                                       Foreground="#F59E0B" FontSize="12"
-                                                       TextWrapping="Wrap"/>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                        <StackPanel DockPanel.Dock="Bottom" Margin="0,14,0,0">
+                            <Button Style="{StaticResource PrimaryButton}"
+                                    Content="Install Mod"
+                                    Command="{Binding InstallCommand}"
+                                    HorizontalAlignment="Stretch"
+                                    IsEnabled="{Binding IsIdle}"/>
+                            <Button Style="{StaticResource GhostButton}"
+                                    Content="Clear"
+                                    Command="{Binding ClearCommand}"
+                                    HorizontalAlignment="Stretch"
+                                    Margin="0,8,0,0"/>
                         </StackPanel>
-                    </ScrollViewer>
-                </DockPanel>
+
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <!-- Type + confidence badges -->
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                    <Border CornerRadius="6" Padding="10,4"
+                                            Background="{Binding DetectedMod.TypeColor,
+                                                Converter={StaticResource StringToBrush}}">
+                                        <TextBlock Text="{Binding DetectedMod.TypeLabel}"
+                                                   Foreground="White" FontSize="12"
+                                                   FontWeight="SemiBold"/>
+                                    </Border>
+                                    <Border CornerRadius="6" Padding="8,4" Margin="8,0,0,0"
+                                            Background="{StaticResource Surface2}">
+                                        <TextBlock Foreground="{StaticResource TextMuted}" FontSize="12">
+                                            <Run Text="{Binding DetectedMod.ConfidenceLabel, Mode=OneWay}"/>
+                                            <Run Text=" confidence"/>
+                                        </TextBlock>
+                                    </Border>
+                                </StackPanel>
+
+                                <TextBlock Style="{StaticResource DetailLabel}" Text="MOD NAME"/>
+                                <TextBox Text="{Binding NameOverride, UpdateSourceTrigger=PropertyChanged}"
+                                         Margin="0,0,0,10"/>
+
+                                <TextBlock Style="{StaticResource DetailLabel}" Text="DETECTED VERSION"/>
+                                <TextBlock Foreground="{StaticResource TextPrimary}" FontSize="13" Margin="0,0,0,10">
+                                    <Run Text="{Binding DetectedMod.Version, Mode=OneWay, FallbackValue='—'}"/>
+                                </TextBlock>
+
+                                <TextBlock Style="{StaticResource DetailLabel}" Text="AUTHOR (OPTIONAL)"/>
+                                <TextBox Text="{Binding AuthorOverride, UpdateSourceTrigger=PropertyChanged}"
+                                         Margin="0,0,0,10"/>
+
+                                <TextBlock Style="{StaticResource DetailLabel}" Text="DLC PACK NAME"
+                                           Visibility="{Binding DetectedMod.IsAddon, Converter={StaticResource BoolToVis}}"/>
+                                <TextBlock Foreground="{StaticResource TextMuted}" FontSize="12"
+                                           Margin="0,0,0,10" FontFamily="Consolas"
+                                           Text="{Binding DetectedMod.DlcPackName}"
+                                           Visibility="{Binding DetectedMod.IsAddon, Converter={StaticResource BoolToVis}}"/>
+
+                                <TextBlock Style="{StaticResource DetailLabel}" Text="FILES DETECTED"/>
+                                <ItemsControl ItemsSource="{Binding DetectedFilesSample}" Margin="0,2,0,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}"
+                                                       Style="{StaticResource ConsoleText}"
+                                                       FontSize="11"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Text="{Binding DetectedFilesMoreText}"
+                                           Foreground="{StaticResource TextFaint}"
+                                           FontSize="11" Margin="0,3,0,8"
+                                           Visibility="{Binding HasMoreDetectedFiles,
+                                               Converter={StaticResource BoolToVis}}"/>
+
+                                <!-- Warnings -->
+                                <ItemsControl ItemsSource="{Binding DetectedMod.Warnings}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Style="{StaticResource InlineWarnPill}">
+                                                <TextBlock Text="{Binding}"
+                                                           Foreground="{StaticResource WarningText}"
+                                                           FontSize="12"
+                                                           TextWrapping="Wrap"/>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </DockPanel>
                 </Grid>
             </Border>
         </Grid>

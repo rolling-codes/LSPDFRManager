@@ -9,14 +9,34 @@ echo.
 
 dotnet --list-runtimes 2>nul | find "WindowsDesktop.App 8." >nul 2>&1
 
-if %errorlevel% equ 0 (
-    echo [OK] .NET 8 Desktop Runtime found. Launching LSPDFRManager...
-    echo.
-    powershell -Command "[System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms') | Out-Null; [System.Windows.Forms.MessageBox]::Show('LSPDFRManager is launching...', 'Success', [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)" >nul 2>&1
-    LSPDFRManager.exe
-    exit /b 0
+if %errorlevel% neq 0 goto :install_dotnet
+
+:launch
+echo [OK] .NET 8 Desktop Runtime found.
+echo.
+
+:: Kill any leftover API process from a previous run
+taskkill /IM LSPDFRManager.Api.exe /F >nul 2>&1
+timeout /t 1 /nobreak >nul 2>&1
+
+:: Start the API server hidden in the background
+if exist "%~dp0LSPDFRManager.Api.exe" (
+    echo Starting LSPDFRManager.Api...
+    start "" /B "%~dp0LSPDFRManager.Api.exe"
+    echo [OK] API server started.
+) else (
+    echo [WARN] LSPDFRManager.Api.exe not found - Browse tab will be unavailable.
 )
 
+echo Launching LSPDFRManager...
+echo.
+"%~dp0LSPDFRManager.exe"
+
+:: Clean up API when main app exits
+taskkill /IM LSPDFRManager.Api.exe /F >nul 2>&1
+exit /b 0
+
+:install_dotnet
 echo [ERROR] .NET 8 Desktop Runtime not found.
 echo.
 echo Attempting to download and install .NET 8 Desktop Runtime...
@@ -34,7 +54,6 @@ if %errorlevel% neq 0 (
     echo Download and install manually from:
     echo https://dotnet.microsoft.com/en-us/download/dotnet/8.0
     echo.
-    echo Then run this script again.
     pause
     exit /b 1
 )
@@ -42,24 +61,12 @@ if %errorlevel% neq 0 (
 echo Running installer (this may take a minute)...
 "%INSTALLER%" /quiet /norestart >nul 2>&1
 
-if %errorlevel% neq 0 (
-    echo [WARNING] Installer exited with status %errorlevel%
-    echo Verifying .NET 8 installation...
-    echo.
-)
-
 timeout /t 3 /nobreak >nul 2>&1
 
 dotnet --list-runtimes 2>nul | find "WindowsDesktop.App 8." >nul 2>&1
 
 if %errorlevel% equ 0 (
-    echo.
-    echo [OK] .NET 8 Desktop Runtime installed successfully!
-    echo Launching LSPDFRManager...
-    echo.
-    powershell -Command "[System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms') | Out-Null; [System.Windows.Forms.MessageBox]::Show('.NET 8 installed successfully. LSPDFRManager is launching...', 'Success', [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)" >nul 2>&1
-    LSPDFRManager.exe
-    exit /b 0
+    goto :launch
 ) else (
     echo [FAILED] .NET 8 Desktop Runtime still not found.
     echo.

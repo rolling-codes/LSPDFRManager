@@ -30,7 +30,7 @@ public class LspdfrApiClient
 
     private readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(20) };
 
-    public string BaseUrl { get; set; } = "http://localhost:5284";
+    public string BaseUrl { get; set; } = "http://localhost:5000";
 
     public async Task<List<ModSearchResult>> SearchAsync(
         string query,

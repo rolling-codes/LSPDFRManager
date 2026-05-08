@@ -34,3 +34,15 @@ desktop.ini
 .claude/
 lsp_agent_context/
 release-worktree/
+
+## Release artifacts (built locally, uploaded via GitHub Actions)
+release-package/
+zip-smoke/
+
+## Internal dev/planning docs (not for public repo)
+PHASE_C_STREAMING.md
+REFACTOR_SUMMARY.md
+
+## Test artifacts
+*.log
+test.log

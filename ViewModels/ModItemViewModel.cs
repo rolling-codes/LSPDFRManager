@@ -109,6 +109,7 @@ public class ModItemViewModel : ObservableObject
         set => SetProperty(ref _errorMessage, value);
     }
 
+    public bool IsDisabled => !IsEnabled;
     public double Opacity => IsEnabled ? 1.0 : 0.6;
     public Brush StatusBrush => _statusBrush;
 
@@ -197,6 +198,7 @@ public class ModItemViewModel : ObservableObject
     private void NotifyVisualStateChanged()
     {
         OnPropertyChanged(nameof(IsEnabled));
+        OnPropertyChanged(nameof(IsDisabled));
         OnPropertyChanged(nameof(Opacity));
         OnPropertyChanged(nameof(StatusBrush));
         OnPropertyChanged(nameof(StatusText));

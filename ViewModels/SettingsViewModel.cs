@@ -15,6 +15,8 @@ public class SettingsViewModel : ObservableObject
     private bool _autoBackup = AppConfig.Instance.AutoBackupOnInstall;
     private bool _confirmUninstall = AppConfig.Instance.ConfirmBeforeUninstall;
     private bool _autoLaunch = AppConfig.Instance.AutoLaunchAfterInstall;
+    private bool _autoInstallHighConfidence = AppConfig.Instance.AutoInstallHighConfidence;
+    private bool _deleteTempAfterInstall = AppConfig.Instance.DeleteTempAfterInstall;
     private string _statusMessage = "";
     private bool _isBusy;
 
@@ -91,6 +93,30 @@ public class SettingsViewModel : ObservableObject
                 return;
 
             AppConfig.Instance.AutoLaunchAfterInstall = value;
+        }
+    }
+
+    public bool AutoInstallHighConfidence
+    {
+        get => _autoInstallHighConfidence;
+        set
+        {
+            if (!SetProperty(ref _autoInstallHighConfidence, value))
+                return;
+
+            AppConfig.Instance.AutoInstallHighConfidence = value;
+        }
+    }
+
+    public bool DeleteTempAfterInstall
+    {
+        get => _deleteTempAfterInstall;
+        set
+        {
+            if (!SetProperty(ref _deleteTempAfterInstall, value))
+                return;
+
+            AppConfig.Instance.DeleteTempAfterInstall = value;
         }
     }
 

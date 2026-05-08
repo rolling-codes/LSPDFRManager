@@ -87,6 +87,7 @@ public class InstallQueue : IDisposable
             InstallCompleted?.Invoke(installed);
             AppLogger.Info($"[INSTALL_SUCCESS] {mod.Name} | filesWritten={result.FilesWritten} | type={mod.Type}");
 
+            TryDeleteTempSource(mod.SourcePath);
             queued.Completion.TrySetResult(result);
         }
         catch (Exception ex)
@@ -136,6 +137,27 @@ public class InstallQueue : IDisposable
 
         InstallFailed?.Invoke(mod, result.Error ?? "Unknown error");
         InstallFailedWithResult?.Invoke(mod, result);
+    }
+
+    private static void TryDeleteTempSource(string sourcePath)
+    {
+        if (!AppConfig.Instance.DeleteTempAfterInstall) return;
+
+        var tempDownloadDir = Path.Combine(Path.GetTempPath(), "LSPDFRManager_downloads");
+        if (!sourcePath.StartsWith(tempDownloadDir, StringComparison.OrdinalIgnoreCase)) return;
+
+        try
+        {
+            if (File.Exists(sourcePath))
+            {
+                File.Delete(sourcePath);
+                AppLogger.Info($"[CLEANUP] Deleted temp source: {sourcePath}");
+            }
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Error($"[CLEANUP] Could not delete temp source: {sourcePath}", ex);
+        }
     }
 
     public void Dispose()

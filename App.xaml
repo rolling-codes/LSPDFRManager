@@ -25,6 +25,24 @@
             <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
                 <views:SettingsView/>
             </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
+                <views:DashboardView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:DiagnosticsViewModel}">
+                <views:DiagnosticsView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:ProfilesViewModel}">
+                <views:ProfilesView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:BackupsViewModel}">
+                <views:BackupsView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:HistoryViewModel}">
+                <views:HistoryView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:LogViewerViewModel}">
+                <views:LogViewerView/>
+            </DataTemplate>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

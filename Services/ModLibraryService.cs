@@ -55,6 +55,26 @@ public class ModLibraryService
         Save();
     }
 
+    public void SetEnabledBatch(IEnumerable<Guid> ids, bool enabled)
+    {
+        var idSet = ids.ToHashSet();
+        List<InstalledMod> targets = [];
+
+        UiDispatcher.Invoke(() =>
+        {
+            targets = Mods.Where(mod => idSet.Contains(mod.Id) && mod.IsEnabled != enabled).ToList();
+        });
+
+        foreach (var target in targets)
+        {
+            _fileService.SetEnabled(target, enabled);
+            ModUpdated?.Invoke(target);
+        }
+
+        if (targets.Count > 0)
+            Save();
+    }
+
     public IEnumerable<InstalledMod> Search(string query)
     {
         if (string.IsNullOrWhiteSpace(query))
