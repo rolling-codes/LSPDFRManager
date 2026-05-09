@@ -31,6 +31,7 @@
 
   <ItemGroup>
     <None Include="run.bat" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
+    <Resource Include="Resources\app.ico"/>
   </ItemGroup>
 
 </Project>
