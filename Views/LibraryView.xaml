@@ -91,12 +91,12 @@
                         Command="{Binding SetFilterCommand}" CommandParameter="All"
                         Margin="0,0,6,0" Padding="10,6">
                     <Button.Style>
-                        <Style TargetType="Button" BasedOn="{StaticResource GhostButton}">
+                        <Style TargetType="Button" BasedOn="{StaticResource FilterPill}">
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsRiskAllActive}" Value="True">
-                                    <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
-                                    <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
-                                    <Setter Property="Background" Value="{StaticResource AccentActiveBg}"/>
+                                    <Setter Property="Background"   Value="{StaticResource AccentActiveBg}"/>
+                                    <Setter Property="BorderBrush"  Value="{StaticResource AccentPrimary}"/>
+                                    <Setter Property="Foreground"   Value="{StaticResource AccentPrimary}"/>
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
@@ -106,12 +106,12 @@
                         Command="{Binding SetFilterCommand}" CommandParameter="Safe"
                         Margin="0,0,6,0" Padding="10,6">
                     <Button.Style>
-                        <Style TargetType="Button" BasedOn="{StaticResource GhostButton}">
+                        <Style TargetType="Button" BasedOn="{StaticResource FilterPill}">
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsRiskSafeActive}" Value="True">
-                                    <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
-                                    <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
-                                    <Setter Property="Background" Value="{StaticResource AccentActiveBg}"/>
+                                    <Setter Property="Background"   Value="{StaticResource AccentActiveBg}"/>
+                                    <Setter Property="BorderBrush"  Value="{StaticResource AccentPrimary}"/>
+                                    <Setter Property="Foreground"   Value="{StaticResource AccentPrimary}"/>
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
@@ -121,12 +121,12 @@
                         Command="{Binding SetFilterCommand}" CommandParameter="Medium"
                         Margin="0,0,6,0" Padding="10,6">
                     <Button.Style>
-                        <Style TargetType="Button" BasedOn="{StaticResource GhostButton}">
+                        <Style TargetType="Button" BasedOn="{StaticResource FilterPill}">
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsRiskMediumActive}" Value="True">
-                                    <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
-                                    <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
-                                    <Setter Property="Background" Value="{StaticResource AccentActiveBg}"/>
+                                    <Setter Property="Background"   Value="{StaticResource AccentActiveBg}"/>
+                                    <Setter Property="BorderBrush"  Value="{StaticResource AccentPrimary}"/>
+                                    <Setter Property="Foreground"   Value="{StaticResource AccentPrimary}"/>
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
@@ -136,12 +136,12 @@
                         Command="{Binding SetFilterCommand}" CommandParameter="High"
                         Padding="10,6">
                     <Button.Style>
-                        <Style TargetType="Button" BasedOn="{StaticResource GhostButton}">
+                        <Style TargetType="Button" BasedOn="{StaticResource FilterPill}">
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsRiskHighActive}" Value="True">
-                                    <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
-                                    <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
-                                    <Setter Property="Background" Value="{StaticResource AccentActiveBg}"/>
+                                    <Setter Property="Background"   Value="{StaticResource AccentActiveBg}"/>
+                                    <Setter Property="BorderBrush"  Value="{StaticResource AccentPrimary}"/>
+                                    <Setter Property="Foreground"   Value="{StaticResource AccentPrimary}"/>
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>

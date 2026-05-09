@@ -8,6 +8,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>LSPDFRManager</RootNamespace>
     <AssemblyName>LSPDFRManager</AssemblyName>
+    <ApplicationIcon>Resources\app.ico</ApplicationIcon>
     <Description>Desktop mod manager for GTA V LSPDFR installations.</Description>
     <Authors>rolling-codes</Authors>
     <RepositoryUrl>https://github.com/rolling-codes/LSPDFRManager</RepositoryUrl>

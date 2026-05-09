@@ -2,65 +2,78 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- ══ Base surfaces ════════════════════════════════════════════ -->
-    <SolidColorBrush x:Key="AppBackground"      Color="#0A0C10"/>
-    <SolidColorBrush x:Key="PanelBackground"    Color="#161B22"/>
-    <SolidColorBrush x:Key="PanelAltBackground" Color="#21262D"/>
-    <SolidColorBrush x:Key="SidebarBackground"  Color="#010409"/>
+    <SolidColorBrush x:Key="AppBackground"      Color="#0B0D13"/>
+    <SolidColorBrush x:Key="PanelBackground"    Color="#111420"/>
+    <SolidColorBrush x:Key="PanelAltBackground" Color="#1A1E2E"/>
+    <SolidColorBrush x:Key="SidebarBackground"  Color="#080A10"/>
 
     <!-- ══ Borders ══════════════════════════════════════════════════ -->
-    <SolidColorBrush x:Key="BorderSubtle"       Color="#30363D"/>
+    <SolidColorBrush x:Key="BorderSubtle"       Color="#252B3B"/>
+    <SolidColorBrush x:Key="BorderActive"       Color="#3B82F6"/>
 
-    <!-- ══ Accent ═══════════════════════════════════════════════════ -->
-    <SolidColorBrush x:Key="AccentPrimary"      Color="#58A6FF"/>
-    <SolidColorBrush x:Key="AccentSecondary"    Color="#1F6FEB"/>
+    <!-- ══ Accent — blue primary, gold secondary ═══════════════════ -->
+    <SolidColorBrush x:Key="AccentPrimary"      Color="#3B82F6"/>
+    <SolidColorBrush x:Key="AccentSecondary"    Color="#2563EB"/>
     <SolidColorBrush x:Key="AccentActiveBg"     Color="#0F1E3D"/>
+    <SolidColorBrush x:Key="AccentGold"         Color="#F59E0B"/>
+    <SolidColorBrush x:Key="AccentGoldDim"      Color="#78490A"/>
+
+    <!-- Gradient brushes for primary buttons -->
+    <LinearGradientBrush x:Key="AccentGradient" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#3B82F6" Offset="0"/>
+        <GradientStop Color="#1D4ED8" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="AccentGradientHover" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#60A5FA" Offset="0"/>
+        <GradientStop Color="#2563EB" Offset="1"/>
+    </LinearGradientBrush>
 
     <!-- ══ Semantic status ══════════════════════════════════════════ -->
-    <SolidColorBrush x:Key="SuccessBrush"       Color="#3FB950"/>
-    <SolidColorBrush x:Key="WarningBrush"       Color="#D29922"/>
-    <SolidColorBrush x:Key="DangerBrush"        Color="#F85149"/>
+    <SolidColorBrush x:Key="SuccessBrush"       Color="#10B981"/>
+    <SolidColorBrush x:Key="WarningBrush"       Color="#F59E0B"/>
+    <SolidColorBrush x:Key="DangerBrush"        Color="#EF4444"/>
 
     <!-- ══ Text ═════════════════════════════════════════════════════ -->
-    <SolidColorBrush x:Key="TextStrong"         Color="#F0F6FC"/>
-    <SolidColorBrush x:Key="TextMuted"          Color="#8B949E"/>
-    <SolidColorBrush x:Key="TextSubtle"         Color="#484F58"/>
-    <SolidColorBrush x:Key="PlaceholderFg"      Color="#3D4F6A"/>
+    <SolidColorBrush x:Key="TextStrong"         Color="#F1F5F9"/>
+    <SolidColorBrush x:Key="TextMuted"          Color="#94A3B8"/>
+    <SolidColorBrush x:Key="TextSubtle"         Color="#475569"/>
+    <SolidColorBrush x:Key="PlaceholderFg"      Color="#334155"/>
 
     <!-- ══ Error banner ═════════════════════════════════════════════ -->
-    <SolidColorBrush x:Key="ErrorBackground"    Color="#2D1B1B"/>
-    <SolidColorBrush x:Key="ErrorBorder"        Color="#DC2626"/>
+    <SolidColorBrush x:Key="ErrorBackground"    Color="#1F0A0A"/>
+    <SolidColorBrush x:Key="ErrorBorder"        Color="#EF4444"/>
     <SolidColorBrush x:Key="ErrorText"          Color="#FCA5A5"/>
 
     <!-- ══ Warning banner ═══════════════════════════════════════════ -->
-    <SolidColorBrush x:Key="WarningBackground"  Color="#1C0F00"/>
-    <SolidColorBrush x:Key="WarningBorder"      Color="#D29922"/>
-    <SolidColorBrush x:Key="WarningText"        Color="#F59E0B"/>
+    <SolidColorBrush x:Key="WarningBackground"  Color="#1A1000"/>
+    <SolidColorBrush x:Key="WarningBorder"      Color="#F59E0B"/>
+    <SolidColorBrush x:Key="WarningText"        Color="#FCD34D"/>
     <SolidColorBrush x:Key="WarningTextSubtle"  Color="#92601A"/>
 
     <!-- ══ Inline warning (install detection) ═══════════════════════ -->
-    <SolidColorBrush x:Key="InlineWarnBg"       Color="#1C1200"/>
+    <SolidColorBrush x:Key="InlineWarnBg"       Color="#1A1000"/>
 
     <!-- ══ Status indicators ════════════════════════════════════════ -->
     <SolidColorBrush x:Key="StatusOk"           Color="#10B981"/>
     <SolidColorBrush x:Key="StatusError"        Color="#EF4444"/>
     <SolidColorBrush x:Key="StatusEnabled"      Color="#10B981"/>
-    <SolidColorBrush x:Key="StatusDisabled"     Color="#3D4F6A"/>
+    <SolidColorBrush x:Key="StatusDisabled"     Color="#334155"/>
 
     <!-- ══ Console / log text ═══════════════════════════════════════ -->
     <SolidColorBrush x:Key="ConsoleFg"          Color="#64748B"/>
 
-    <!-- ══ Compatibility aliases (keep existing keys working) ════════ -->
-    <SolidColorBrush x:Key="Bg"          Color="#0A0C10"/>
-    <SolidColorBrush x:Key="Surface"     Color="#161B22"/>
-    <SolidColorBrush x:Key="Surface2"    Color="#21262D"/>
-    <SolidColorBrush x:Key="Sidebar"     Color="#010409"/>
-    <SolidColorBrush x:Key="Border"      Color="#30363D"/>
-    <SolidColorBrush x:Key="Accent"      Color="#58A6FF"/>
-    <SolidColorBrush x:Key="AccentDark"  Color="#1F6FEB"/>
-    <SolidColorBrush x:Key="Success"     Color="#3FB950"/>
-    <SolidColorBrush x:Key="Warning"     Color="#D29922"/>
-    <SolidColorBrush x:Key="Danger"      Color="#F85149"/>
-    <SolidColorBrush x:Key="TextPrimary" Color="#F0F6FC"/>
-    <SolidColorBrush x:Key="TextFaint"   Color="#484F58"/>
+    <!-- ══ Compatibility aliases ════════════════════════════════════ -->
+    <SolidColorBrush x:Key="Bg"          Color="#0B0D13"/>
+    <SolidColorBrush x:Key="Surface"     Color="#111420"/>
+    <SolidColorBrush x:Key="Surface2"    Color="#1A1E2E"/>
+    <SolidColorBrush x:Key="Sidebar"     Color="#080A10"/>
+    <SolidColorBrush x:Key="Border"      Color="#252B3B"/>
+    <SolidColorBrush x:Key="Accent"      Color="#3B82F6"/>
+    <SolidColorBrush x:Key="AccentDark"  Color="#1D4ED8"/>
+    <SolidColorBrush x:Key="Success"     Color="#10B981"/>
+    <SolidColorBrush x:Key="Warning"     Color="#F59E0B"/>
+    <SolidColorBrush x:Key="Danger"      Color="#EF4444"/>
+    <SolidColorBrush x:Key="TextPrimary" Color="#F1F5F9"/>
+    <SolidColorBrush x:Key="TextFaint"   Color="#334155"/>
 
 </ResourceDictionary>
