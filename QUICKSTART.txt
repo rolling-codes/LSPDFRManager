@@ -1,0 +1,10 @@
+LSPDFRManager - Quick Start
+==========================
+
+1. Launch LSPDFRManager.exe.
+2. On first run, follow the Setup Wizard to locate your GTA V directory.
+3. Use the 'Browse' tab to find mods on lcpdfr.com.
+4. Click 'Install This Mod' on a mod page to queue it.
+5. Go to the 'Install' tab to review and execute the installation.
+
+Safe modding!

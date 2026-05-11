@@ -1,0 +1,9 @@
+LSPDFRManager - Installation Guide
+==================================
+
+1. Extract all files from this ZIP to a folder of your choice (e.g., C:\LSPDFRManager).
+2. Ensure you have the .NET 8.0 Runtime installed.
+3. If you are on Windows 10 or older, you may need to install the WebView2 Evergreen Runtime.
+4. Run 'LSPDFRManager.exe' or use 'run.bat' to start the application.
+
+For more details, see README.md.

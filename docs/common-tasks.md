@@ -1,0 +1,39 @@
+# Common Tasks & Gotchas
+
+## Common Tasks
+
+**Add a new mod type**
+- Add entry to ModType enum [Domain/ModType.cs](../Domain/ModType.cs)
+- Update ModDetector detection logic [Services/ModDetector.cs](../Services/ModDetector.cs)
+- Add UI for type filtering in LibraryView/ViewModel (search/filter dropdown)
+
+**Add app setting**
+- Add property to AppConfig [Domain/AppConfig.cs](../Domain/AppConfig.cs)
+- Update config.json schema
+- Wire UI control in SettingsView/SettingsViewModel
+
+**Debug install failures**
+- Check app.log for error message
+- InstallQueue.ProcessLoop logs InstallStarted/InstallFailed events
+- Verify GTA path is valid and writable
+- Confirm archive is not corrupted (SharpCompress extraction)
+
+**Profile performance**
+- Enable verbose logging in AppLogger.cs (all Service methods log entry/exit)
+- Check backup/restore speed (large libraries = slow JSON I/O)
+- Archive extraction bottleneck for large mods (SharpCompress perf)
+
+## Gotchas
+
+**Archive Extraction**
+- SharpCompress extracts RAR/7-Zip; ZipFile (System.IO.Compression) for ZIP
+- Duplicate file paths in archive (rare) — only first is extracted
+- No password-protected archive support
+
+**File Locking**
+- On enable/disable, renames files on disk while GTA V may have them open
+- May fail silently if GTA V holds file handle — check app.log for rename errors
+
+**Testing**
+- AppConfig and ModLibraryService are singletons; tests must reset Instance before/after each test
+- No mocking of file I/O or ModLibraryService — use real temp directories and JSON serialization

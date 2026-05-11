@@ -1,0 +1,47 @@
+<UserControl x:Class="LSPDFRManager.Views.LogViewerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{StaticResource Bg}"
+             FontFamily="Segoe UI">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Controls -->
+        <StackPanel Grid.Row="0" Margin="28,24,28,12">
+            <TextBlock Text="Log Viewer" Style="{StaticResource SectionHeader}" Margin="0,0,0,4"/>
+            <TextBlock Text="View and search log files from the manager and GTA V." Foreground="{StaticResource TextMuted}" FontSize="13" Margin="0,0,0,16"/>
+
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                <TextBlock Text="Log:" Foreground="{StaticResource TextMuted}" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <ComboBox ItemsSource="{Binding AvailableLogs}" SelectedItem="{Binding SelectedLog}"
+                          DisplayMemberPath="Label" Width="200" Margin="0,0,16,0"/>
+                <Button Style="{StaticResource GhostButton}" Content="Refresh" Command="{Binding RefreshCommand}" Padding="12,6" Margin="0,0,8,0"/>
+                <Button Style="{StaticResource GhostButton}" Content="Export" Command="{Binding ExportCommand}" Padding="12,6" Margin="0,0,8,0"/>
+                <Button Style="{StaticResource GhostButton}" Content="Clear Manager Log" Command="{Binding ClearManagerLogCommand}" Padding="12,6" Margin="0,0,8,0"/>
+                <Button Style="{StaticResource GhostButton}" Content="Open Folder" Command="{Binding OpenFolderCommand}" Padding="12,6"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal">
+                <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Width="240" Tag="Search…" Margin="0,0,12,0"/>
+                <TextBox Text="{Binding SeverityFilter, UpdateSourceTrigger=PropertyChanged}" Width="120" Tag="Severity filter…"/>
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Log lines -->
+        <Border Grid.Row="1" Background="{StaticResource Surface}" CornerRadius="10" Margin="28,0,28,16">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Lines}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" Style="{StaticResource ConsoleText}" Padding="12,2"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</UserControl>

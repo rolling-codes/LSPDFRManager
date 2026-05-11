@@ -1,0 +1,91 @@
+<UserControl x:Class="LSPDFRManager.Views.DiagnosticsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{StaticResource Bg}"
+             FontFamily="Segoe UI">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header + controls -->
+        <StackPanel Grid.Row="0" Margin="28,24,28,12">
+            <TextBlock Text="Diagnostics Center" Style="{StaticResource SectionHeader}" Margin="0,0,0,4"/>
+            <TextBlock Text="Scan plugins, dependencies, conflicts, and storage." Foreground="{StaticResource TextMuted}" FontSize="13" Margin="0,0,0,16"/>
+
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                <Button Style="{StaticResource PrimaryButton}" Content="Run Full Scan"
+                        Command="{Binding RunScanCommand}" Margin="0,0,8,0" Padding="20,10"/>
+                <Button Style="{StaticResource GhostButton}" Content="Export JSON"
+                        Command="{Binding ExportJsonCommand}" Margin="0,0,8,0" Padding="16,10"/>
+                <Button Style="{StaticResource GhostButton}" Content="Export HTML"
+                        Command="{Binding ExportHtmlCommand}" Margin="0,0,8,0" Padding="16,10"/>
+                <Button Style="{StaticResource GhostButton}" Content="Export TXT"
+                        Command="{Binding ExportTxtCommand}" Padding="16,10"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Category:" Foreground="{StaticResource TextMuted}" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <ComboBox ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}"
+                          Width="160" Margin="0,0,16,0"/>
+                <TextBlock Text="Severity:" Foreground="{StaticResource TextMuted}" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <ComboBox ItemsSource="{Binding SeverityFilters}" SelectedItem="{Binding SeverityFilter}" Width="120"/>
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Findings list + detail -->
+        <Grid Grid.Row="1" Margin="28,0,28,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="320"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Findings list -->
+            <Border Grid.Column="0" Background="{StaticResource Surface}" CornerRadius="10" Padding="0" Margin="0,0,8,0">
+                <ListBox ItemsSource="{Binding Findings}" SelectedItem="{Binding SelectedFinding}" Background="Transparent" BorderThickness="0">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="12,10" BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="{Binding Severity}" Foreground="{StaticResource AccentPrimary}" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Category}" Foreground="{StaticResource TextMuted}" FontSize="11" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding Title}" Foreground="{StaticResource TextPrimary}" FontSize="13" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Border>
+
+            <!-- Detail panel -->
+            <Border Grid.Column="1" Background="{StaticResource Surface}" CornerRadius="10" Padding="16">
+                <ScrollViewer>
+                    <StackPanel Visibility="{Binding SelectedFinding, Converter={StaticResource StringToVis}}">
+                        <TextBlock Text="{Binding SelectedFinding.Category}" Style="{StaticResource SectionLabel}"/>
+                        <TextBlock Text="{Binding SelectedFinding.Title}" Foreground="{StaticResource TextPrimary}" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                        <TextBlock Text="Detail" Style="{StaticResource DetailLabel}" Margin="0,8,0,4"/>
+                        <TextBlock Text="{Binding SelectedFinding.Detail}" Foreground="{StaticResource TextMuted}" FontSize="12" TextWrapping="Wrap"/>
+                        <TextBlock Text="Recommended Fix" Style="{StaticResource DetailLabel}" Margin="0,12,0,4"/>
+                        <TextBlock Text="{Binding SelectedFinding.RecommendedFix}" Foreground="{StaticResource TextPrimary}" FontSize="12" TextWrapping="Wrap"/>
+                        <TextBlock Text="Path" Style="{StaticResource DetailLabel}" Margin="0,12,0,4"/>
+                        <TextBlock Text="{Binding SelectedFinding.AffectedPath}" Foreground="{StaticResource TextMuted}" FontSize="11" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <!-- Status + progress -->
+        <StackPanel Grid.Row="2" Margin="28,8,28,16">
+            <ProgressBar IsIndeterminate="True" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" Margin="0,0,0,4"/>
+            <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource TextMuted}" FontSize="12"/>
+        </StackPanel>
+    </Grid>
+</UserControl>
