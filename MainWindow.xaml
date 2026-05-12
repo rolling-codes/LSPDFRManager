@@ -189,21 +189,6 @@
                         </Button.Style>
                     </Button>
 
-                    <!-- Mod Config -->
-                    <Button Content="Mod Config"
-                            Command="{Binding NavigateCommand}" CommandParameter="ModConfig">
-                        <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsModConfigActive}" Value="True">
-                                        <Setter Property="Background" Value="{StaticResource PanelAltBackground}"/>
-                                        <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
-
                     <!-- OIV Tools -->
                     <Button Content="OIV Tools"
                             Command="{Binding NavigateCommand}" CommandParameter="Oiv">
