@@ -43,6 +43,12 @@
             <DataTemplate DataType="{x:Type vm:LogViewerViewModel}">
                 <views:LogViewerView/>
             </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:ModConfigViewModel}">
+                <views:ModConfigView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:OivViewModel}">
+                <views:OivView/>
+            </DataTemplate>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

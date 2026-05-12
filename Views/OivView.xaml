@@ -1,0 +1,347 @@
+<UserControl x:Class="LSPDFRManager.Views.OivView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:domain="clr-namespace:LSPDFRManager.Domain"
+             Background="{StaticResource Bg}"
+             FontFamily="Segoe UI">
+
+    <DockPanel Margin="28,24,28,16">
+
+        <!-- Header -->
+        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,20">
+            <TextBlock Text="OIV Package Manager" Style="{StaticResource SectionHeader}"/>
+            <TextBlock Text="Create .oiv packages or install them into your game directory."
+                       Foreground="{StaticResource TextMuted}" FontSize="13"/>
+        </StackPanel>
+
+        <!-- Mode toggle -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,20">
+            <RadioButton Content="Creator"
+                         IsChecked="{Binding IsCreatorMode}"
+                         GroupName="OivMode"
+                         Margin="0,0,12,0"
+                         VerticalAlignment="Center"
+                         Foreground="{StaticResource TextPrimary}"/>
+            <RadioButton Content="Installer"
+                         IsChecked="{Binding IsInstallerMode}"
+                         GroupName="OivMode"
+                         VerticalAlignment="Center"
+                         Foreground="{StaticResource TextPrimary}"/>
+        </StackPanel>
+
+        <!-- Status bar -->
+        <Border DockPanel.Dock="Bottom"
+                Background="{StaticResource Surface}"
+                CornerRadius="8" Padding="12,8"
+                Margin="0,16,0,0"
+                Visibility="{Binding StatusMessage, Converter={StaticResource NullToCollapsed}, FallbackValue=Collapsed}">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Right"
+                           Text="&#xE9D9;" FontFamily="Segoe MDL2 Assets"
+                           Foreground="{StaticResource Accent}" FontSize="14"
+                           VerticalAlignment="Center" Margin="8,0,0,0"
+                           Visibility="{Binding IsWorking, Converter={StaticResource BoolToVis}}"/>
+                <TextBlock Text="{Binding StatusMessage}"
+                           Foreground="{StaticResource TextMuted}"
+                           FontSize="13" VerticalAlignment="Center"/>
+            </DockPanel>
+        </Border>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <Grid>
+
+                <!-- ── CREATOR PANEL ─────────────────────────────────────── -->
+                <StackPanel Visibility="{Binding IsCreatorMode, Converter={StaticResource BoolToVis}}">
+
+                    <TextBlock Text="PACKAGE METADATA" Style="{StaticResource SectionLabel}"/>
+                    <Border Style="{StaticResource CardPanel}" Margin="0,0,0,16" Padding="20">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="20"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Style="{StaticResource DetailLabel}" Text="PACKAGE NAME *"/>
+                                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                                         Margin="0,0,0,12"/>
+
+                                <TextBlock Style="{StaticResource DetailLabel}" Text="VERSION"/>
+                                <TextBox Text="{Binding Version, UpdateSourceTrigger=PropertyChanged}"
+                                         Margin="0,0,0,12"/>
+
+                                <TextBlock Style="{StaticResource DetailLabel}" Text="AUTHOR"/>
+                                <TextBox Text="{Binding Author, UpdateSourceTrigger=PropertyChanged}"
+                                         Margin="0,0,0,12"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource DetailLabel}" Text="DESCRIPTION"/>
+                                <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
+                                         TextWrapping="Wrap" AcceptsReturn="True"
+                                         Height="90" VerticalScrollBarVisibility="Auto"
+                                         Margin="0,0,0,12"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Files list -->
+                    <DockPanel Margin="0,0,0,8">
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                            <Button Style="{StaticResource PrimaryButton}"
+                                    Content="Add Files"
+                                    Command="{Binding AddFileCommand}"
+                                    Padding="16,8"
+                                    AutomationProperties.Name="Add files to OIV package"/>
+                        </StackPanel>
+                        <TextBlock Text="CONTENT FILES" Style="{StaticResource SectionLabel}"
+                                   VerticalAlignment="Center"/>
+                    </DockPanel>
+
+                    <Border Style="{StaticResource CardPanel}" Margin="0,0,0,16" MinHeight="120">
+                        <Grid>
+                            <!-- Empty state -->
+                            <TextBlock Text="No files added yet. Click 'Add Files' to include files in the package."
+                                       Foreground="{StaticResource TextFaint}" FontSize="13"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       TextAlignment="Center" TextWrapping="Wrap" Margin="20"
+                                       Visibility="{Binding Files.Count, Converter={StaticResource ZeroToVisible}, FallbackValue=Collapsed}"/>
+
+                            <ItemsControl ItemsSource="{Binding Files}"
+                                          Visibility="{Binding Files.Count, Converter={StaticResource NonZeroToVisible}, FallbackValue=Visible}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="{StaticResource Border}"
+                                                BorderThickness="0,0,0,1"
+                                                Padding="0,8">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="20"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="32"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0"
+                                                           Text="{Binding SourcePath}"
+                                                           Foreground="{StaticResource TextPrimary}"
+                                                           FontSize="12"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1"
+                                                           Text="&#xE72A;" FontFamily="Segoe MDL2 Assets"
+                                                           Foreground="{StaticResource TextFaint}"
+                                                           FontSize="11" VerticalAlignment="Center"
+                                                           HorizontalAlignment="Center"/>
+                                                <TextBox Grid.Column="2"
+                                                         Text="{Binding InstallPath, UpdateSourceTrigger=PropertyChanged}"
+                                                         FontSize="12" VerticalAlignment="Center"/>
+                                                <Button Grid.Column="3"
+                                                        Style="{StaticResource GhostButton}"
+                                                        Content="&#xE711;" FontFamily="Segoe MDL2 Assets"
+                                                        FontSize="11"
+                                                        Command="{Binding DataContext.RemoveFileCommand,
+                                                            RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Padding="6,4"
+                                                        AutomationProperties.Name="Remove this file from package"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Grid>
+                    </Border>
+
+                    <!-- Output path + create -->
+                    <TextBlock Text="OUTPUT PATH *" Style="{StaticResource SectionLabel}"/>
+                    <Grid Margin="0,4,0,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0"
+                                 Text="{Binding OutputPath, UpdateSourceTrigger=PropertyChanged}"
+                                 IsReadOnly="True"/>
+                        <Button Grid.Column="2"
+                                Style="{StaticResource GhostButton}"
+                                Content="Browse..."
+                                Command="{Binding BrowseOutputCommand}"
+                                Padding="14,8"
+                                AutomationProperties.Name="Browse for output path"/>
+                    </Grid>
+
+                    <Button Style="{StaticResource PrimaryButton}"
+                            Content="Create OIV Package"
+                            Command="{Binding CreatePackageCommand}"
+                            HorizontalAlignment="Left"
+                            Padding="24,10"/>
+                </StackPanel>
+
+                <!-- ── INSTALLER PANEL ───────────────────────────────────── -->
+                <StackPanel Visibility="{Binding IsInstallerMode, Converter={StaticResource BoolToVis}}">
+
+                    <!-- OIV file picker -->
+                    <TextBlock Text="OIV PACKAGE" Style="{StaticResource SectionLabel}"/>
+                    <Grid Margin="0,4,0,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0"
+                                 Text="{Binding SelectedOivPath, Mode=OneWay}"
+                                 IsReadOnly="True"
+                                 Foreground="{StaticResource TextPrimary}"/>
+                        <Button Grid.Column="2"
+                                Style="{StaticResource PrimaryButton}"
+                                Content="Browse OIV..."
+                                Command="{Binding BrowseOivCommand}"
+                                Padding="16,8"
+                                AutomationProperties.Name="Browse for OIV package file"/>
+                    </Grid>
+
+                    <!-- Parse error banner -->
+                    <Border Style="{StaticResource WarningBanner}"
+                            Margin="0,0,0,12"
+                            Visibility="{Binding ParseError, Converter={StaticResource NullToCollapsed}, FallbackValue=Collapsed}">
+                        <TextBlock Text="{Binding ParseError}"
+                                   Foreground="{StaticResource WarningText}"
+                                   FontSize="13" TextWrapping="Wrap"/>
+                    </Border>
+
+                    <!-- Package info -->
+                    <Border Style="{StaticResource CardPanel}"
+                            Margin="0,0,0,16" Padding="16"
+                            Visibility="{Binding HasParsedPackage, Converter={StaticResource BoolToVis}}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource DetailLabel}" Text="PACKAGE DETAILS"/>
+                            <Grid Margin="0,6,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Name:"
+                                           Foreground="{StaticResource TextMuted}" FontSize="12"/>
+                                <TextBlock Grid.Row="0" Grid.Column="2"
+                                           Text="{Binding ParsedPackage.Name}"
+                                           Foreground="{StaticResource TextPrimary}" FontSize="12"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Version:"
+                                           Foreground="{StaticResource TextMuted}" FontSize="12" Margin="0,4,0,0"/>
+                                <TextBlock Grid.Row="1" Grid.Column="2"
+                                           Text="{Binding ParsedPackage.Version}"
+                                           Foreground="{StaticResource TextPrimary}" FontSize="12" Margin="0,4,0,0"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Author:"
+                                           Foreground="{StaticResource TextMuted}" FontSize="12" Margin="0,4,0,0"/>
+                                <TextBlock Grid.Row="2" Grid.Column="2"
+                                           Text="{Binding ParsedPackage.Author}"
+                                           Foreground="{StaticResource TextPrimary}" FontSize="12" Margin="0,4,0,0"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Target root override -->
+                    <TextBlock Text="INSTALL ROOT (leave blank for GTA V directory)"
+                               Style="{StaticResource SectionLabel}"/>
+                    <TextBox Text="{Binding TargetRoot, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="0,4,0,16"/>
+
+                    <!-- Preview + Install actions -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                        <Button Style="{StaticResource GhostButton}"
+                                Content="Preview Install"
+                                Command="{Binding PreviewCommand}"
+                                Padding="16,8" Margin="0,0,8,0"
+                                AutomationProperties.Name="Preview install to see which files would be added or replaced"/>
+                        <Button Style="{StaticResource PrimaryButton}"
+                                Content="Install Package"
+                                Command="{Binding InstallCommand}"
+                                Padding="20,8"
+                                AutomationProperties.Name="Install OIV package"/>
+                    </StackPanel>
+
+                    <!-- Preview file list -->
+                    <TextBlock Text="FILE PREVIEW" Style="{StaticResource SectionLabel}"
+                               Visibility="{Binding PreviewEntries.Count, Converter={StaticResource NonZeroToVisible}, FallbackValue=Collapsed}"/>
+                    <Border Style="{StaticResource CardPanel}"
+                            Margin="0,4,0,0" Padding="0"
+                            Visibility="{Binding PreviewEntries.Count, Converter={StaticResource NonZeroToVisible}, FallbackValue=Collapsed}">
+                        <ItemsControl ItemsSource="{Binding PreviewEntries}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="{StaticResource Border}"
+                                            BorderThickness="0,0,0,1"
+                                            Padding="16,10">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="12"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Action badge -->
+                                            <Border Grid.Column="0"
+                                                    CornerRadius="4" Padding="8,3">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="{StaticResource Surface2}"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Action}" Value="Add">
+                                                                <Setter Property="Background" Value="#1A4CAF50"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Action}" Value="Replace">
+                                                                <Setter Property="Background" Value="#1AFF8C00"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Action}" Value="Skip">
+                                                                <Setter Property="Background" Value="{StaticResource Surface2}"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <TextBlock FontSize="11" FontWeight="SemiBold" Width="52" TextAlignment="Center">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Text" Value="SKIP"/>
+                                                            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Action}" Value="Add">
+                                                                    <Setter Property="Text" Value="ADD"/>
+                                                                    <Setter Property="Foreground" Value="#4CAF50"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding Action}" Value="Replace">
+                                                                    <Setter Property="Text" Value="REPLACE"/>
+                                                                    <Setter Property="Foreground" Value="#FF8C00"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </Border>
+
+                                            <TextBlock Grid.Column="2"
+                                                       Text="{Binding InstallPath}"
+                                                       Foreground="{StaticResource TextPrimary}"
+                                                       FontSize="12" VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+
+                </StackPanel>
+
+            </Grid>
+        </ScrollViewer>
+
+    </DockPanel>
+</UserControl>

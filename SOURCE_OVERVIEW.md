@@ -22,6 +22,14 @@ This repository contains the full source for LSPDFR Manager — a .NET 8 WPF des
 | `Converters/` | WPF value converters (StringToBrush, InverseBool, …) |
 | `LSPDFRManager.Api/` | Background API service used by the browser install flow |
 | `LSPDFRManager.Tests/` | xUnit test suite — run with `dotnet test` |
+| `Domain/ModConfigFile.cs` | Model for mod-owned config files (vehicles.meta, etc.) |
+| `Domain/OivPackage.cs` | OIV package manifest model + file entry types |
+| `Services/ModConfigService.cs` | Load/validate/backup/save mod config XML files |
+| `Services/OivService.cs` | Create, parse, preview, and install .oiv packages |
+| `ViewModels/ModConfigViewModel.cs` | MVVM VM for the Mod Config editor tab |
+| `ViewModels/OivViewModel.cs` | MVVM VM for OIV creator/installer tab |
+| `Views/ModConfigView.xaml` | Mod Config editor view |
+| `Views/OivView.xaml` | OIV creator/installer view |
 
 ## Build
 
