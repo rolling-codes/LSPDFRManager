@@ -27,11 +27,13 @@ public partial class BrowseView : UserControl
 
             await WebView.EnsureCoreWebView2Async(env);
             WebView.CoreWebView2.DownloadStarting += CoreWebView2_DownloadStarting;
+            if (Vm is not null)
+                Vm.IsBrowserReady = true;
         }
         catch (Exception ex)
         {
             if (Vm is not null)
-                Vm.StatusMessage = $"WebView2 init failed: {ex.Message}";
+                Vm.StatusMessage = $"WebView2 not available: {ex.Message} — Install or repair the Microsoft WebView2 Runtime.";
         }
     }
 
@@ -127,6 +129,13 @@ public partial class BrowseView : UserControl
 
     private async void InstallButton_Click(object sender, RoutedEventArgs e)
     {
+        if (WebView.CoreWebView2 is null)
+        {
+            if (Vm is not null)
+                Vm.StatusMessage = "Browser is not ready. Install or repair the Microsoft WebView2 Runtime.";
+            return;
+        }
+
         // Inject JS to click the primary download button on the lcpdfr.com mod page
         // This triggers the site's download flow, which fires DownloadStarting above
         try

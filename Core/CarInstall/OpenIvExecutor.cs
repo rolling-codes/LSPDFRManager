@@ -22,6 +22,11 @@ public class OpenIvExecutor
     private const int MaxRetries = 3;
     private const int InitialBackoffMs = 50;
 
+    private sealed record RollbackEntry(string DestinationPath, string? BackupPath)
+    {
+        public bool ExistedBeforeInstall => BackupPath is not null;
+    }
+
     public OpenIvExecutor(IXmlPatcher xmlPatcher)
     {
         _xmlPatcher = xmlPatcher;
@@ -30,6 +35,7 @@ public class OpenIvExecutor
     /// <summary>
     /// Executes plan: extracts files from archive, applies XML patches.
     /// Supports cancellation; rolls back all files on any failure.
+    /// New files are deleted on rollback; overwritten files are restored from backup.
     /// Returns InstallResult with success/failure/rollback state.
     /// </summary>
     public async Task<InstallResult> ExecuteAsync(
@@ -38,7 +44,8 @@ public class OpenIvExecutor
         string targetRoot,
         CancellationToken ct = default)
     {
-        var writtenFiles = new Stack<string>();
+        var rollbackEntries = new Stack<RollbackEntry>();
+        var backupRoot = CreateBackupRoot(targetRoot);
 
         try
         {
@@ -60,7 +67,15 @@ public class OpenIvExecutor
                 if (!string.IsNullOrEmpty(destDir))
                     Directory.CreateDirectory(destDir);
 
-                writtenFiles.Push(destPath);
+                // Back up any existing file before overwriting
+                string? backupPath = null;
+                if (File.Exists(destPath))
+                {
+                    backupPath = Path.Combine(backupRoot, Guid.NewGuid().ToString("N") + ".bak");
+                    File.Copy(destPath, backupPath, overwrite: false);
+                }
+
+                rollbackEntries.Push(new RollbackEntry(destPath, backupPath));
 
                 using (var entryStream = sourceEntry.OpenEntryStream())
                 {
@@ -86,17 +101,19 @@ public class OpenIvExecutor
             }
 
             AppLogger.Info($"[PLAN_SUCCESS] operations={plan.Operations.Count} | patches={plan.XmlPatches.Count}");
+            DeleteBackupRoot(backupRoot);
             return new InstallResult
             {
                 Success = true,
-                FilesWritten = writtenFiles.Count
+                FilesWritten = rollbackEntries.Count
             };
         }
         catch (Exception ex)
         {
-            int writtenCount = writtenFiles.Count;
+            int writtenCount = rollbackEntries.Count;
             AppLogger.Error($"[PLAN_ERROR] written={writtenCount}", ex);
-            await RollbackAsync(writtenFiles, ct);
+            await RollbackAsync(rollbackEntries, ct);
+            DeleteBackupRoot(backupRoot);
 
             return new InstallResult
             {
@@ -105,6 +122,27 @@ public class OpenIvExecutor
                 FilesWritten = writtenCount,
                 Error = ex.Message
             };
+        }
+    }
+
+    private static string CreateBackupRoot(string targetRoot)
+    {
+        var safeRoot = Directory.Exists(targetRoot) ? targetRoot : Path.GetTempPath();
+        var backupRoot = Path.Combine(safeRoot, $".lspdfrmanager_rollback_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(backupRoot);
+        return backupRoot;
+    }
+
+    private static void DeleteBackupRoot(string backupRoot)
+    {
+        try
+        {
+            if (Directory.Exists(backupRoot))
+                Directory.Delete(backupRoot, recursive: true);
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Warning($"[ROLLBACK_BACKUP_CLEANUP] {ex.Message}");
         }
     }
 
@@ -171,34 +209,46 @@ public class OpenIvExecutor
             $"Failed to write file after {MaxRetries} attempts: {destPath}");
     }
 
-    private static Task RollbackAsync(Stack<string> files, CancellationToken ct)
+    private static Task RollbackAsync(Stack<RollbackEntry> entries, CancellationToken ct)
     {
-        int rollbackCount = files.Count;
+        int rollbackCount = entries.Count;
         AppLogger.Info($"[ROLLBACK_START] {rollbackCount} files");
 
+        int restoredCount = 0;
         int deletedCount = 0;
-        while (files.Count > 0)
+
+        while (entries.Count > 0)
         {
-            var file = files.Pop();
+            var entry = entries.Pop();
 
             try
             {
                 ct.ThrowIfCancellationRequested();
 
-                if (File.Exists(file))
+                if (entry.ExistedBeforeInstall && entry.BackupPath is not null && File.Exists(entry.BackupPath))
                 {
-                    File.Delete(file);
+                    // Restore the original file that was overwritten
+                    if (File.Exists(entry.DestinationPath))
+                        File.Delete(entry.DestinationPath);
+                    File.Move(entry.BackupPath, entry.DestinationPath);
+                    restoredCount++;
+                    AppLogger.Info($"[ROLLBACK_RESTORE] {Path.GetFileName(entry.DestinationPath)}");
+                }
+                else if (File.Exists(entry.DestinationPath))
+                {
+                    // Newly created file — remove it
+                    File.Delete(entry.DestinationPath);
                     deletedCount++;
-                    AppLogger.Info($"[ROLLBACK_DELETE] {Path.GetFileName(file)}");
+                    AppLogger.Info($"[ROLLBACK_DELETE] {Path.GetFileName(entry.DestinationPath)}");
                 }
             }
             catch (Exception ex)
             {
-                AppLogger.Warning($"[ROLLBACK_ERROR] {Path.GetFileName(file)} | {ex.Message}");
+                AppLogger.Warning($"[ROLLBACK_ERROR] {Path.GetFileName(entry.DestinationPath)} | {ex.Message}");
             }
         }
 
-        AppLogger.Info($"[ROLLBACK_COMPLETE] deleted={deletedCount} of {rollbackCount}");
+        AppLogger.Info($"[ROLLBACK_COMPLETE] restored={restoredCount} deleted={deletedCount} of {rollbackCount}");
         return Task.CompletedTask;
     }
 }

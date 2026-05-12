@@ -33,18 +33,21 @@
                         Style="{StaticResource IconButton}"
                         Content="&#xE76B;" FontFamily="Segoe MDL2 Assets"
                         ToolTip="Back" Click="BackButton_Click"
+                        AutomationProperties.Name="Back"
                         Margin="0,0,3,0"/>
                 <Button x:Name="ForwardButton"
                         DockPanel.Dock="Left"
                         Style="{StaticResource IconButton}"
                         Content="&#xE76C;" FontFamily="Segoe MDL2 Assets"
                         ToolTip="Forward" Click="ForwardButton_Click"
+                        AutomationProperties.Name="Forward"
                         Margin="0,0,3,0"/>
                 <Button x:Name="RefreshButton"
                         DockPanel.Dock="Left"
                         Style="{StaticResource IconButton}"
                         Content="&#xE72C;" FontFamily="Segoe MDL2 Assets"
                         ToolTip="Refresh" Click="RefreshButton_Click"
+                        AutomationProperties.Name="Refresh"
                         Margin="0,0,6,0"/>
 
                 <Button DockPanel.Dock="Right"
@@ -52,6 +55,7 @@
                         Content="&#xE896;  Install This Mod"
                         FontFamily="Segoe MDL2 Assets, Segoe UI"
                         ToolTip="Click the download button on this mod page and queue for install"
+                        IsEnabled="{Binding IsBrowserReady}"
                         Click="InstallButton_Click"
                         Margin="6,0,0,0" Padding="12,5"/>
 

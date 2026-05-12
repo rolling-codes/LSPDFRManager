@@ -2,11 +2,11 @@ name: .NET
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "main", "master" ]
     tags:
       - "v*"
   pull_request:
-    branches: [ "master" ]
+    branches: [ "main", "master" ]
   workflow_dispatch:
     inputs:
       ref:
@@ -75,6 +75,12 @@ jobs:
         run: dotnet publish LSPDFRManager.csproj -c $env:BUILD_CONFIGURATION -r win-x64 --self-contained false -o publish -p:DebugType=None -p:DebugSymbols=false
         shell: pwsh
 
+      - name: Copy first-impression docs into publish folder
+        shell: pwsh
+        run: |
+          Copy-Item INSTALL.txt publish\INSTALL.txt
+          Copy-Item LICENSE     publish\LICENSE
+
       - name: Verify release payload
         shell: pwsh
         run: |
@@ -85,7 +91,9 @@ jobs:
             'publish\LSPDFRManager.deps.json',
             'publish\SharpCompress.dll',
             'publish\ZstdSharp.dll',
-            'publish\run.bat'
+            'publish\run.bat',
+            'publish\INSTALL.txt',
+            'publish\LICENSE'
           )
           foreach ($path in $required) {
             if (-not (Test-Path $path)) {
@@ -101,6 +109,7 @@ jobs:
             Remove-Item $releaseRoot -Recurse -Force
           }
           New-Item -ItemType Directory -Path $releaseRoot | Out-Null
+          # Copy only the publish output — exclude obj/bin source junk
           Copy-Item -Path publish\* -Destination $releaseRoot -Recurse
           Compress-Archive -Path $releaseRoot -DestinationPath "$releaseRoot-win-x64.zip"
 

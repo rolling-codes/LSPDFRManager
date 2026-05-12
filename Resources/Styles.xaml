@@ -57,6 +57,23 @@
         <Setter Property="Padding"      Value="16,8"/>
         <Setter Property="FontSize"     Value="13"/>
         <Setter Property="Cursor"       Value="Hand"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource AccentPrimary}"/>
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="{StaticResource AccentSecondary}"/>
+                <Setter Property="Opacity"    Value="0.8"/>
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter Property="BorderThickness" Value="2"/>
+                <Setter Property="BorderBrush"     Value="{StaticResource AccentPrimary}"/>
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity"     Value="0.4"/>
+                <Setter Property="Cursor"      Value="Arrow"/>
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <Style x:Key="GhostButton" TargetType="Button">
@@ -67,6 +84,25 @@
         <Setter Property="Padding"      Value="16,8"/>
         <Setter Property="FontSize"     Value="13"/>
         <Setter Property="Cursor"       Value="Hand"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource Surface2}"/>
+                <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource AccentPrimary}"/>
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="{StaticResource Surface}"/>
+                <Setter Property="Opacity"    Value="0.8"/>
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter Property="BorderBrush"     Value="{StaticResource AccentPrimary}"/>
+                <Setter Property="BorderThickness" Value="2"/>
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.4"/>
+                <Setter Property="Cursor"  Value="Arrow"/>
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <Style x:Key="IconButton" TargetType="Button">
@@ -80,6 +116,25 @@
         <Setter Property="HorizontalContentAlignment" Value="Center"/>
         <Setter Property="VerticalContentAlignment"   Value="Center"/>
         <Setter Property="Cursor"       Value="Hand"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource Surface}"/>
+                <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource AccentPrimary}"/>
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="{StaticResource Surface2}"/>
+                <Setter Property="Opacity"    Value="0.75"/>
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter Property="BorderBrush"     Value="{StaticResource AccentPrimary}"/>
+                <Setter Property="BorderThickness" Value="2"/>
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.35"/>
+                <Setter Property="Cursor"  Value="Arrow"/>
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <!-- Sidebar nav button — extend this style with a DataTrigger for active state -->
@@ -93,6 +148,23 @@
         <Setter Property="Margin"       Value="0,3"/>
         <Setter Property="FontSize"     Value="13"/>
         <Setter Property="Cursor"       Value="Hand"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource PanelAltBackground}"/>
+                <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="{StaticResource AccentActiveBg}"/>
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter Property="BorderBrush"     Value="{StaticResource AccentPrimary}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.4"/>
+                <Setter Property="Cursor"  Value="Arrow"/>
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <!-- Active-state variant — apply as BasedOn in the nav buttons -->
