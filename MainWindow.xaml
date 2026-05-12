@@ -18,7 +18,7 @@
             <DockPanel>
                 <StackPanel DockPanel.Dock="Top" Margin="22,26,22,18">
                     <TextBlock Text="LSPDFR MANAGER" FontSize="22" FontWeight="Bold" Foreground="{StaticResource TextStrong}"/>
-                    <TextBlock Text="v3.7.0  •  Command Center" Margin="0,4,0,0" Foreground="{StaticResource TextMuted}" FontSize="11"/>
+                    <TextBlock Text="v3.7.3  •  Command Center" Margin="0,4,0,0" Foreground="{StaticResource TextMuted}" FontSize="11"/>
                 </StackPanel>
 
                 <StackPanel Margin="14,0,14,12">

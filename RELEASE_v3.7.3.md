@@ -1,4 +1,4 @@
-# LSPDFR Manager v3.7.0
+# LSPDFR Manager v3.7.3
 
 This release delivers a major UI refresh with an LSPDFR-aligned command-center visual system.
 
@@ -19,8 +19,8 @@ This release delivers a major UI refresh with an LSPDFR-aligned command-center v
 
 ## Version Consistency
 
-- Updated project versioning to `3.7.0` in `LSPDFRManager.csproj`.
-- Updated the in-app shell version label to `v3.7.0`.
+- Updated project versioning to `3.7.3` in `LSPDFRManager.csproj`.
+- Updated the in-app shell version label to `v3.7.3`.
 
 ## Known Scope Boundaries
 
@@ -35,5 +35,5 @@ This release delivers a major UI refresh with an LSPDFR-aligned command-center v
 
 ## Download
 
-- `LSPDFRManager-v3.7.0-win-x64.zip`
+- `LSPDFRManager-v3.7.3-win-x64.zip`
 
