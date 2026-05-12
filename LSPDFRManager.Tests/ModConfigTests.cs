@@ -13,10 +13,13 @@ public class ModConfigTests : IDisposable
     public ModConfigTests()
     {
         Directory.CreateDirectory(_tempDir);
+        AppDataPaths.OverrideRoot(_tempDir);
+        AppDataPaths.EnsureRootExists();
     }
 
     public void Dispose()
     {
+        AppDataPaths.ClearOverride();
         try
         {
             if (Directory.Exists(_tempDir))
