@@ -37,7 +37,7 @@
                             <TextBlock Text="LSPDFR" FontSize="18" FontWeight="Bold" Foreground="{StaticResource AccentPrimary}"/>
                             <TextBlock Text=" Manager" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextStrong}"/>
                         </StackPanel>
-                        <TextBlock Text="v3.7.3  •  Command Center" Margin="0,4,0,0" Foreground="{StaticResource TextMuted}" FontSize="11"/>
+                        <TextBlock Text="{Binding AppVersion}" Margin="0,4,0,0" Foreground="{StaticResource TextMuted}" FontSize="11"/>
                     </StackPanel>
                 </Border>
 

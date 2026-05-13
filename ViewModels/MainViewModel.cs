@@ -81,6 +81,9 @@ public class MainViewModel : ObservableObject
 
     public string GtaStatusText => AppConfig.Instance.GtaPath;
 
+    public static string AppVersion =>
+        $"v{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "?.?.?"}  •  Command Center";
+
     public bool IsHomeActive        => _activePage == "Home";
     public bool IsLibraryActive     => _activePage == "Library";
     public bool IsInstallActive     => _activePage == "Install";
