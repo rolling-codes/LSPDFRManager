@@ -63,4 +63,7 @@ public class InstalledMod
 
     /// <summary>User-provided notes for this mod.</summary>
     public string Notes { get; set; } = "";
+
+    /// <summary>URL of the first suitable preview image from the mod's LSPDFR.com page, or null.</summary>
+    public string? ThumbnailUrl { get; set; }
 }

@@ -11,6 +11,8 @@ public partial class BrowseView : UserControl
 {
     private BrowseViewModel? Vm => DataContext as BrowseViewModel;
 
+    private string? _pendingThumbnailUrl;
+
     public BrowseView() => InitializeComponent();
 
     private async void BrowseView_Loaded(object sender, RoutedEventArgs e)
@@ -57,7 +59,7 @@ public partial class BrowseView : UserControl
             {
                 Dispatcher.Invoke(() =>
                 {
-                    ModDownloadBridge.Instance.OnDownloadCompleted(destPath, suggestedName);
+                    ModDownloadBridge.Instance.OnDownloadCompleted(destPath, suggestedName, _pendingThumbnailUrl);
                 });
             }
             else if (op.State == CoreWebView2DownloadState.Interrupted)
@@ -105,7 +107,7 @@ public partial class BrowseView : UserControl
         UpdateNavButtons();
     }
 
-    private void WebView_NavigationCompleted(object? sender, CoreWebView2NavigationCompletedEventArgs e)
+    private async void WebView_NavigationCompleted(object? sender, CoreWebView2NavigationCompletedEventArgs e)
     {
         if (Vm is null) return;
         Vm.IsLoading = false;
@@ -113,6 +115,48 @@ public partial class BrowseView : UserControl
         Vm.CurrentUrl = WebView.Source?.ToString() ?? "";
         Vm.StatusMessage = e.IsSuccess ? "Ready" : $"Failed to load page ({e.WebErrorStatus})";
         UpdateNavButtons();
+
+        if (e.IsSuccess)
+            _pendingThumbnailUrl = await ExtractThumbnailUrlAsync();
+    }
+
+    private async Task<string?> ExtractThumbnailUrlAsync()
+    {
+        try
+        {
+            var result = await WebView.CoreWebView2.ExecuteScriptAsync("""
+                (function() {
+                    var selectors = [
+                        '.ipsContained img',
+                        '.cCmsRecord_image img',
+                        'article .ipsType_richText img',
+                        '.ipsType_richText img',
+                        'article img'
+                    ];
+                    for (var i = 0; i < selectors.length; i++) {
+                        var imgs = document.querySelectorAll(selectors[i]);
+                        for (var j = 0; j < imgs.length; j++) {
+                            var img = imgs[j];
+                            var src = img.src || img.dataset.src || '';
+                            var w = img.naturalWidth || img.width || 0;
+                            var h = img.naturalHeight || img.height || 0;
+                            if (src && src.startsWith('http') && w >= 100 && h >= 100)
+                                return src;
+                        }
+                    }
+                    return null;
+                })()
+                """);
+
+            if (result is null || result == "null")
+                return null;
+
+            return result.Trim('"');
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private void UpdateNavButtons()

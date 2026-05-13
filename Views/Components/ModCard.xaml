@@ -18,18 +18,28 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Type badge + confidence bar -->
+            <!-- Thumbnail (if available) or type badge -->
             <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                <Border Width="44" Height="44" CornerRadius="10"
-                        Background="{Binding TypeColor, Converter={StaticResource StringToBrush}}"
-                        HorizontalAlignment="Left">
-                    <TextBlock Text="{Binding TypeLabel}"
-                               Foreground="White" FontSize="9"
-                               FontWeight="Heavy" TextWrapping="Wrap"
-                               TextAlignment="Center" Padding="4"
-                               VerticalAlignment="Center"
-                               HorizontalAlignment="Center"/>
-                </Border>
+                <Grid Width="44" Height="44">
+                    <!-- Thumbnail image -->
+                    <Border CornerRadius="10" ClipToBounds="True"
+                            Visibility="{Binding ThumbnailUrl, Converter={StaticResource NullToCollapsed}}">
+                        <Image Source="{Binding ThumbnailUrl}" Stretch="UniformToFill"
+                               RenderOptions.BitmapScalingMode="HighQuality"/>
+                    </Border>
+                    <!-- Type badge fallback -->
+                    <Border CornerRadius="10"
+                            Background="{Binding TypeColor, Converter={StaticResource StringToBrush}}"
+                            HorizontalAlignment="Left"
+                            Visibility="{Binding ThumbnailUrl, Converter={StaticResource StringToVis}}">
+                        <TextBlock Text="{Binding TypeLabel}"
+                                   Foreground="White" FontSize="9"
+                                   FontWeight="Heavy" TextWrapping="Wrap"
+                                   TextAlignment="Center" Padding="4"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center"/>
+                    </Border>
+                </Grid>
                 <ProgressBar Value="{Binding DetectionScore, FallbackValue=100}"
                              Width="44" Height="4" Margin="0,10,0,0"
                              HorizontalAlignment="Left"

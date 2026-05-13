@@ -29,13 +29,13 @@ public class ModDownloadBridge
     /// Called by the Browse code-behind once WebView2 has finished writing the
     /// download to <paramref name="localPath"/>.
     /// </summary>
-    public void OnDownloadCompleted(string localPath, string displayName)
+    public void OnDownloadCompleted(string localPath, string displayName, string? thumbnailUrl = null)
     {
         if (string.IsNullOrWhiteSpace(localPath)) return;
-        _ = DetectAndEnqueueAsync(localPath, displayName);
+        _ = DetectAndEnqueueAsync(localPath, displayName, thumbnailUrl);
     }
 
-    private async Task DetectAndEnqueueAsync(string localPath, string displayName)
+    private async Task DetectAndEnqueueAsync(string localPath, string displayName, string? thumbnailUrl)
     {
         UiDispatcher.Invoke(() => Detecting?.Invoke(displayName));
 
@@ -48,6 +48,7 @@ public class ModDownloadBridge
             if (string.IsNullOrWhiteSpace(mod.Name) || mod.Name.StartsWith("Mod "))
                 mod.Name = CleanDisplayName(displayName);
 
+            mod.ThumbnailUrl = thumbnailUrl;
             _queue.Enqueue(mod);
 
             UiDispatcher.Invoke(() => Queued?.Invoke(mod));

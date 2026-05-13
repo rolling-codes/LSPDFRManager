@@ -46,4 +46,7 @@ public class ModInfo
 
     /// <summary>Non-fatal warnings collected during detection (e.g. low confidence, missing DLC name).</summary>
     public List<string> Warnings { get; set; } = [];
+
+    /// <summary>URL of the first suitable preview image extracted from the LSPDFR.com mod page, or null.</summary>
+    public string? ThumbnailUrl { get; set; }
 }

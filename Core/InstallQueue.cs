@@ -140,6 +140,7 @@ public class InstallQueue : IDisposable
             DlcPackName = mod.DlcPackName ?? "",
             InstalledFiles = installedFiles,
             DetectionScore = (int)Math.Round(mod.Confidence * 100),
+            ThumbnailUrl = mod.ThumbnailUrl,
         };
     }
 
