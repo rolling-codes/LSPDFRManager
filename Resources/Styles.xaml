@@ -7,10 +7,13 @@
         <ResourceDictionary Source="Colors.xaml"/>
     </ResourceDictionary.MergedDictionaries>
 
-    <converters:StringToBrushConverter      x:Key="StringToBrush"/>
-    <converters:StringToVisibilityConverter x:Key="StringToVis"/>
-    <converters:InverseBoolConverter        x:Key="InverseBool"/>
-    <BooleanToVisibilityConverter           x:Key="BoolToVis"/>
+    <converters:StringToBrushConverter          x:Key="StringToBrush"/>
+    <converters:StringToVisibilityConverter     x:Key="StringToVis"/>
+    <converters:InverseBoolConverter            x:Key="InverseBool"/>
+    <converters:NullToCollapsedConverter        x:Key="NullToCollapsed"/>
+    <converters:ZeroToVisibilityConverter       x:Key="ZeroToVisible"/>
+    <converters:NonZeroToVisibilityConverter    x:Key="NonZeroToVisible"/>
+    <BooleanToVisibilityConverter               x:Key="BoolToVis"/>
 
     <Style TargetType="TextBox">
         <Setter Property="Background" Value="{StaticResource Surface}"/>
@@ -76,6 +79,42 @@
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Opacity" Value="0.96"/>
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Opacity" Value="0.82"/>
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter Property="BorderBrush" Value="{StaticResource TextStrong}"/>
+                <Setter Property="BorderThickness" Value="2"/>
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.45"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="DangerButton" TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource ErrorBackground}"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DangerBorder}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="16,9"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Opacity" Value="0.96"/>
+                <Setter Property="BorderBrush" Value="{StaticResource DangerRed}"/>
             </Trigger>
             <Trigger Property="IsPressed" Value="True">
                 <Setter Property="Opacity" Value="0.82"/>
@@ -158,6 +197,12 @@
                 <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
                 <Setter Property="BorderBrush" Value="{StaticResource TextStrong}"/>
                 <Setter Property="BorderThickness" Value="2"/>
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Opacity" Value="0.85"/>
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.45"/>
             </Trigger>
         </Style.Triggers>
     </Style>
@@ -295,6 +340,35 @@
     <Style x:Key="EmptyState" TargetType="StackPanel">
         <Setter Property="HorizontalAlignment" Value="Center"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <Style x:Key="IconButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
+        <Setter Property="Width" Value="34"/>
+        <Setter Property="Height" Value="34"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+
+    <Style x:Key="ToggleSwitch" TargetType="CheckBox">
+        <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Style.Triggers>
+            <Trigger Property="IsChecked" Value="True">
+                <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.55"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="InlineWarnPill" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource InlineWarnBg}"/>
+        <Setter Property="CornerRadius" Value="6"/>
+        <Setter Property="Padding" Value="10,6"/>
+        <Setter Property="Margin" Value="0,2"/>
     </Style>
 
 </ResourceDictionary>

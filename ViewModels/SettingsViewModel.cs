@@ -45,6 +45,7 @@ public class SettingsViewModel : ObservableObject
 
             AppConfig.Instance.GtaPath = value;
             AppConfig.Instance.Save();
+            AppConfig.NotifyGtaPathChanged(value);
             LspdfrStatus.Refresh();
         }
     }

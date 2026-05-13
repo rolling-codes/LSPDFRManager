@@ -21,4 +21,10 @@ public partial class MainWindow : Window
             throw;
         }
     }
+
+    private void DismissError_Click(object _, RoutedEventArgs __)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.GlobalErrorMessage = null;
+    }
 }

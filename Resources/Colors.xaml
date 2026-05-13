@@ -116,4 +116,17 @@
     <SolidColorBrush x:Key="TextPrimary" Color="#F2F7FF"/>
     <SolidColorBrush x:Key="TextFaint"   Color="#7C95B8"/>
 
+    <!-- ══ Extended palette (v3.8.0 design system additions) ══════════ -->
+    <SolidColorBrush x:Key="SurfaceLift"        Color="#2a2f38"/>
+    <SolidColorBrush x:Key="AccentHover"        Color="#2563eb"/>
+    <SolidColorBrush x:Key="AccentActive"       Color="#1d4ed8"/>
+    <SolidColorBrush x:Key="SuccessGreen"       Color="#22c55e"/>
+    <SolidColorBrush x:Key="SuccessBackground"  Color="#22c55e14"/>
+    <SolidColorBrush x:Key="SuccessBorder"      Color="#22c55e30"/>
+    <SolidColorBrush x:Key="DangerRed"          Color="#ef4444"/>
+    <SolidColorBrush x:Key="DangerBorder"       Color="#ef444430"/>
+    <SolidColorBrush x:Key="WarnAmber"          Color="#f59e0b"/>
+    <SolidColorBrush x:Key="StatusChipBg"       Color="#3b82f614"/>
+    <SolidColorBrush x:Key="StatusChipBorder"   Color="#3b82f620"/>
+
 </ResourceDictionary>

@@ -27,59 +27,83 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <Border Grid.Row="0" Margin="18,18,18,14" CornerRadius="12" Padding="14,12" BorderBrush="{StaticResource AccentBorder}" BorderThickness="1">
-                    <Border.Background>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                            <GradientStop Color="#11274A" Offset="0"/>
-                            <GradientStop Color="#1C4F9A" Offset="1"/>
-                        </LinearGradientBrush>
-                    </Border.Background>
+                <!-- Logo area -->
+                <Border Grid.Row="0" Margin="14,18,14,10" CornerRadius="12" Padding="14,12" BorderBrush="{StaticResource AccentBorder}" BorderThickness="1" Background="{StaticResource CardGradient}">
                     <StackPanel>
-                        <TextBlock Text="LSPDFR MANAGER" FontSize="20" FontWeight="Bold" Foreground="White"/>
-                        <TextBlock Text="v3.7.0  •  Command Center" Margin="0,4,0,0" Foreground="#D6E7FF" FontSize="11"/>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="LSPDFR" FontSize="18" FontWeight="Bold" Foreground="{StaticResource AccentPrimary}"/>
+                            <TextBlock Text=" Manager" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextStrong}"/>
+                        </StackPanel>
+                        <TextBlock Text="v3.7.3  •  Command Center" Margin="0,4,0,0" Foreground="{StaticResource TextMuted}" FontSize="11"/>
                     </StackPanel>
                 </Border>
 
-                <StackPanel Grid.Row="1" Margin="14,0,14,12">
-                    <Button Content="Home" Command="{Binding NavigateCommand}" CommandParameter="Home">
+                <!-- Nav buttons -->
+                <StackPanel Grid.Row="1" Margin="10,0,10,0">
+                    <Button Command="{Binding NavigateCommand}" CommandParameter="Home">
+                        <Button.Content><StackPanel Orientation="Horizontal"><TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE80F;" FontSize="14" Width="20" TextAlignment="Center"/><TextBlock Text="Home" FontSize="13" Margin="10,0,0,0"/></StackPanel></Button.Content>
                         <Button.Style><Style TargetType="Button" BasedOn="{StaticResource NavButton}"><Style.Triggers><DataTrigger Binding="{Binding IsHomeActive}" Value="True"><Setter Property="Background" Value="{StaticResource AccentActiveBg}"/><Setter Property="BorderBrush" Value="{StaticResource AccentBorder}"/><Setter Property="Foreground" Value="{StaticResource TextStrong}"/><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers></Style></Button.Style>
                     </Button>
-                    <Button Content="Library" Command="{Binding NavigateCommand}" CommandParameter="Library">
+                    <Button Command="{Binding NavigateCommand}" CommandParameter="Library">
+                        <Button.Content><StackPanel Orientation="Horizontal"><TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8F1;" FontSize="14" Width="20" TextAlignment="Center"/><TextBlock Text="Library" FontSize="13" Margin="10,0,0,0"/></StackPanel></Button.Content>
                         <Button.Style><Style TargetType="Button" BasedOn="{StaticResource NavButton}"><Style.Triggers><DataTrigger Binding="{Binding IsLibraryActive}" Value="True"><Setter Property="Background" Value="{StaticResource AccentActiveBg}"/><Setter Property="BorderBrush" Value="{StaticResource AccentBorder}"/><Setter Property="Foreground" Value="{StaticResource TextStrong}"/><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers></Style></Button.Style>
                     </Button>
-                    <Button Content="Install" Command="{Binding NavigateCommand}" CommandParameter="Install">
+                    <Button Command="{Binding NavigateCommand}" CommandParameter="Install">
+                        <Button.Content><StackPanel Orientation="Horizontal"><TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE710;" FontSize="14" Width="20" TextAlignment="Center"/><TextBlock Text="Install" FontSize="13" Margin="10,0,0,0"/></StackPanel></Button.Content>
                         <Button.Style><Style TargetType="Button" BasedOn="{StaticResource NavButton}"><Style.Triggers><DataTrigger Binding="{Binding IsInstallActive}" Value="True"><Setter Property="Background" Value="{StaticResource AccentActiveBg}"/><Setter Property="BorderBrush" Value="{StaticResource AccentBorder}"/><Setter Property="Foreground" Value="{StaticResource TextStrong}"/><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers></Style></Button.Style>
                     </Button>
-                    <Button Content="Browse" Command="{Binding NavigateCommand}" CommandParameter="Browse">
+                    <Button Command="{Binding NavigateCommand}" CommandParameter="Browse">
+                        <Button.Content><StackPanel Orientation="Horizontal"><TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE721;" FontSize="14" Width="20" TextAlignment="Center"/><TextBlock Text="Browse" FontSize="13" Margin="10,0,0,0"/></StackPanel></Button.Content>
                         <Button.Style><Style TargetType="Button" BasedOn="{StaticResource NavButton}"><Style.Triggers><DataTrigger Binding="{Binding IsBrowseActive}" Value="True"><Setter Property="Background" Value="{StaticResource AccentActiveBg}"/><Setter Property="BorderBrush" Value="{StaticResource AccentBorder}"/><Setter Property="Foreground" Value="{StaticResource TextStrong}"/><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers></Style></Button.Style>
                     </Button>
-                    <Button Content="Diagnostics" Command="{Binding NavigateCommand}" CommandParameter="Diagnostics">
+                    <Button Command="{Binding NavigateCommand}" CommandParameter="Diagnostics">
+                        <Button.Content><StackPanel Orientation="Horizontal"><TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE9D9;" FontSize="14" Width="20" TextAlignment="Center"/><TextBlock Text="Diagnostics" FontSize="13" Margin="10,0,0,0"/></StackPanel></Button.Content>
                         <Button.Style><Style TargetType="Button" BasedOn="{StaticResource NavButton}"><Style.Triggers><DataTrigger Binding="{Binding IsDiagnosticsActive}" Value="True"><Setter Property="Background" Value="{StaticResource AccentActiveBg}"/><Setter Property="BorderBrush" Value="{StaticResource AccentBorder}"/><Setter Property="Foreground" Value="{StaticResource TextStrong}"/><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers></Style></Button.Style>
                     </Button>
-                    <Button Content="Profiles" Command="{Binding NavigateCommand}" CommandParameter="Profiles">
+                    <Button Command="{Binding NavigateCommand}" CommandParameter="Profiles">
+                        <Button.Content><StackPanel Orientation="Horizontal"><TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE748;" FontSize="14" Width="20" TextAlignment="Center"/><TextBlock Text="Profiles" FontSize="13" Margin="10,0,0,0"/></StackPanel></Button.Content>
                         <Button.Style><Style TargetType="Button" BasedOn="{StaticResource NavButton}"><Style.Triggers><DataTrigger Binding="{Binding IsProfilesActive}" Value="True"><Setter Property="Background" Value="{StaticResource AccentActiveBg}"/><Setter Property="BorderBrush" Value="{StaticResource AccentBorder}"/><Setter Property="Foreground" Value="{StaticResource TextStrong}"/><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers></Style></Button.Style>
                     </Button>
-                    <Button Content="Backups" Command="{Binding NavigateCommand}" CommandParameter="Backups">
+                    <Button Command="{Binding NavigateCommand}" CommandParameter="Backups">
+                        <Button.Content><StackPanel Orientation="Horizontal"><TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE777;" FontSize="14" Width="20" TextAlignment="Center"/><TextBlock Text="Backups" FontSize="13" Margin="10,0,0,0"/></StackPanel></Button.Content>
                         <Button.Style><Style TargetType="Button" BasedOn="{StaticResource NavButton}"><Style.Triggers><DataTrigger Binding="{Binding IsBackupsActive}" Value="True"><Setter Property="Background" Value="{StaticResource AccentActiveBg}"/><Setter Property="BorderBrush" Value="{StaticResource AccentBorder}"/><Setter Property="Foreground" Value="{StaticResource TextStrong}"/><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers></Style></Button.Style>
                     </Button>
-                    <Button Content="History" Command="{Binding NavigateCommand}" CommandParameter="History">
+                    <Button Command="{Binding NavigateCommand}" CommandParameter="History">
+                        <Button.Content><StackPanel Orientation="Horizontal"><TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE81C;" FontSize="14" Width="20" TextAlignment="Center"/><TextBlock Text="History" FontSize="13" Margin="10,0,0,0"/></StackPanel></Button.Content>
                         <Button.Style><Style TargetType="Button" BasedOn="{StaticResource NavButton}"><Style.Triggers><DataTrigger Binding="{Binding IsHistoryActive}" Value="True"><Setter Property="Background" Value="{StaticResource AccentActiveBg}"/><Setter Property="BorderBrush" Value="{StaticResource AccentBorder}"/><Setter Property="Foreground" Value="{StaticResource TextStrong}"/><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers></Style></Button.Style>
                     </Button>
-                    <Button Content="Logs" Command="{Binding NavigateCommand}" CommandParameter="Logs">
+                    <Button Command="{Binding NavigateCommand}" CommandParameter="Logs">
+                        <Button.Content><StackPanel Orientation="Horizontal"><TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE9F9;" FontSize="14" Width="20" TextAlignment="Center"/><TextBlock Text="Logs" FontSize="13" Margin="10,0,0,0"/></StackPanel></Button.Content>
                         <Button.Style><Style TargetType="Button" BasedOn="{StaticResource NavButton}"><Style.Triggers><DataTrigger Binding="{Binding IsLogViewerActive}" Value="True"><Setter Property="Background" Value="{StaticResource AccentActiveBg}"/><Setter Property="BorderBrush" Value="{StaticResource AccentBorder}"/><Setter Property="Foreground" Value="{StaticResource TextStrong}"/><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers></Style></Button.Style>
                     </Button>
-                    <Button Content="Settings" Command="{Binding NavigateCommand}" CommandParameter="Settings">
+                    <Button Command="{Binding NavigateCommand}" CommandParameter="Settings">
+                        <Button.Content><StackPanel Orientation="Horizontal"><TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE713;" FontSize="14" Width="20" TextAlignment="Center"/><TextBlock Text="Settings" FontSize="13" Margin="10,0,0,0"/></StackPanel></Button.Content>
                         <Button.Style><Style TargetType="Button" BasedOn="{StaticResource NavButton}"><Style.Triggers><DataTrigger Binding="{Binding IsSettingsActive}" Value="True"><Setter Property="Background" Value="{StaticResource AccentActiveBg}"/><Setter Property="BorderBrush" Value="{StaticResource AccentBorder}"/><Setter Property="Foreground" Value="{StaticResource TextStrong}"/><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers></Style></Button.Style>
                     </Button>
-                    <Button Content="Mod Config" Command="{Binding NavigateCommand}" CommandParameter="ModConfig">
+                    <Button Command="{Binding NavigateCommand}" CommandParameter="ModConfig">
+                        <Button.Content><StackPanel Orientation="Horizontal"><TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE70F;" FontSize="14" Width="20" TextAlignment="Center"/><TextBlock Text="Mod Config" FontSize="13" Margin="10,0,0,0"/></StackPanel></Button.Content>
                         <Button.Style><Style TargetType="Button" BasedOn="{StaticResource NavButton}"><Style.Triggers><DataTrigger Binding="{Binding IsModConfigActive}" Value="True"><Setter Property="Background" Value="{StaticResource AccentActiveBg}"/><Setter Property="BorderBrush" Value="{StaticResource AccentBorder}"/><Setter Property="Foreground" Value="{StaticResource TextStrong}"/><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers></Style></Button.Style>
                     </Button>
-                    <Button Content="OIV Tools" Command="{Binding NavigateCommand}" CommandParameter="Oiv">
+                    <Button Command="{Binding NavigateCommand}" CommandParameter="Oiv">
+                        <Button.Content><StackPanel Orientation="Horizontal"><TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE7EE;" FontSize="14" Width="20" TextAlignment="Center"/><TextBlock Text="OIV Tools" FontSize="13" Margin="10,0,0,0"/></StackPanel></Button.Content>
                         <Button.Style><Style TargetType="Button" BasedOn="{StaticResource NavButton}"><Style.Triggers><DataTrigger Binding="{Binding IsOivActive}" Value="True"><Setter Property="Background" Value="{StaticResource AccentActiveBg}"/><Setter Property="BorderBrush" Value="{StaticResource AccentBorder}"/><Setter Property="Foreground" Value="{StaticResource TextStrong}"/><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers></Style></Button.Style>
                     </Button>
                 </StackPanel>
+
+                <!-- Bottom status footer -->
+                <Border Grid.Row="2" Margin="10,0,10,12" Padding="10,8" CornerRadius="8" Background="{StaticResource Surface}" BorderBrush="{StaticResource BorderSubtle}" BorderThickness="1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Ellipse Grid.Column="0" Width="8" Height="8" Margin="0,0,8,0" VerticalAlignment="Center" Fill="{StaticResource SuccessGreen}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding GtaStatusText}" FontSize="11" Foreground="{StaticResource TextMuted}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
             </Grid>
         </Border>
 
@@ -92,7 +116,10 @@
             <Border Grid.Row="0" Height="4" Margin="0,0,0,8" CornerRadius="2" Background="{StaticResource ShellGlowAccent}"/>
 
             <Border Grid.Row="0" Margin="0,8,0,10" Style="{StaticResource WarningBanner}" Visibility="{Binding HasGlobalError, Converter={StaticResource BoolToVis}}">
-                <TextBlock Text="{Binding GlobalErrorMessage}" Foreground="{StaticResource ErrorText}" FontSize="13" TextWrapping="Wrap"/>
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="✕" VerticalAlignment="Top" Margin="8,0,0,0" Click="DismissError_Click"/>
+                    <TextBlock Text="{Binding GlobalErrorMessage}" Foreground="{StaticResource ErrorText}" FontSize="13" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                </DockPanel>
             </Border>
 
             <Border Grid.Row="1" Style="{StaticResource ShellContentPanel}">

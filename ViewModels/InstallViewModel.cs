@@ -21,22 +21,30 @@ public class InstallViewModel : ObservableObject
     public InstallViewModel()
     {
         BrowseCommand = new RelayCommand(BrowseForArchive);
-        InstallCommand = new RelayCommand(() => _ = InstallAsync(), () => DetectedMod is not null && IsIdle);
+        InstallCommand = new RelayCommand(() => _ = InstallAsync().ContinueWith(t =>
+        {
+            if (t.Exception is { } ex)
+                UiDispatcher.Invoke(() =>
+                {
+                    IsInstalling = false;
+                    LastErrorMessage = $"Install failed: {ex.InnerException?.Message ?? ex.Message}";
+                });
+        }, TaskContinuationOptions.OnlyOnFaulted), () => DetectedMod is not null && IsIdle);
         ClearCommand = new RelayCommand(Clear);
         ClearLogCommand = new RelayCommand(Log.Clear);
 
         _queue.InstallStarted += mod => AddLog($"Installing {mod.Name}…");
-        _queue.InstallCompleted += mod =>
+        _queue.InstallCompleted += mod => UiDispatcher.Invoke(() =>
         {
             IsInstalling = false;
             AddLog($"✓ Installed: {mod.Name}");
-        };
-        _queue.InstallFailed += (mod, error) =>
+        });
+        _queue.InstallFailed += (mod, error) => UiDispatcher.Invoke(() =>
         {
             IsInstalling = false;
             LastErrorMessage = $"Install failed: {error}";
             AddLog($"✗ Failed: {mod.Name} — {error}");
-        };
+        });
 
         var bridge = ModDownloadBridge.Instance;
         bridge.Detecting += name => AddLog($"[Browse] Detecting: {name}…");
@@ -240,16 +248,23 @@ public class InstallViewModel : ObservableObject
             .Select(f => Path.GetFullPath(Path.Combine(gtaPath, f.Replace('/', Path.DirectorySeparatorChar))))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        var conflictingMods = ModLibraryService.Instance.Mods
+        var conflictingModsWithFiles = ModLibraryService.Instance.Mods
             .Where(mod => mod.InstalledFiles.Any(file =>
                 incomingPaths.Contains(Path.GetFullPath(NormalizeDisabledPath(file)))))
+            .ToList();
+
+        var conflictingMods = conflictingModsWithFiles
             .Select(mod => $"  • {mod.Name}{(mod.IsEnabled ? "" : " (disabled)") }")
             .ToList();
 
+        // Paths already covered by a tracked mod — skip orphaned .disabled entries for these
+        var pathsCoveredByMod = conflictingModsWithFiles
+            .SelectMany(mod => mod.InstalledFiles.Select(f => Path.GetFullPath(NormalizeDisabledPath(f))))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
         var disabledFileConflicts = incomingPaths
-            .Where(path => File.Exists(path + ".disabled"))
+            .Where(path => File.Exists(path + ".disabled") && !pathsCoveredByMod.Contains(path))
             .Select(path => $"  • {Path.GetFileName(path)} (disabled file exists)")
-            .Except(conflictingMods, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
         conflictingMods.AddRange(disabledFileConflicts);
@@ -331,7 +346,11 @@ public class InstallViewModel : ObservableObject
         };
 
         if (dialog.ShowDialog() == true)
-            _ = DetectAsync(dialog.FileName);
+            _ = DetectAsync(dialog.FileName).ContinueWith(t =>
+            {
+                if (t.Exception is { } ex)
+                    UiDispatcher.Invoke(() => LastErrorMessage = $"Detection failed: {ex.InnerException?.Message ?? ex.Message}");
+            }, TaskContinuationOptions.OnlyOnFaulted);
     }
 
     private void Clear()

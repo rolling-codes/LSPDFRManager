@@ -8,6 +8,7 @@ namespace LSPDFRManager.Tests;
 /// Integration tests for all Command Center (v3.5.0) features.
 /// Each test uses real temp directories and fresh service instances — no mocks.
 /// </summary>
+[Collection("AppData serial")]
 public class CommandCenterTests : IDisposable
 {
     private readonly string _tempDir;
@@ -30,6 +31,7 @@ public class CommandCenterTests : IDisposable
 
     public void Dispose()
     {
+        try { ModLibraryService.Instance.Mods.Clear(); } catch { }
         AppDataPaths.ClearOverride();
         try { Directory.Delete(_tempDir, true); } catch { }
     }

@@ -18,7 +18,7 @@
             <DockPanel>
                 <StackPanel DockPanel.Dock="Left">
                     <TextBlock Text="Library" Foreground="White" FontSize="25" FontWeight="Bold"/>
-                    <TextBlock Foreground="#D5E7FF" FontSize="13" Margin="0,4,0,0">
+                    <TextBlock Foreground="{StaticResource TextMuted}" FontSize="13" Margin="0,4,0,0">
                         <Run Text="{Binding TotalMods, Mode=OneWay}"/>
                         <Run Text=" total  •  "/>
                         <Run Text="{Binding EnabledMods, Mode=OneWay}"/>

@@ -11,7 +11,7 @@
                 <Border.Background>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                         <GradientStop Color="#0F2B56" Offset="0"/>
-                        <GradientStop Color="#1E58AD" Offset="1"/>
+                        <GradientStop Color="#1a5dcc" Offset="1"/>
                     </LinearGradientBrush>
                 </Border.Background>
                 <DockPanel>
@@ -24,7 +24,7 @@
                     <StackPanel>
                         <TextBlock Text="Command Center" Foreground="White" FontSize="27" FontWeight="Bold"/>
                         <TextBlock Text="Mission control for your GTA V and LSPDFR ecosystem."
-                               Foreground="#D8E9FF" FontSize="14" Margin="0,6,0,0"/>
+                               Foreground="{StaticResource TextMuted}" FontSize="14" Margin="0,6,0,0"/>
                     </StackPanel>
                 </DockPanel>
             </Border>

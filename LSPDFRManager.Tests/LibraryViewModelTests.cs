@@ -5,13 +5,26 @@ using Xunit;
 
 namespace LSPDFRManager.Tests;
 
-public class LibraryViewModelTests
+[Collection("AppData serial")]
+public class LibraryViewModelTests : IDisposable
 {
+    private readonly string _tempRoot = Path.Combine(Path.GetTempPath(), $"lspm_lvm_{Guid.NewGuid():N}");
     private readonly ModLibraryService _library = ModLibraryService.Instance;
 
     public LibraryViewModelTests()
     {
+        Directory.CreateDirectory(_tempRoot);
+        AppDataPaths.OverrideRoot(Path.Combine(_tempRoot, "AppData"));
+        AppDataPaths.EnsureRootExists();
+        File.WriteAllText(AppDataPaths.LibraryFile, "[]");
         _library.Mods.Clear();
+    }
+
+    public void Dispose()
+    {
+        try { _library.Mods.Clear(); } catch { }
+        AppDataPaths.ClearOverride();
+        try { if (Directory.Exists(_tempRoot)) Directory.Delete(_tempRoot, recursive: true); } catch { }
     }
 
     [Fact]

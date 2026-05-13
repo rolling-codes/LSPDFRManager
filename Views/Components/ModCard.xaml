@@ -71,10 +71,10 @@
                         <TextBlock Foreground="{StaticResource TextMuted}" FontSize="11"
                                    FontWeight="Medium" Text="{Binding StatusText}"/>
                     </Border>
-                    <Border CornerRadius="4" Background="#3D4F6A"
+                    <Border CornerRadius="4" Background="{StaticResource SurfaceLift}"
                             Padding="6,2" Margin="0,0,8,0"
                             Visibility="{Binding IsDisabled, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
-                        <TextBlock Text="DISABLED" Foreground="#9CA3AF"
+                        <TextBlock Text="DISABLED" Foreground="{StaticResource TextMuted}"
                                    FontSize="10" FontWeight="ExtraBold"/>
                     </Border>
                     <TextBlock Foreground="{StaticResource TextFaint}" FontSize="11"
