@@ -22,6 +22,8 @@ public class MainViewModel : ObservableObject
 
         InstallVM.LogAdded += message => UiDispatcher.Invoke(() => StatusMessage = message);
 
+        AppConfig.GtaPathChanged += _ => UiDispatcher.Invoke(() => OnPropertyChanged(nameof(GtaStatusText)));
+
         InstallQueue.Instance.InstallFailedWithResult += (mod, result) =>
         {
             GlobalErrorMessage = $"Install failed: {result.Error}";
@@ -77,6 +79,8 @@ public class MainViewModel : ObservableObject
 
     public bool HasGlobalError => !string.IsNullOrWhiteSpace(GlobalErrorMessage);
 
+    public string GtaStatusText => AppConfig.Instance.GtaPath;
+
     public bool IsHomeActive        => _activePage == "Home";
     public bool IsLibraryActive     => _activePage == "Library";
     public bool IsInstallActive     => _activePage == "Install";
@@ -87,6 +91,7 @@ public class MainViewModel : ObservableObject
     public bool IsHistoryActive     => _activePage == "History";
     public bool IsLogViewerActive   => _activePage == "Logs";
     public bool IsSettingsActive    => _activePage == "Settings";
+    public bool IsModConfigActive   => _activePage == "ModConfig";
     public bool IsOivActive         => _activePage == "Oiv";
 
     public ICommand NavigateCommand { get; }
@@ -101,6 +106,7 @@ public class MainViewModel : ObservableObject
             "Library"     => LibraryVM,
             "Install"     => InstallVM,
             "Config"      => ConfigVM,
+            "ModConfig"   => ConfigVM,
             "Browse"      => BrowseVM,
             "Diagnostics" => DiagnosticsVM,
             "Profiles"    => ProfilesVM,
@@ -122,6 +128,7 @@ public class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(IsHistoryActive));
         OnPropertyChanged(nameof(IsLogViewerActive));
         OnPropertyChanged(nameof(IsSettingsActive));
+        OnPropertyChanged(nameof(IsModConfigActive));
         OnPropertyChanged(nameof(IsOivActive));
     }
 

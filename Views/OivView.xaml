@@ -295,10 +295,10 @@
                                                         <Setter Property="Background" Value="{StaticResource Surface2}"/>
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding Action}" Value="Add">
-                                                                <Setter Property="Background" Value="#1A4CAF50"/>
+                                                                <Setter Property="Background" Value="{StaticResource SuccessBackground}"/>
                                                             </DataTrigger>
                                                             <DataTrigger Binding="{Binding Action}" Value="Replace">
-                                                                <Setter Property="Background" Value="#1AFF8C00"/>
+                                                                <Setter Property="Background" Value="{StaticResource WarningBackground}"/>
                                                             </DataTrigger>
                                                             <DataTrigger Binding="{Binding Action}" Value="Skip">
                                                                 <Setter Property="Background" Value="{StaticResource Surface2}"/>
@@ -314,11 +314,11 @@
                                                             <Style.Triggers>
                                                                 <DataTrigger Binding="{Binding Action}" Value="Add">
                                                                     <Setter Property="Text" Value="ADD"/>
-                                                                    <Setter Property="Foreground" Value="#4CAF50"/>
+                                                                    <Setter Property="Foreground" Value="{StaticResource SuccessGreen}"/>
                                                                 </DataTrigger>
                                                                 <DataTrigger Binding="{Binding Action}" Value="Replace">
                                                                     <Setter Property="Text" Value="REPLACE"/>
-                                                                    <Setter Property="Foreground" Value="#FF8C00"/>
+                                                                    <Setter Property="Foreground" Value="{StaticResource WarnAmber}"/>
                                                                 </DataTrigger>
                                                             </Style.Triggers>
                                                         </Style>
