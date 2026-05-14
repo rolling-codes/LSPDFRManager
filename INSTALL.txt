@@ -1,0 +1,39 @@
+LSPDFR Manager — Quick Start
+==============================
+
+1. EXTRACT
+   Extract the ZIP, keeping all files together in the same folder.
+   Do not run the .exe from inside the ZIP — extract first.
+
+   If Windows shows "Open File - Security Warning", click Run.
+   If Windows SmartScreen appears, click "More info" then "Run anyway".
+
+2. RUN
+   Double-click  run.bat          (recommended — also starts the API service)
+   Or double-click  LSPDFRManager.exe  directly.
+
+3. REQUIREMENTS
+   • Windows 10 / 11 (x64)
+   • .NET 8 Desktop Runtime
+     → run.bat installs it automatically if missing.
+     → Or download from: https://dotnet.microsoft.com/download/dotnet/8.0
+   • Microsoft WebView2 Runtime
+     → Pre-installed on Windows 11.
+     → If the Browse tab is blank, download from:
+       https://developer.microsoft.com/microsoft-edge/webview2/
+   • Grand Theft Auto V (Steam, Epic, or Rockstar Launcher)
+
+4. FIRST LAUNCH
+   The Setup Wizard opens automatically.
+   Select your GTA V folder and a backup location, then click Finish.
+
+5. TROUBLESHOOTING
+   • Buttons not visible? — Make sure you're on Windows 10 1903+ or Windows 11.
+   • Browse tab is blank? — Install or repair WebView2 Runtime (see step 3).
+   • App won't start? — Install .NET 8 Desktop Runtime (see step 3).
+   • GTA V not detected? — Open Settings and set the path manually.
+   • "Blocked" executable? — Right-click LSPDFRManager.exe → Properties → Unblock.
+   • Logs: check %APPDATA%\LSPDFRManager\logs\ for details.
+
+LICENSE: MIT — see LICENSE file.
+SOURCE:  https://github.com/rolling-codes/LSPDFRManager

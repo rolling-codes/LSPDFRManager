@@ -75,6 +75,11 @@ public class DiagnosticsOrchestrator
             });
         }
 
+        ct.ThrowIfCancellationRequested();
+        progress?.Report("Running Setup Doctor…");
+        var doctorFindings = await Task.Run(async () => await new SetupDoctorService().RunAsync(ct), ct);
+        findings.AddRange(doctorFindings.Where(f => f.Severity != DiagnosticSeverity.Ok));
+
         AppConfig.Instance.LastDiagnosticsScanUtc = DateTime.UtcNow;
         AppConfig.Instance.Save();
 
@@ -107,8 +112,9 @@ public class DiagnosticsOrchestrator
 
     private static string BuildHtmlReport(List<DiagnosticFinding> findings)
     {
+        Func<string, string> e = System.Net.WebUtility.HtmlEncode;
         var rows = string.Join("\n", findings.Select(f =>
-            $"<tr><td>{f.Severity}</td><td>{f.Category}</td><td>{f.Title}</td><td>{f.Detail}</td><td>{f.RecommendedFix}</td></tr>"));
+            $"<tr><td>{e(f.Severity.ToString())}</td><td>{e(f.Category)}</td><td>{e(f.Title)}</td><td>{e(f.Detail ?? "")}</td><td>{e(f.RecommendedFix ?? "")}</td></tr>"));
         return $"""
             <html><head><title>Diagnostics Report</title></head><body>
             <h1>LSPDFR Manager Diagnostics Report</h1>

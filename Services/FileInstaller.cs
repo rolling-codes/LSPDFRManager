@@ -1,6 +1,7 @@
 using LSPDFRManager.Core;
 using LSPDFRManager.Domain;
 using SharpCompress.Archives;
+using SharpCompress.Common;
 
 namespace LSPDFRManager.Services;
 
@@ -8,7 +9,6 @@ namespace LSPDFRManager.Services;
 /// Extracts mod files from a <c>.zip</c>, <c>.rar</c>, <c>.7z</c> archive, or
 /// plain directory into a target root folder (the GTA V directory).
 /// Implements path traversal protection and rollback on failure.
-/// Archive format adapters live in Services/Install/ArchiveAdapters.cs.
 /// </summary>
 public static class FileInstaller
 {
@@ -302,4 +302,119 @@ public static class FileInstaller
             AppLogger.Warning($"Rollback backup cleanup failed: {ex.Message}");
         }
     }
+}
+
+// ── Archive Adapters ──────────────────────────────────────────────────────
+
+/// <summary>
+/// Adapts a directory to IArchive interface.
+/// </summary>
+internal class DirectoryArchiveAdapter : IArchive
+{
+    private readonly string _source;
+
+    public IEnumerable<IArchiveEntry> Entries
+    {
+        get
+        {
+            var files = Directory.GetFiles(_source, "*", SearchOption.AllDirectories);
+            return files.Select(f => new DirectoryEntryAdapter(_source, f));
+        }
+    }
+
+    public DirectoryArchiveAdapter(string source) => _source = source;
+}
+
+internal class DirectoryEntryAdapter : IArchiveEntry
+{
+    private readonly string _fullPath;
+
+    public string Key { get; }
+    public bool IsDirectory => false;
+    public long Size => new FileInfo(_fullPath).Length;
+
+    public DirectoryEntryAdapter(string source, string fullPath)
+    {
+        _fullPath = fullPath;
+        Key = Path.GetRelativePath(source, fullPath);
+    }
+
+    public Stream OpenEntryStream() => File.OpenRead(_fullPath);
+}
+
+/// <summary>
+/// Adapts System.IO.Compression.ZipFile to IArchive interface.
+/// Streams entries directly from archive (no materialization).
+/// </summary>
+internal class ZipArchiveAdapter : IArchive
+{
+    private readonly ZipArchive _zipArchive;
+
+    public IEnumerable<IArchiveEntry> Entries
+    {
+        get
+        {
+            return _zipArchive.Entries
+                .Where(e => !e.FullName.EndsWith("/"))
+                .Select(e => new ZipEntryAdapter(e));
+        }
+    }
+
+    public ZipArchiveAdapter(ZipArchive zipArchive) => _zipArchive = zipArchive;
+}
+
+internal class ZipEntryAdapter : IArchiveEntry
+{
+    private readonly ZipArchiveEntry _entry;
+
+    public string Key { get; }
+    public bool IsDirectory => false;
+    public long Size => _entry.Length;
+
+    public ZipEntryAdapter(ZipArchiveEntry entry)
+    {
+        _entry = entry;
+        Key = entry.FullName;
+    }
+
+    public Stream OpenEntryStream() => _entry.Open();
+}
+
+/// <summary>
+/// Adapts SharpCompress.Archives.Archive to IArchive interface.
+/// Streams entries directly from archive (no materialization).
+/// WARNING: Streams from compressed archives may be non-seekable.
+/// </summary>
+internal class SharpCompressArchiveAdapter : IArchive
+{
+    private readonly SharpCompress.Archives.IArchive _archive;
+
+    public IEnumerable<IArchiveEntry> Entries
+    {
+        get
+        {
+            return _archive.Entries
+                .Where(e => !e.IsDirectory)
+                .Select(e => new SharpCompressEntryAdapter(e));
+        }
+    }
+
+    public SharpCompressArchiveAdapter(SharpCompress.Archives.IArchive archive) => _archive = archive;
+}
+
+internal class SharpCompressEntryAdapter : IArchiveEntry
+{
+    private readonly SharpCompress.Archives.IArchiveEntry _entry;
+
+    public string Key { get; }
+    public bool IsDirectory => false;
+    public long Size => _entry.Size;
+
+    public SharpCompressEntryAdapter(SharpCompress.Archives.IArchiveEntry entry)
+    {
+        _entry = entry;
+        Key = entry.Key ?? "";
+    }
+
+    public Stream OpenEntryStream() => _entry.OpenEntryStream();
 }

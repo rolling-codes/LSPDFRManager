@@ -122,7 +122,7 @@ public class ServiceIntegrationTests : CommandCenterTestBase
 
         var imported = await svc.ImportFromFileAsync(outPath);
         Assert.NotNull(imported);
-        Assert.Equal("3.6.0", imported!.ManagerVersion);
+        Assert.Equal("3.5.0", imported!.ManagerVersion);
     }
 
     [Fact]

@@ -85,17 +85,11 @@ public class BatchReinstallService
             var manifest = JsonSerializer.Deserialize<ModManifest>(manifestJson)
                 ?? throw new InvalidOperationException("Invalid manifest");
 
-            var tempRoot = Path.GetFullPath(tempDirectory).TrimEnd(Path.DirectorySeparatorChar)
-                           + Path.DirectorySeparatorChar;
             foreach (var mod in manifest.Mods)
             {
-                var extractedArchive = Path.GetFullPath(
-                    Path.Combine(tempDirectory, Path.GetFileName(mod.SourceArchivePath)));
-                if (extractedArchive.StartsWith(tempRoot, StringComparison.OrdinalIgnoreCase)
-                    && File.Exists(extractedArchive))
-                {
+                var extractedArchive = Path.Combine(tempDirectory, Path.GetFileName(mod.SourceArchivePath));
+                if (File.Exists(extractedArchive))
                     mod.SourceArchivePath = extractedArchive;
-                }
             }
 
             return (manifest, tempDirectory);

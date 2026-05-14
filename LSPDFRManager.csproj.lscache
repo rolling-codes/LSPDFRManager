@@ -56,8 +56,11 @@ TemporaryDependencyNodeTargetIdentifier=net8.0-windows
 App.xaml.cs
 Converters/
  InverseBoolConverter.cs
+ NonZeroToVisibilityConverter.cs
+ NullToCollapsedConverter.cs
  StringToBrushConverter.cs
  StringToVisibilityConverter.cs
+ ZeroToVisibilityConverter.cs
 Core/
  AppLogger.cs
  CarInstall/
@@ -78,25 +81,33 @@ Domain/
  AppConfig.cs
  BackupManifest.cs
  BackupScheduleMode.cs
+ BackupUniformMapping.cs
+ BackupUniformPatchPreview.cs
+ BackupUnitDefinition.cs
  BrowseApiStatus.cs
  ChangeHistoryAction.cs
  ChangeHistoryEntry.cs
  ConflictSeverity.cs
  CrashLogFinding.cs
  CrashLogSeverity.cs
+ CrashTimelineEvent.cs
+ CrashTimelineFinding.cs
  DependencyScanResult.cs
  DependencyStatus.cs
  DiagnosticFinding.cs
  DiagnosticSeverity.cs
  DisabledModEntry.cs
+ DiscoveredConfig.cs
  EmergencyRecoveryPlan.cs
  GamePathCandidate.cs
  GameVersionInfo.cs
+ IniPatchPreview.cs
  InstalledMod.cs
  InstallPlan.cs
  InstallPlanEntry.cs
  InstallResult.cs
  InstallRisk.cs
+ KeybindConflict.cs
  LoadoutManifest.cs
  ModConflictResult.cs
  ModInfo.cs
@@ -104,9 +115,14 @@ Domain/
  ModMetadata.cs
  ModProfile.cs
  ModType.cs
+ ModTypeRecipe.cs
+ OivPackage.cs
+ PatrolSetupPreset.cs
+ PatrolSnapshot.cs
  PluginScanResult.cs
  PluginScanSeverity.cs
  PreLaunchCheckResult.cs
+ PresetPatchRule.cs
  ProfileEntry.cs
  RestorePoint.cs
  RestorePointEntry.cs
@@ -137,15 +153,20 @@ obj/Debug/net8.0-windows/
   LibraryView.g.cs
   LoadingView.g.cs
   LogViewerView.g.cs
+  OivView.g.cs
   ProfilesView.g.cs
   SettingsView.g.cs
 Services/
  AppDataPaths.cs
+ BackupConfigDiscoveryService.cs
+ BackupEasyEditorService.cs
  BackupScheduler.cs
  BackupService.cs
+ BackupXmlParser.cs
  BatchReinstallService.cs
  BrowseApiServiceManager.cs
  ChangeHistoryService.cs
+ ConfigDiscoveryService.cs
  ConfigManagerService.cs
  CrashLogAnalyzer.cs
  DashboardStatusService.cs
@@ -159,9 +180,10 @@ Services/
  GamePathDetector.cs
  GameVersionService.cs
  IArchive.cs
- Install/ArchiveAdapters.cs
+ IniParser.cs
  InstalledModFileService.cs
  JsonFileStore.cs
+ KeybindConflictScanner.cs
  LoadoutManifestService.cs
  LogViewerService.cs
  LspdfrApiClient.cs
@@ -172,13 +194,17 @@ Services/
  ModDownloadBridge.cs
  ModLibraryService.cs
  ModMetadataService.cs
+ OivService.cs
  PathSafety.cs
  PluginHealthScanner.cs
  PreLaunchChecklistService.cs
+ PresetPatchService.cs
  ProfileManager.cs
+ RecipeValidatorService.cs
  RestorePointService.cs
  SafeLaunchManager.cs
  SettingsValidationService.cs
+ SetupDoctorService.cs
  SetupWizardService.cs
  SmartInstallPlanner.cs
  StorageUsageAnalyzer.cs
@@ -197,6 +223,7 @@ ViewModels/
  MainViewModel.cs
  ModItemViewModel.cs
  ObservableObject.cs
+ OivViewModel.cs
  ProfilesViewModel.cs
  RelayCommand.cs
  SettingsViewModel.cs
@@ -213,11 +240,12 @@ Views/
  LibraryView.xaml.cs
  LoadingView.xaml.cs
  LogViewerView.xaml.cs
+ OivView.xaml.cs
  ProfilesView.xaml.cs
  SettingsView.xaml.cs
 
 [metadataReferences]
-<DOTNET>/packs/Microsoft.NETCore.App.Ref/8.0.26/ref/net8.0/
+<DOTNET>/packs/Microsoft.NETCore.App.Ref/8.0.27/ref/net8.0/
  Microsoft.CSharp.dll
  Microsoft.VisualBasic.Core.dll
  Microsoft.VisualBasic.dll
@@ -380,7 +408,7 @@ Views/
  System.Xml.XmlSerializer.dll
  System.Xml.XPath.dll
  System.Xml.XPath.XDocument.dll
-<DOTNET>/packs/Microsoft.WindowsDesktop.App.Ref/8.0.26/ref/net8.0/
+<DOTNET>/packs/Microsoft.WindowsDesktop.App.Ref/8.0.27/ref/net8.0/
  Accessibility.dll
  Microsoft.Win32.Registry.AccessControl.dll
  Microsoft.Win32.SystemEvents.dll
@@ -426,17 +454,18 @@ Views/
  zstdsharp.port/0.8.1/lib/net8.0/ZstdSharp.dll
 
 [analyzerReferences]
-<DOTNET>/packs/Microsoft.NETCore.App.Ref/8.0.26/analyzers/dotnet/cs/
+<DOTNET>/packs/Microsoft.NETCore.App.Ref/8.0.27/analyzers/dotnet/cs/
  Microsoft.Interop.ComInterfaceGenerator.dll
  Microsoft.Interop.JavaScript.JSImportGenerator.dll
  Microsoft.Interop.LibraryImportGenerator.dll
  Microsoft.Interop.SourceGeneration.dll
  System.Text.Json.SourceGeneration.dll
  System.Text.RegularExpressions.Generator.dll
-<DOTNET>/sdk/10.0.203/Sdks/Microsoft.NET.Sdk/analyzers/
+<DOTNET>/sdk/10.0.204/Sdks/Microsoft.NET.Sdk/analyzers/
  Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll
  Microsoft.CodeAnalysis.NetAnalyzers.dll
 
 [analyzerConfigFiles]
-<DOTNET>/sdk/10.0.203/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_8_default.globalconfig
+../../.editorconfig
+<DOTNET>/sdk/10.0.204/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_8_default.globalconfig
 obj/Debug/net8.0-windows/LSPDFRManager.GeneratedMSBuildEditorConfig.editorconfig

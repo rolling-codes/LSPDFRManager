@@ -44,6 +44,8 @@ public class SettingsViewModel : ObservableObject
                 return;
 
             AppConfig.Instance.GtaPath = value;
+            AppConfig.Instance.Save();
+            AppConfig.NotifyGtaPathChanged(value);
             LspdfrStatus.Refresh();
         }
     }
@@ -57,6 +59,7 @@ public class SettingsViewModel : ObservableObject
                 return;
 
             AppConfig.Instance.BackupPath = value;
+            AppConfig.Instance.Save();
         }
     }
 
@@ -69,6 +72,7 @@ public class SettingsViewModel : ObservableObject
                 return;
 
             AppConfig.Instance.AutoBackupOnInstall = value;
+            AppConfig.Instance.Save();
         }
     }
 
@@ -81,6 +85,7 @@ public class SettingsViewModel : ObservableObject
                 return;
 
             AppConfig.Instance.ConfirmBeforeUninstall = value;
+            AppConfig.Instance.Save();
         }
     }
 
@@ -93,6 +98,7 @@ public class SettingsViewModel : ObservableObject
                 return;
 
             AppConfig.Instance.AutoLaunchAfterInstall = value;
+            AppConfig.Instance.Save();
         }
     }
 
@@ -105,6 +111,7 @@ public class SettingsViewModel : ObservableObject
                 return;
 
             AppConfig.Instance.AutoInstallHighConfidence = value;
+            AppConfig.Instance.Save();
         }
     }
 
@@ -117,6 +124,7 @@ public class SettingsViewModel : ObservableObject
                 return;
 
             AppConfig.Instance.DeleteTempAfterInstall = value;
+            AppConfig.Instance.Save();
         }
     }
 

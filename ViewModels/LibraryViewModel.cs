@@ -281,8 +281,35 @@ public class LibraryViewModel : ObservableObject
         OnPropertyChanged(nameof(FilteredCount));
     }
 
-    private IEnumerable<InstalledMod> ApplyFilters(IEnumerable<InstalledMod> mods) =>
-        LibraryFilter.Apply(mods, SearchQuery, SelectedFilter, RiskFilter, SelectedSort, _library.Search);
+    private IEnumerable<InstalledMod> ApplyFilters(IEnumerable<InstalledMod> mods)
+    {
+        var query = SearchQuery.Trim();
+        if (!string.IsNullOrWhiteSpace(query))
+            mods = _library.Search(query);
+
+        if (!SelectedFilter.Equals("All", StringComparison.OrdinalIgnoreCase))
+        {
+            mods = mods.Where(mod =>
+                mod.TypeLabel.Equals(SelectedFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (!RiskFilter.Equals("All", StringComparison.OrdinalIgnoreCase))
+        {
+            mods = mods.Where(mod =>
+                RiskFor(mod.DetectionScore).Equals(RiskFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        return SelectedSort switch
+        {
+            "Installed: Oldest first" => mods.OrderBy(mod => mod.InstalledAt),
+            "Name: A to Z" => mods.OrderBy(mod => mod.Name, StringComparer.OrdinalIgnoreCase),
+            "Name: Z to A" => mods.OrderByDescending(mod => mod.Name, StringComparer.OrdinalIgnoreCase),
+            "Author: A to Z" => mods.OrderBy(mod => mod.Author, StringComparer.OrdinalIgnoreCase),
+            "Enabled first" => mods.OrderByDescending(mod => mod.IsEnabled).ThenByDescending(mod => mod.InstalledAt),
+            "Load order" => mods.OrderBy(mod => mod.LoadOrderPriority == 0 ? int.MaxValue : mod.LoadOrderPriority).ThenBy(mod => mod.InstalledAt),
+            _ => mods.OrderByDescending(mod => mod.InstalledAt),
+        };
+    }
 
     private void RecordSearchHistory(string value)
     {
@@ -307,4 +334,8 @@ public class LibraryViewModel : ObservableObject
         OnPropertyChanged(nameof(DisabledMods));
     }
 
+    private static string RiskFor(int score) =>
+        score >= 70 ? "Safe" :
+        score >= 40 ? "Medium" :
+        "High";
 }

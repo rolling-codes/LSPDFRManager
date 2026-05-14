@@ -3,7 +3,7 @@ namespace LSPDFRManager.Domain;
 public class LoadoutManifest
 {
     public string ExportedBy { get; set; } = "LSPDFR Manager";
-    public string ManagerVersion { get; set; } = "3.6.0";
+    public string ManagerVersion { get; set; } = "3.5.0";
     public string? GameVersion { get; set; }
     public DateTime ExportedAt { get; set; } = DateTime.UtcNow;
     public List<string> EnabledMods { get; set; } = [];

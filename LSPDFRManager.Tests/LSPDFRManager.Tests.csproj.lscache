@@ -55,8 +55,12 @@ TemporaryDependencyNodeTargetIdentifier=net8.0-windows
 [sourceFiles]
 <NUGET>/microsoft.net.test.sdk/17.10.0/build/netcoreapp3.1/Microsoft.NET.Test.Sdk.Program.cs
 AppConfigTests.cs
+AppDataSerialCollection.cs
+BackupEasyEditorTests.cs
+BackupServiceTests.cs
 ChangeHistoryTests.cs
 CommandCenterTests.cs
+ConfigDiscoveryTests.cs
 CrashLogAnalyzerTests.cs
 DependencyScannerTests.cs
 DiagnosticsTests.cs
@@ -66,6 +70,8 @@ FileInstallerArchiveTests.cs
 FileInstallerTests.cs
 GlobalUsings.cs
 InstallIntegrationTests.cs
+InstallUninstallIntegrationTests.cs
+InstallViewModelTests.cs
 LibraryViewModelTests.cs
 LspdfrValidatorTests.cs
 ModDetectorTests.cs
@@ -76,6 +82,7 @@ obj/Debug/net8.0-windows/
  .NETCoreApp,Version=v8.0.AssemblyAttributes.cs
  LSPDFRManager.Tests.AssemblyInfo.cs
  LSPDFRManager.Tests.GlobalUsings.g.cs
+OivTests.cs
 OpenIvExecutorIntegrationTests.cs
 OpenIvIntegrationTests.cs
 PathSafetyTests.cs
@@ -83,16 +90,19 @@ PersistenceAndConflictTests.cs
 PluginHealthScannerTests.cs
 ProfileManagerTests.cs
 RealWorldInstallerTests.cs
+RecipeValidatorTests.cs
 RestorePointTests.cs
 SafeLaunchTests.cs
 ServiceIntegrationTests.cs
+SetupDoctorTests.cs
 SetupWizardTests.cs
 StreamingBufferTests.cs
 TestBase.cs
+UiRedesignXamlContractTests.cs
 
 [metadataReferences]
 ../obj/Debug/net8.0-windows/ref/LSPDFRManager.dll
-<DOTNET>/packs/Microsoft.NETCore.App.Ref/8.0.26/ref/net8.0/
+<DOTNET>/packs/Microsoft.NETCore.App.Ref/8.0.27/ref/net8.0/
  Microsoft.CSharp.dll
  Microsoft.VisualBasic.Core.dll
  Microsoft.VisualBasic.dll
@@ -255,7 +265,7 @@ TestBase.cs
  System.Xml.XmlSerializer.dll
  System.Xml.XPath.dll
  System.Xml.XPath.XDocument.dll
-<DOTNET>/packs/Microsoft.WindowsDesktop.App.Ref/8.0.26/ref/net8.0/
+<DOTNET>/packs/Microsoft.WindowsDesktop.App.Ref/8.0.27/ref/net8.0/
  Accessibility.dll
  Microsoft.Win32.Registry.AccessControl.dll
  Microsoft.Win32.SystemEvents.dll
@@ -312,14 +322,14 @@ TestBase.cs
  zstdsharp.port/0.8.1/lib/net8.0/ZstdSharp.dll
 
 [analyzerReferences]
-<DOTNET>/packs/Microsoft.NETCore.App.Ref/8.0.26/analyzers/dotnet/cs/
+<DOTNET>/packs/Microsoft.NETCore.App.Ref/8.0.27/analyzers/dotnet/cs/
  Microsoft.Interop.ComInterfaceGenerator.dll
  Microsoft.Interop.JavaScript.JSImportGenerator.dll
  Microsoft.Interop.LibraryImportGenerator.dll
  Microsoft.Interop.SourceGeneration.dll
  System.Text.Json.SourceGeneration.dll
  System.Text.RegularExpressions.Generator.dll
-<DOTNET>/sdk/10.0.203/Sdks/Microsoft.NET.Sdk/analyzers/
+<DOTNET>/sdk/10.0.204/Sdks/Microsoft.NET.Sdk/analyzers/
  Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll
  Microsoft.CodeAnalysis.NetAnalyzers.dll
 <NUGET>/xunit.analyzers/1.15.0/analyzers/dotnet/cs/
@@ -327,5 +337,6 @@ TestBase.cs
  xunit.analyzers.fixes.dll
 
 [analyzerConfigFiles]
-<DOTNET>/sdk/10.0.203/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_8_default.globalconfig
+../../../.editorconfig
+<DOTNET>/sdk/10.0.204/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_8_default.globalconfig
 obj/Debug/net8.0-windows/LSPDFRManager.Tests.GeneratedMSBuildEditorConfig.editorconfig

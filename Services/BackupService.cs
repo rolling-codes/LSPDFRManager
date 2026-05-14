@@ -49,17 +49,7 @@ public class BackupService
             using var zip = ZipFile.OpenRead(backupPath);
             foreach (var entry in zip.Entries.Where(entry => !string.IsNullOrWhiteSpace(entry.FullName)))
             {
-                string destination;
-                try
-                {
-                    destination = PathSafety.GetSafePath(AppDataPaths.Root, entry.FullName);
-                }
-                catch (InvalidOperationException)
-                {
-                    AppLogger.Warning($"Skipping unsafe backup entry: {entry.FullName}");
-                    continue;
-                }
-
+                var destination = Path.Combine(AppDataPaths.Root, entry.FullName);
                 var directory = Path.GetDirectoryName(destination);
                 if (!string.IsNullOrWhiteSpace(directory))
                     Directory.CreateDirectory(directory);

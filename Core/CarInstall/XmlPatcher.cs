@@ -30,7 +30,11 @@ public class XmlPatcher : IXmlPatcher
             {
                 targetElement.Add(new XElement("Item", ToCanonicalDlcEntry(patch.Value)));
                 doc.Save(patch.FilePath);
-                AppLogger.Info($"XML patch applied: {patch.FilePath} at {patch.XPath}");
+                AppLogger.Info($"[PATCH_APPLY] {patch.FilePath} | xpath={patch.XPath}");
+            }
+            else
+            {
+                AppLogger.Info($"[PATCH_SKIP_DUPLICATE] {patch.FilePath} | value already exists");
             }
         }
         catch (Exception ex)

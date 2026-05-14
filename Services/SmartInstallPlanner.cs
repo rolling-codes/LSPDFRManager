@@ -1,4 +1,3 @@
-using LSPDFRManager.Core;
 using LSPDFRManager.Domain;
 
 namespace LSPDFRManager.Services;
@@ -34,15 +33,7 @@ public class SmartInstallPlanner
 
                     if (fileName is "readme.txt" or "readme.md" or "install.txt")
                     {
-                        try
-                        {
-                            using var s = entry.OpenEntryStream();
-                            readmeContent = s.ReadToEnd();
-                        }
-                        catch (Exception ex)
-                        {
-                            AppLogger.Info($"Could not read readme from archive: {ex.Message}");
-                        }
+                        try { readmeContent = entry.OpenEntryStream().ReadToEnd(); } catch { }
                     }
 
                     entries.Add(new InstallPlanEntry

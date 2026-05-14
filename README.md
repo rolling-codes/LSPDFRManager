@@ -1,64 +1,72 @@
 # LSPDFR Manager
 
-Open-source GTA V and LSPDFR command center built with .NET 8 and WPF.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![.NET](https://img.shields.io/badge/.NET-8.0-blue.svg)](https://dotnet.microsoft.com/download/dotnet/8.0)
+[![Release](https://img.shields.io/badge/release-v3.7.4-blue.svg)](https://github.com/rolling-codes/LSPDFRManager/releases/latest)
 
-LSPDFR Manager is a desktop tool for managing Grand Theft Auto V/LSPDFR mod setups. It focuses on safe mod installation, library tracking, diagnostics, profiles, backups, crash-log analysis, and recovery workflows.
+A complete GTA V and LSPDFR command center — install and manage mods, run diagnostics, switch profiles, analyze crashes, and launch safely. Built with .NET 8 WPF.
 
----
-
-## Core Capabilities
-
-| Area | What it provides |
-|:---|:---|
-| **Mod Library** | Browse installed mods, search, filter, enable, disable, and track metadata. |
-| **Smart Installer** | Drag-and-drop archive detection, install planning, path safety checks, rollback, and conflict warnings. |
-| **Diagnostics** | Plugin health checks, dependency checks, conflict detection, storage analysis, and exportable reports. |
-| **Crash Analysis** | Reads common GTA V/LSPDFR log files and surfaces likely causes in plain language. |
-| **Profiles** | Switch between mod setups safely using launch profiles and restore points. |
-| **Backups & Recovery** | Restore points, backup scheduling, safe launch mode, and emergency recovery workflows. |
-| **Browse Integration** | Embedded WebView2 browser for LCPDFR browsing and mod download routing. |
-| **Settings Validation** | Detects invalid paths, missing dependencies, unwritable folders, and configuration issues. |
+**[Download Latest Release →](https://github.com/rolling-codes/LSPDFRManager/releases/latest)**
 
 ---
 
-## Supported Mod Types
+## Features
 
-- LSPDFR plugins
-- Vehicle add-ons and replacements
-- ASI mods and scripts
-- ScriptHookVDotNet scripts
-- EUP clothing packs
-- Map/MLO content
-- Sound and siren packs
-- Custom GTA V content archives
+| Tab | What it does |
+|-----|-------------|
+| **Home** | Dashboard with mod count, status indicators, and quick-action buttons |
+| **Library** | Browse, search, filter, enable/disable, and uninstall all installed mods |
+| **Install** | Drag-and-drop or browse for mod archives — auto-detects type and confidence |
+| **Browse** | Embedded lcpdfr.com browser with one-click install queuing |
+| **Diagnostics** | Plugin health scanner, dependency checker, crash log analyzer |
+| **Profiles** | Launch profiles — switch full mod loadouts with a single click |
+| **Backups** | Scheduled and on-demand backups of library and config state |
+| **History** | Full change log of every install, uninstall, enable, and disable action |
+| **Logs** | Real-time LSPDFR/GTA V log viewer |
+| **OIV Tools** | Build and install OpenIV packages without leaving the app |
+| **Settings** | GTA V path, backup location, behavior toggles |
+| **Mod Config** | Per-plugin config file editor |
+
+### Detection Engine
+
+Automatically identifies mod type from archive contents:
+
+| Mod Type | Detection signal |
+|----------|-----------------|
+| LSPDFR Plugin | `plugins/lspdfr/*.dll` |
+| ASI Mod | `*.asi` at root |
+| Vehicle Add-On DLC | `dlcpacks/*/dlc.rpf` |
+| Vehicle Replace | `x64/levels/gta5/vehicles.rpf` |
+| Script | `scripts/*.cs` or `scripts/*.dll` |
+| EUP | `x64e.rpf` or `eup/` paths |
+| Map | `*.ymap` or `maps/` |
+| Sound | `x64/audio/**/*.awc` |
+
+Each detection produces a confidence score (Low / Medium / High). Low-confidence results warn before installing.
+
+### Safety
+
+- **Atomic installs** — any failure triggers a full rollback; no partial installs reach disk
+- **Path traversal protection** — archive entries are validated through `PathSafety` before extraction
+- **Enable/Disable** — renames files with `.disabled` suffix; GTA V ignores them without deletion
+- **Conflict detection** — warns when incoming mod files overlap with installed mods (including disabled ones)
 
 ---
 
 ## Requirements
 
-- Windows 10 or Windows 11 x64
-- .NET 8 Desktop Runtime / SDK
-- WebView2 Runtime for the embedded browser
+- Windows 10 / 11 (x64)
+- [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/) — required for Browse tab (pre-installed on Windows 11)
 - Grand Theft Auto V
-- LSPDFR / RAGE Plugin Hook for LSPDFR-specific workflows
 
 ---
 
-## Repository Structure
+## Install
 
-| Path | Purpose |
-|:---|:---|
-| `.github/workflows/` | CI and release automation. |
-| `Core/` | Core application infrastructure. |
-| `Domain/` | Domain models and shared types. |
-| `Services/` | Installer, library, diagnostics, profile, backup, and recovery services. |
-| `ViewModels/` | MVVM view models for the WPF UI. |
-| `Views/` | WPF XAML views and UI components. |
-| `Converters/` | WPF binding converters. |
-| `Resources/` | Styles, templates, icons, and UI resources. |
-| `LSPDFRManager.Api/` | Companion API service used by browse/search workflows. |
-| `LSPDFRManager.Tests/` | xUnit test coverage for services and workflows. |
-| `docs/` | Long-form documentation. |
+**Recommended:** Download `LSPDFRManager-v3.7.4-win-x64.zip` from [Releases](https://github.com/rolling-codes/LSPDFRManager/releases/latest), extract anywhere, and run `LSPDFRManager.exe`. No installer needed.
+
+The first run will prompt you to set your GTA V path if it is not auto-detected.
 
 ---
 
@@ -68,41 +76,58 @@ LSPDFR Manager is a desktop tool for managing Grand Theft Auto V/LSPDFR mod setu
 git clone https://github.com/rolling-codes/LSPDFRManager.git
 cd LSPDFRManager
 dotnet restore LSPDFRManager.sln
-dotnet build LSPDFRManager.sln --configuration Release
-dotnet test LSPDFRManager.Tests/LSPDFRManager.Tests.csproj --configuration Release
+dotnet build LSPDFRManager.sln
+dotnet test
 ```
 
-To publish a Windows x64 build:
-
+**Self-contained release build:**
 ```bash
-dotnet publish LSPDFRManager.csproj \
-  --configuration Release \
-  --runtime win-x64 \
-  --self-contained false \
-  --output publish/win-x64
+dotnet publish LSPDFRManager.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish
 ```
 
 ---
 
-## Development Notes
+## Project Structure
 
-- Keep installer logic rollback-safe and path-safe.
-- Avoid direct file writes without backup or atomic replacement where data loss is possible.
-- Keep UI changes accessible: readable contrast, clear states, keyboard-friendly controls, and meaningful labels.
-- Add tests for installer, rollback, XML/config patching, profile switching, and diagnostics behavior when changing those systems.
+```
+LSPDFRManager/
+├── Domain/          # Data models (InstalledMod, ModInfo, AppConfig, ModType…)
+├── Services/        # Business logic (ModDetector, FileInstaller, BackupService,
+│                    #   ModLibraryService, OivService, DiagnosticsOrchestrator…)
+├── ViewModels/      # MVVM view models; MainViewModel orchestrates tab navigation
+├── Views/           # WPF UserControls, one per tab
+│   └── Components/  # Shared sub-controls (ModCard…)
+├── Converters/      # WPF value converters
+├── Core/            # AppLogger, InstallQueue, UiDispatcher, PathSafety
+├── Resources/       # Colors.xaml (design tokens), Styles.xaml (component styles)
+└── LSPDFRManager.Tests/  # xUnit test suite (255 tests)
+```
+
+Key singletons: `ModLibraryService`, `AppConfig`, `InstallQueue`, `LspdfrStatusService`
+
+All persistent data lives in `%APPDATA%\LSPDFRManager\`:
+- `library.json` — installed mod registry
+- `config.json` — app settings
+- `configs.json` — captured mod config snapshots
+- `Backups/` — ZIP backup archives
+- `app.log` — runtime log
 
 ---
 
-## Releases
+## Troubleshooting
 
-Release builds and version-specific notes belong on the GitHub Releases page, not as permanent root-level release-note files in the source tree.
+| Problem | Fix |
+|---------|-----|
+| Buttons invisible / blank UI | Reinstall [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) |
+| Browse tab blank | Install/repair [WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/) |
+| GTA V not detected | Settings → set path manually |
+| SmartScreen warning | "More info" → "Run anyway" |
+| File blocked after extract | Right-click → Properties → Unblock |
+| Errors after update | Delete `%APPDATA%\LSPDFRManager\library.json` to reset the library |
+| Other | Check `%APPDATA%\LSPDFRManager\app.log` |
 
 ---
 
-## License
+Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Licensed [MIT](LICENSE).
 
-MIT License. See [`LICENSE`](LICENSE).
-
----
-
-This project is not affiliated with Rockstar Games, Take-Two Interactive, LCPDFR, LSPDFR, or RAGE Plugin Hook.
+*Not affiliated with Rockstar Games or the LCPDFR/LSPDFR team.*

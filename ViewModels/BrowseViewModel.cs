@@ -10,6 +10,7 @@ public class BrowseViewModel : ObservableObject
     private string _statusMessage = "Ready";
     private bool _isLoading;
     private int _loadProgress;
+    private bool _isBrowserReady;
 
     public BrowseView? View { get; set; }
 
@@ -45,6 +46,12 @@ public class BrowseViewModel : ObservableObject
     {
         get => _loadProgress;
         set => SetProperty(ref _loadProgress, value);
+    }
+
+    public bool IsBrowserReady
+    {
+        get => _isBrowserReady;
+        set => SetProperty(ref _isBrowserReady, value);
     }
 
     public ICommand NavigateCommand { get; }

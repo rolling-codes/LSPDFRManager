@@ -1,4 +1,3 @@
-using LSPDFRManager.Core;
 using LSPDFRManager.Domain;
 
 namespace LSPDFRManager.Services;
@@ -20,11 +19,7 @@ public class RestorePointService
             var json = File.ReadAllText(indexPath);
             _points = System.Text.Json.JsonSerializer.Deserialize<List<RestorePoint>>(json) ?? [];
         }
-        catch (Exception ex)
-        {
-            AppLogger.Warning($"Failed to load restore points index: {ex.Message}");
-            _points = [];
-        }
+        catch { _points = []; }
     }
 
     public async Task SaveAsync(RestorePoint point)

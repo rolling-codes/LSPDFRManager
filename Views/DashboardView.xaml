@@ -5,120 +5,118 @@
              FontFamily="Segoe UI">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="28,24,28,16">
+        <StackPanel Margin="28,26,28,20">
 
-            <TextBlock Text="Command Center" Style="{StaticResource SectionHeader}" Margin="0,0,0,4"/>
-            <TextBlock Text="Overview of your GTA V / LSPDFR installation."
-                       Foreground="{StaticResource TextMuted}" FontSize="13" Margin="0,0,0,24"/>
-
-            <!-- Status Cards -->
-            <TextBlock Text="ENVIRONMENT STATUS" Style="{StaticResource SectionLabel}"/>
-            <Border Style="{StaticResource SectionCard}" Margin="0,0,0,16">
-                <UniformGrid Columns="4">
-                    <!-- GTA V -->
-                    <StackPanel Margin="0,0,16,0">
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                            <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,7,0">
-                                <Ellipse.Style>
-                                    <Style TargetType="Ellipse">
-                                        <Setter Property="Fill" Value="{StaticResource StatusError}"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Status.IsGtaPathValid}" Value="True">
-                                                <Setter Property="Fill" Value="{StaticResource StatusOk}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Ellipse.Style>
-                            </Ellipse>
-                            <TextBlock Text="GTA V" Foreground="{StaticResource TextPrimary}" FontSize="13" FontWeight="SemiBold"/>
-                        </StackPanel>
-                        <TextBlock Text="{Binding Status.GtaPath}" Foreground="{StaticResource TextMuted}" FontSize="11" TextTrimming="CharacterEllipsis"/>
-                    </StackPanel>
-                    <!-- LSPDFR -->
-                    <StackPanel Margin="0,0,16,0">
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                            <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,7,0">
-                                <Ellipse.Style>
-                                    <Style TargetType="Ellipse">
-                                        <Setter Property="Fill" Value="{StaticResource StatusError}"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Status.IsLspdfrInstalled}" Value="True">
-                                                <Setter Property="Fill" Value="{StaticResource StatusOk}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Ellipse.Style>
-                            </Ellipse>
-                            <TextBlock Text="LSPDFR" Foreground="{StaticResource TextPrimary}" FontSize="13" FontWeight="SemiBold"/>
-                        </StackPanel>
-                        <TextBlock Text="{Binding Status.IsLspdfrInstalled, StringFormat='{}{0}'}" Foreground="{StaticResource TextMuted}" FontSize="11"/>
-                    </StackPanel>
-                    <!-- Mods -->
-                    <StackPanel Margin="0,0,16,0">
-                        <TextBlock Text="Mods" Foreground="{StaticResource TextPrimary}" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,4"/>
+            <Border Margin="0,0,0,18" CornerRadius="14" Padding="18,14" BorderBrush="{StaticResource AccentBorder}" BorderThickness="1">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#0F2B56" Offset="0"/>
+                        <GradientStop Color="#1a5dcc" Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+                <DockPanel>
+                    <Border DockPanel.Dock="Right" Style="{StaticResource StatusChip}" VerticalAlignment="Center" Margin="12,0,0,0">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Foreground="{StaticResource StatusOk}" FontSize="12" FontWeight="Bold">
-                                <Run Text="{Binding Status.EnabledModCount, Mode=OneWay}"/>
-                                <Run Text=" enabled"/>
-                            </TextBlock>
-                            <TextBlock Text=" · " Foreground="{StaticResource TextMuted}" FontSize="12"/>
-                            <TextBlock Foreground="{StaticResource TextMuted}" FontSize="12">
-                                <Run Text="{Binding Status.DisabledModCount, Mode=OneWay}"/>
-                                <Run Text=" disabled"/>
-                            </TextBlock>
+                            <Ellipse Width="7" Height="7" Fill="{StaticResource StatusOk}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="Operational" Foreground="{StaticResource TextStrong}" FontWeight="SemiBold" FontSize="11"/>
                         </StackPanel>
-                    </StackPanel>
-                    <!-- Storage -->
+                    </Border>
                     <StackPanel>
-                        <TextBlock Text="Storage (plugins)" Foreground="{StaticResource TextPrimary}" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                        <TextBlock Text="{Binding Status.StorageUsed}" Foreground="{StaticResource TextMuted}" FontSize="11"/>
+                        <TextBlock Text="Command Center" Foreground="White" FontSize="27" FontWeight="Bold"/>
+                        <TextBlock Text="Mission control for your GTA V and LSPDFR ecosystem."
+                               Foreground="{StaticResource TextMuted}" FontSize="14" Margin="0,6,0,0"/>
                     </StackPanel>
-                </UniformGrid>
+                </DockPanel>
             </Border>
 
-            <!-- Diagnostics info row -->
-            <Border Style="{StaticResource SectionCard}" Margin="0,0,0,16">
-                <UniformGrid Columns="3">
-                    <StackPanel Margin="0,0,16,0">
-                        <TextBlock Text="Last Backup" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,0,0,2"/>
-                        <TextBlock Text="{Binding Status.LastBackupDisplay}" Foreground="{StaticResource TextPrimary}" FontSize="13" FontWeight="SemiBold"/>
-                    </StackPanel>
-                    <StackPanel Margin="0,0,16,0">
-                        <TextBlock Text="Last Diagnostics Scan" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,0,0,2"/>
-                        <TextBlock Text="{Binding Status.LastDiagnosticsDisplay}" Foreground="{StaticResource TextPrimary}" FontSize="13" FontWeight="SemiBold"/>
-                    </StackPanel>
+            <TextBlock Text="ENVIRONMENT STATUS" Style="{StaticResource SectionLabel}"/>
+            <UniformGrid Columns="4" Margin="0,0,0,16">
+                <Border Style="{StaticResource MetricCard}" Margin="0,0,10,0">
                     <StackPanel>
-                        <TextBlock Text="Last Crash Log Modified" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,0,0,2"/>
-                        <TextBlock Foreground="{StaticResource TextPrimary}" FontSize="13" FontWeight="SemiBold">
-                            <TextBlock.Text>
-                                <Binding Path="Status.LastCrashDetected" TargetNullValue="None detected"/>
-                            </TextBlock.Text>
+                        <TextBlock Text="GAME PATH" Foreground="{StaticResource TextMuted}" FontSize="11" FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding Status.GtaPath}" Foreground="{StaticResource TextStrong}" FontSize="13" FontWeight="SemiBold" Margin="0,7,0,0" TextTrimming="CharacterEllipsis"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <Ellipse Width="7" Height="7" Margin="0,0,6,0" VerticalAlignment="Center">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Fill" Value="{StaticResource StatusError}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Status.IsGtaPathValid}" Value="True"><Setter Property="Fill" Value="{StaticResource StatusOk}"/></DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+                            <TextBlock Text="Validated" Foreground="{StaticResource TextMuted}" FontSize="12"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource MetricCard}" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Text="LSPDFR CORE" Foreground="{StaticResource TextMuted}" FontSize="11" FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding Status.IsLspdfrInstalled, StringFormat='{}{0}'}" Foreground="{StaticResource TextStrong}" FontSize="22" FontWeight="Bold" Margin="0,7,0,0"/>
+                        <TextBlock Text="Core install state" Foreground="{StaticResource TextSubtle}" FontSize="12" Margin="0,8,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource MetricCard}" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Text="MODS" Foreground="{StaticResource TextMuted}" FontSize="11" FontWeight="SemiBold"/>
+                        <TextBlock Foreground="{StaticResource TextStrong}" FontSize="22" FontWeight="Bold" Margin="0,7,0,0">
+                            <Run Text="{Binding Status.EnabledModCount, Mode=OneWay}"/><Run Text=" enabled"/>
+                        </TextBlock>
+                        <TextBlock Foreground="{StaticResource TextSubtle}" FontSize="12" Margin="0,8,0,0">
+                            <Run Text="{Binding Status.DisabledModCount, Mode=OneWay}"/><Run Text=" disabled"/>
                         </TextBlock>
                     </StackPanel>
-                </UniformGrid>
+                </Border>
+
+                <Border Style="{StaticResource MetricCard}">
+                    <StackPanel>
+                        <TextBlock Text="PLUGIN STORAGE" Foreground="{StaticResource TextMuted}" FontSize="11" FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding Status.StorageUsed}" Foreground="{StaticResource TextStrong}" FontSize="22" FontWeight="Bold" Margin="0,7,0,0"/>
+                        <TextBlock Text="Current plugin footprint" Foreground="{StaticResource TextSubtle}" FontSize="12" Margin="0,8,0,0"/>
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <TextBlock Text="QUICK ACTIONS" Style="{StaticResource SectionLabel}"/>
+            <Border Style="{StaticResource ActionGroupCard}" Margin="0,0,0,16" BorderBrush="{StaticResource AccentBorder}" BorderThickness="1">
+                <WrapPanel>
+                    <Button Style="{StaticResource PrimaryButton}" Content="Launch RPH" Command="{Binding LaunchRphCommand}" Margin="0,0,10,10"/>
+                    <Button Style="{StaticResource GhostButton}" Content="Launch GTA V" Command="{Binding LaunchGtaCommand}" Margin="0,0,10,10"/>
+                    <Button Style="{StaticResource GhostButton}" Content="Scan Plugins" Command="{Binding ScanPluginsCommand}" Margin="0,0,10,10"/>
+                    <Button Style="{StaticResource GhostButton}" Content="Analyze Crash Logs" Command="{Binding AnalyzeCrashLogsCommand}" Margin="0,0,10,10"/>
+                    <Button Style="{StaticResource GhostButton}" Content="Create Backup" Command="{Binding CreateBackupCommand}" Margin="0,0,10,10"/>
+                    <Button Style="{StaticResource GhostButton}" Content="Safe Launch Mode" Command="{Binding ApplySafeLaunchCommand}" Margin="0,0,10,10"/>
+                    <Button Style="{StaticResource GhostButton}" Content="Open GTA V Folder" Command="{Binding OpenGtaFolderCommand}" Margin="0,0,10,10"/>
+                    <Button Style="{StaticResource GhostButton}" Content="Open Logs Folder" Command="{Binding OpenLogsFolderCommand}" Margin="0,0,10,10"/>
+                </WrapPanel>
             </Border>
 
-            <!-- Quick Actions -->
-            <TextBlock Text="QUICK ACTIONS" Style="{StaticResource SectionLabel}"/>
-            <Border Style="{StaticResource SectionCard}" Margin="0,0,0,16">
-                <WrapPanel>
-                    <Button Style="{StaticResource PrimaryButton}" Content="Launch RPH"
-                            Command="{Binding LaunchRphCommand}" Margin="0,0,8,8" Padding="16,8"/>
-                    <Button Style="{StaticResource GhostButton}" Content="Launch GTA V"
-                            Command="{Binding LaunchGtaCommand}" Margin="0,0,8,8" Padding="16,8"/>
-                    <Button Style="{StaticResource GhostButton}" Content="Scan Plugins"
-                            Command="{Binding ScanPluginsCommand}" Margin="0,0,8,8" Padding="16,8"/>
-                    <Button Style="{StaticResource GhostButton}" Content="Analyze Crash Logs"
-                            Command="{Binding AnalyzeCrashLogsCommand}" Margin="0,0,8,8" Padding="16,8"/>
-                    <Button Style="{StaticResource GhostButton}" Content="Create Backup"
-                            Command="{Binding CreateBackupCommand}" Margin="0,0,8,8" Padding="16,8"/>
-                    <Button Style="{StaticResource GhostButton}" Content="Safe Launch Mode"
-                            Command="{Binding ApplySafeLaunchCommand}" Margin="0,0,8,8" Padding="16,8"/>
-                    <Button Style="{StaticResource GhostButton}" Content="Open GTA V Folder"
-                            Command="{Binding OpenGtaFolderCommand}" Margin="0,0,8,8" Padding="16,8"/>
-                    <Button Style="{StaticResource GhostButton}" Content="Open Logs Folder"
-                            Command="{Binding OpenLogsFolderCommand}" Margin="0,0,8,8" Padding="16,8"/>
-                </WrapPanel>
+            <TextBlock Text="TELEMETRY" Style="{StaticResource SectionLabel}"/>
+            <Border Style="{StaticResource TelemetryCard}" Margin="0,0,0,12" BorderBrush="{StaticResource AccentBorder}" BorderThickness="1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,0,14,0">
+                        <TextBlock Text="Last Backup" Foreground="{StaticResource TextMuted}" FontSize="11"/>
+                        <TextBlock Text="{Binding Status.LastBackupDisplay}" Foreground="{StaticResource TextStrong}" FontSize="14" FontWeight="SemiBold" Margin="0,6,0,0"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="0,0,14,0">
+                        <TextBlock Text="Last Diagnostics" Foreground="{StaticResource TextMuted}" FontSize="11"/>
+                        <TextBlock Text="{Binding Status.LastDiagnosticsDisplay}" Foreground="{StaticResource TextStrong}" FontSize="14" FontWeight="SemiBold" Margin="0,6,0,0"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Crash Log Activity" Foreground="{StaticResource TextMuted}" FontSize="11"/>
+                        <TextBlock Foreground="{StaticResource TextStrong}" FontSize="14" FontWeight="SemiBold" Margin="0,6,0,0">
+                            <TextBlock.Text><Binding Path="Status.LastCrashDetected" TargetNullValue="None detected"/></TextBlock.Text>
+                        </TextBlock>
+                    </StackPanel>
+                </Grid>
             </Border>
 
             <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource TextMuted}" FontSize="12"/>

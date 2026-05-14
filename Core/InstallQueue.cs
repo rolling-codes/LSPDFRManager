@@ -176,7 +176,6 @@ public class InstallQueue : IDisposable
     public void Dispose()
     {
         _cts.Cancel();
-        try { _worker.Wait(TimeSpan.FromSeconds(5)); } catch { }
         _signal.Dispose();
         _cts.Dispose();
     }

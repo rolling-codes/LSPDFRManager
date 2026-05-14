@@ -23,4 +23,9 @@ public enum ModType
     Sound,
     /// <summary>Does not match any known pattern.</summary>
     Misc,
+    OivPackage,
+    CalloutPack,
+    SirenPack,
+    DataFilePack,
+    ConfigPreset,
 }

@@ -47,7 +47,7 @@ public class InstalledMod
     public List<string> InstalledFiles { get; set; } = [];
 
     /// <summary>UTC timestamp of when the mod was installed.</summary>
-    public DateTime InstalledAt { get; set; } = DateTime.UtcNow;
+    public DateTime InstalledAt { get; set; } = DateTime.Now;
 
     /// <summary>Lower values load first when the user selects load-order sorting.</summary>
     public int LoadOrderPriority { get; set; }

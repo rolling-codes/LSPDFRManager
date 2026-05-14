@@ -35,7 +35,14 @@ public class ModLibraryService
     {
         lock (_mutationLock)
         {
-            RemoveCore(id);
+            UiDispatcher.Invoke(() =>
+            {
+                var mod = Mods.FirstOrDefault(item => item.Id == id);
+                if (mod is not null)
+                    Mods.Remove(mod);
+            });
+
+            Save();
         }
     }
 
@@ -43,14 +50,18 @@ public class ModLibraryService
 
     public void SetEnabled(Guid id, bool enabled)
     {
+        InstalledMod? target = null;
+
+        UiDispatcher.Invoke(() =>
+        {
+            target = Mods.FirstOrDefault(mod => mod.Id == id);
+        });
+
+        if (target is null || target.IsEnabled == enabled)
+            return;
+
         lock (_mutationLock)
         {
-            InstalledMod? target = null;
-            UiDispatcher.Invoke(() => target = Mods.FirstOrDefault(mod => mod.Id == id));
-
-            if (target is null || target.IsEnabled == enabled)
-                return;
-
             _fileService.SetEnabled(target, enabled);
             ModUpdated?.Invoke(target);
             Save();
@@ -134,28 +145,21 @@ public class ModLibraryService
 
     public void Uninstall(Guid id)
     {
-        lock (_mutationLock)
-        {
-            InstalledMod? target = null;
-            UiDispatcher.Invoke(() => target = Mods.FirstOrDefault(mod => mod.Id == id));
+        InstalledMod? target = null;
 
-            if (target is null)
-                return;
-
-            _fileService.Uninstall(target, Mods);
-            RemoveCore(id);
-        }
-    }
-
-    private void RemoveCore(Guid id)
-    {
         UiDispatcher.Invoke(() =>
         {
-            var mod = Mods.FirstOrDefault(item => item.Id == id);
-            if (mod is not null)
-                Mods.Remove(mod);
+            target = Mods.FirstOrDefault(mod => mod.Id == id);
         });
-        Save();
+
+        if (target is null)
+            return;
+
+        lock (_mutationLock)
+        {
+            _fileService.Uninstall(target, Mods);
+            Remove(id);
+        }
     }
 
     private void Load()

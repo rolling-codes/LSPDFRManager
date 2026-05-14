@@ -8,13 +8,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>LSPDFRManager</RootNamespace>
     <AssemblyName>LSPDFRManager</AssemblyName>
-    <ApplicationIcon>Resources\app.ico</ApplicationIcon>
     <Description>Desktop mod manager for GTA V LSPDFR installations.</Description>
     <Authors>rolling-codes</Authors>
     <RepositoryUrl>https://github.com/rolling-codes/LSPDFRManager</RepositoryUrl>
-    <Version>3.6.0</Version>
-    <AssemblyVersion>3.6.0.0</AssemblyVersion>
-    <FileVersion>3.6.0.0</FileVersion>
+    <Version>3.7.3</Version>
+    <AssemblyVersion>3.7.3.0</AssemblyVersion>
+    <FileVersion>3.7.3.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -31,7 +30,7 @@
 
   <ItemGroup>
     <None Include="run.bat" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
-    <Resource Include="Resources\app.ico"/>
   </ItemGroup>
 
 </Project>
+
