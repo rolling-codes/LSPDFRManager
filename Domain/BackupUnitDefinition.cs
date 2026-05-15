@@ -11,4 +11,5 @@ public sealed class BackupUnitDefinition
     public string? PedModel { get; init; }
     public string? UniformName { get; init; }
     public string? SourceConfigRelativePath { get; init; }
+    public Dictionary<string, string> Metadata { get; init; } = [];
 }

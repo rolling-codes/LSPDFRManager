@@ -51,6 +51,7 @@
                         Style="{StaticResource PrimaryButton}"
                         Content="&#xE896;  Install This Mod"
                         FontFamily="Segoe MDL2 Assets, Segoe UI"
+                        IsEnabled="{Binding CanTriggerInstall}"
                         ToolTip="Click the download button on this mod page and queue for install"
                         Click="InstallButton_Click"
                         Margin="6,0,0,0" Padding="12,5"/>

@@ -51,8 +51,14 @@ public class BrowseViewModel : ObservableObject
     public bool IsBrowserReady
     {
         get => _isBrowserReady;
-        set => SetProperty(ref _isBrowserReady, value);
+        set
+        {
+            if (SetProperty(ref _isBrowserReady, value))
+                OnPropertyChanged(nameof(CanTriggerInstall));
+        }
     }
+
+    public bool CanTriggerInstall => IsBrowserReady;
 
     public ICommand NavigateCommand { get; }
 }

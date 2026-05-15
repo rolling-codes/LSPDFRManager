@@ -46,4 +46,10 @@ public class ModInfo
 
     /// <summary>Non-fatal warnings collected during detection (e.g. low confidence, missing DLC name).</summary>
     public List<string> Warnings { get; set; } = [];
+
+    /// <summary>Primary mod image URL, typically from lcpdfr page metadata.</summary>
+    public string? ImageUrl { get; set; }
+
+    /// <summary>Thumbnail URL used for compact card/list rendering.</summary>
+    public string? ThumbnailUrl { get; set; }
 }

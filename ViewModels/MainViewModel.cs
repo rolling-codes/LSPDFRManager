@@ -80,6 +80,8 @@ public class MainViewModel : ObservableObject
     public bool HasGlobalError => !string.IsNullOrWhiteSpace(GlobalErrorMessage);
 
     public string GtaStatusText => AppConfig.Instance.GtaPath;
+    public string AppVersionText =>
+        $"v{typeof(MainViewModel).Assembly.GetName().Version?.ToString(3) ?? "0.0.0"}  •  Command Center";
 
     public bool IsHomeActive        => _activePage == "Home";
     public bool IsLibraryActive     => _activePage == "Library";

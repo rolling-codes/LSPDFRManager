@@ -83,7 +83,24 @@ public class InstallQueue : IDisposable
                 }
             }
 
-            var result = await FileInstaller.InstallAsync(mod, gtaPath).ConfigureAwait(false);
+            var plan = new SmartInstallPlanner().BuildPlan(mod.SourcePath);
+            foreach (var warning in plan.Warnings)
+                AppLogger.Warning($"[INSTALL_PLAN_WARNING] {mod.Name} | {warning}");
+
+            if (plan.RequiresManualConfirmation && plan.BlockingIssues.Count > 0)
+            {
+                var blockingMessage = string.Join(" | ", plan.BlockingIssues);
+                var blockedResult = new InstallResult
+                {
+                    Success = false,
+                    Error = $"Install requires manual confirmation: {blockingMessage}",
+                };
+                HandleFailedInstall(mod, blockedResult);
+                queued.Completion.TrySetResult(blockedResult);
+                return;
+            }
+
+            var result = await FileInstaller.InstallAsync(mod, gtaPath, plan).ConfigureAwait(false);
             if (!result.Success)
             {
                 HandleFailedInstall(mod, result);

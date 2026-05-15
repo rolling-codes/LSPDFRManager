@@ -181,4 +181,85 @@ public class SetupDoctorTests : IDisposable
             if (File.Exists(tmpFile)) File.Delete(tmpFile);
         }
     }
+
+
+    [Fact]
+    public async Task SetupDoctor_UltimateBackupWithoutStopThePed_ProducesWarning()
+    {
+        var dir = MakeTempDir();
+        var pluginDir = Path.Combine(dir, "plugins", "lspdfr");
+        Directory.CreateDirectory(pluginDir);
+        File.WriteAllText(Path.Combine(pluginDir, "UltimateBackup.dll"), "dll");
+        SetGtaPath(dir);
+
+        var findings = await new SetupDoctorService().RunAsync();
+
+        Assert.Contains(findings, f =>
+            f.Severity == DiagnosticSeverity.Warning &&
+            f.Title.Contains("Ultimate Backup", StringComparison.OrdinalIgnoreCase) &&
+            f.Detail.Contains("Stop The Ped", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task SetupDoctor_UltimateBackupWithStopThePed_NoMissingDependencyWarning()
+    {
+        var dir = MakeTempDir();
+        var pluginDir = Path.Combine(dir, "plugins", "lspdfr");
+        Directory.CreateDirectory(pluginDir);
+        File.WriteAllText(Path.Combine(pluginDir, "UltimateBackup.dll"), "dll");
+        File.WriteAllText(Path.Combine(pluginDir, "StopThePed.dll"), "dll");
+        SetGtaPath(dir);
+
+        var findings = await new SetupDoctorService().RunAsync();
+
+        Assert.DoesNotContain(findings, f =>
+            f.Title.Contains("Ultimate Backup", StringComparison.OrdinalIgnoreCase) &&
+            f.Detail.Contains("Stop The Ped", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task SetupDoctor_TransportCoronerConfigWithoutStopThePed_ProducesWarning()
+    {
+        var dir = MakeTempDir();
+        var pluginDir = Path.Combine(dir, "plugins", "lspdfr");
+        Directory.CreateDirectory(pluginDir);
+        File.WriteAllText(Path.Combine(pluginDir, "UltimateBackup.dll"), "dll");
+        File.WriteAllText(Path.Combine(pluginDir, "UltimateBackup.ini"), """
+            [Transport]
+            CoronerUnit=Enabled
+            """);
+        SetGtaPath(dir);
+
+        var findings = await new SetupDoctorService().RunAsync();
+
+        Assert.Contains(findings, f =>
+            f.Severity == DiagnosticSeverity.Warning &&
+            f.Title.Contains("references Stop The Ped-dependent", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task SetupDoctor_KeybindOverlapAcrossLspdfrAndStopThePed_ProducesSpecificWarning()
+    {
+        var dir = MakeTempDir();
+        var pluginDir = Path.Combine(dir, "plugins", "lspdfr");
+        Directory.CreateDirectory(pluginDir);
+
+        File.WriteAllText(Path.Combine(pluginDir, "LSPDFR.ini"), """
+            [Keys]
+            Interact=F5
+            """);
+        File.WriteAllText(Path.Combine(pluginDir, "StopThePed.ini"), """
+            [Controls]
+            Interact=F5
+            """);
+
+        SetGtaPath(dir);
+
+        var findings = await new SetupDoctorService().RunAsync();
+
+        Assert.Contains(findings, f =>
+            f.Severity == DiagnosticSeverity.Warning &&
+            f.Title.Contains("keybind overlap", StringComparison.OrdinalIgnoreCase));
+    }
+
 }

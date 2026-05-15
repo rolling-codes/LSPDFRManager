@@ -51,16 +51,26 @@ public class BackupConfigDiscoveryService
             }
         }
 
+        // Ultimate Backup — both casing variants
         Scan("plugins/lspdfr/UltimateBackup/*.xml");
         Scan("plugins/lspdfr/Ultimate Backup/*.xml");
+        Scan("Plugins/LSPDFR/UltimateBackup/*.xml");
+        Scan("Plugins/LSPDFR/Ultimate Backup/*.xml");
         Scan("plugins/lspdfr/**/UltimateBackup*.xml");
         Scan("plugins/lspdfr/**/backup*.xml");
-        Scan("plugins/lspdfr/data/backup.xml");
-        Scan("lspdfr/data/backup.xml");
         Scan("plugins/lspdfr/**/regions*.xml");
         Scan("plugins/lspdfr/**/customregions*.xml");
         Scan("plugins/lspdfr/**/agency*.xml");
         Scan("plugins/lspdfr/**/units*.xml");
+        Scan("plugins/lspdfr/**/special*.xml");
+
+        // lspdfr/data and custom subdirectory (community packs often use these)
+        Scan("plugins/lspdfr/data/backup.xml");
+        Scan("lspdfr/data/backup.xml");
+        Scan("lspdfr/data/**/*.xml");
+        Scan("lspdfr/data/custom/**/*.xml");
+        Scan("LSPDFR/data/**/*.xml");
+        Scan("LSPDFR/data/custom/**/*.xml");
 
         return [.. results.OrderBy(p => p, StringComparer.OrdinalIgnoreCase)];
     }

@@ -23,6 +23,16 @@
 - Check backup/restore speed (large libraries = slow JSON I/O)
 - Archive extraction bottleneck for large mods (SharpCompress perf)
 
+**Add a new diagnostic check**
+- Implement check in `SetupDoctorService` or a dedicated scanner service
+- Register it in `DiagnosticsOrchestrator`
+- Return `DiagnosticFinding` with Category, Title, Detail, Severity, Confidence=1.0
+
+**Add a new install safety rule**
+- Add logic to [Services/InstallerSafetyPolicy.cs](../Services/InstallerSafetyPolicy.cs)
+- Update `SmartInstallPlanner` if ordering or plan-level logic changes
+- Add corresponding test in `SmartInstallPlannerTests` or `FileInstallerSafetyPolicyTests`
+
 ## Gotchas
 
 **Archive Extraction**

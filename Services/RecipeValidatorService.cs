@@ -127,6 +127,8 @@ public class RecipeValidatorService
             CheckMissingConfig(recipe, findings);
         }
 
+        AddUltimateBackupDependencyFindings(findings);
+
         return findings;
     }
 
@@ -300,6 +302,66 @@ public class RecipeValidatorService
                     });
                 }
             }
+        }
+    }
+
+    private void AddUltimateBackupDependencyFindings(List<DiagnosticFinding> findings)
+    {
+        var ultimateBackupDll = Path.Combine(_gtaPath, NormalizeSep("plugins/lspdfr/UltimateBackup.dll"));
+        var stopThePedDll = Path.Combine(_gtaPath, NormalizeSep("plugins/lspdfr/StopThePed.dll"));
+
+        if (!File.Exists(ultimateBackupDll))
+            return;
+
+        if (!File.Exists(stopThePedDll))
+        {
+            findings.Add(new DiagnosticFinding
+            {
+                Category = "Dependencies",
+                Title = "Ultimate Backup detected without Stop The Ped",
+                Detail = InstallerSafetyPolicy.GetUltimateBackupMissingStpWarning(),
+                RecommendedFix = "Install Stop The Ped before enabling Ultimate Backup transport/coroner integrations.",
+                AffectedPath = ultimateBackupDll,
+                Severity = DiagnosticSeverity.Warning,
+                Confidence = 1.0f,
+            });
+        }
+
+        if (File.Exists(stopThePedDll))
+            return;
+
+        var configCandidates = new[]
+        {
+            Path.Combine(_gtaPath, NormalizeSep("plugins/lspdfr/UltimateBackup.ini")),
+            Path.Combine(_gtaPath, NormalizeSep("plugins/lspdfr/UltimateBackup/DefaultRegions.xml")),
+            Path.Combine(_gtaPath, NormalizeSep("plugins/lspdfr/UltimateBackup/backup.xml")),
+            Path.Combine(_gtaPath, NormalizeSep("lspdfr/data/backup.xml")),
+            Path.Combine(_gtaPath, NormalizeSep("lspdfr/data/agency.xml")),
+            Path.Combine(_gtaPath, NormalizeSep("lspdfr/data/regions.xml")),
+            Path.Combine(_gtaPath, NormalizeSep("lspdfr/data/customregions.xml")),
+            Path.Combine(_gtaPath, NormalizeSep("lspdfr/data/units.xml")),
+        };
+
+        foreach (var file in configCandidates.Where(File.Exists))
+        {
+            string content;
+            try { content = File.ReadAllText(file); }
+            catch (IOException) { continue; }
+            catch (UnauthorizedAccessException) { continue; }
+
+            if (!InstallerSafetyPolicy.ReferencesTransportOrCoroner(content))
+                continue;
+
+            findings.Add(new DiagnosticFinding
+            {
+                Category = "Config",
+                Title = "Ultimate Backup config may require Stop The Ped",
+                Detail = "Ultimate Backup config references units that may require Stop The Ped.",
+                RecommendedFix = "Install Stop The Ped or adjust the transport/coroner entries in the backup configuration.",
+                AffectedPath = file,
+                Severity = DiagnosticSeverity.Warning,
+                Confidence = 0.9f,
+            });
         }
     }
 

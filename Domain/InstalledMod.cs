@@ -63,4 +63,10 @@ public class InstalledMod
 
     /// <summary>User-provided notes for this mod.</summary>
     public string Notes { get; set; } = "";
+
+    /// <summary>Primary mod image URL, typically from lcpdfr page metadata.</summary>
+    public string? ImageUrl { get; set; }
+
+    /// <summary>Thumbnail URL used for compact card/list rendering.</summary>
+    public string? ThumbnailUrl { get; set; }
 }

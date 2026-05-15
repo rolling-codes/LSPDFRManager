@@ -24,6 +24,8 @@ public class DependencyScanner
         new("LemonUI.dll",                   @"plugins\lspdfr\LemonUI.SHVDN3.dll",  false),
         new("Newtonsoft.Json.dll",           @"plugins\Newtonsoft.Json.dll",        false),
         new("NAudio.dll",                    @"plugins\NAudio.dll",                 false),
+        new("StopThePed.dll",                @"plugins\lspdfr\StopThePed.dll",      false),
+        new("UltimateBackup.dll",            @"plugins\lspdfr\UltimateBackup.dll",  false),
         new("ELS folder",                    "ELS",                                 false),
     ];
 

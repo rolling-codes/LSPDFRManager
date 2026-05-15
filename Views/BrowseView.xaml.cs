@@ -15,6 +15,9 @@ public partial class BrowseView : UserControl
 
     private async void BrowseView_Loaded(object sender, RoutedEventArgs e)
     {
+        if (Vm is not null)
+            Vm.IsBrowserReady = false;
+
         try
         {
             // Persistent profile so cookies/login survive between app launches
@@ -27,11 +30,19 @@ public partial class BrowseView : UserControl
 
             await WebView.EnsureCoreWebView2Async(env);
             WebView.CoreWebView2.DownloadStarting += CoreWebView2_DownloadStarting;
+            if (Vm is not null)
+            {
+                Vm.IsBrowserReady = true;
+                Vm.StatusMessage = "Ready";
+            }
         }
         catch (Exception ex)
         {
             if (Vm is not null)
+            {
+                Vm.IsBrowserReady = false;
                 Vm.StatusMessage = $"WebView2 init failed: {ex.Message}";
+            }
         }
     }
 
@@ -127,6 +138,19 @@ public partial class BrowseView : UserControl
 
     private async void InstallButton_Click(object sender, RoutedEventArgs e)
     {
+        if (Vm is not null && !Vm.CanTriggerInstall)
+        {
+            Vm.StatusMessage = "Browser is not ready yet.";
+            return;
+        }
+
+        if (WebView.CoreWebView2 is null)
+        {
+            if (Vm is not null)
+                Vm.StatusMessage = "Browser engine is not initialized yet.";
+            return;
+        }
+
         // Inject JS to click the primary download button on the lcpdfr.com mod page
         // This triggers the site's download flow, which fires DownloadStarting above
         try

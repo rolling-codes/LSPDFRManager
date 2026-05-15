@@ -17,6 +17,7 @@ public static class FileInstaller
         public required string DestinationPath { get; init; }
         public string? BackupPath { get; init; }
         public bool ExistedBeforeInstall => BackupPath is not null;
+        public bool WasCommitted { get; set; }
     }
 
     private sealed class PreparedWrite
@@ -26,6 +27,8 @@ public static class FileInstaller
         public string? BackupPath { get; init; }
         public bool ExistedBeforeInstall => BackupPath is not null;
     }
+
+    private sealed record InstallEntry(IArchiveEntry Entry, int OriginalIndex);
 
     private static int SelectBufferSize(long fileSize)
     {
@@ -37,30 +40,29 @@ public static class FileInstaller
     }
 
     /// <summary>
-    /// Extracts all files from <paramref name="mod"/> into <paramref name="targetRoot"/>,
-    /// overwriting any existing files. Returns a result indicating success/failure.
+    /// Extracts all files from <paramref name="mod"/> into <paramref name="targetRoot"/>.
     /// On partial failure, newly-created files are deleted and overwritten files are restored.
     /// </summary>
-    public static async Task<InstallResult> InstallAsync(ModInfo mod, string targetRoot)
+    public static async Task<InstallResult> InstallAsync(ModInfo mod, string targetRoot, InstallPlan? plan = null)
     {
         try
         {
             if (Directory.Exists(mod.SourcePath))
             {
                 var adapter = new DirectoryArchiveAdapter(mod.SourcePath);
-                return await InstallAsync(adapter, targetRoot);
+                return await InstallAsync(adapter, targetRoot, plan);
             }
             else if (mod.SourcePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
             {
                 using var zip = ZipFile.OpenRead(mod.SourcePath);
                 var adapter = new ZipArchiveAdapter(zip);
-                return await InstallAsync(adapter, targetRoot);
+                return await InstallAsync(adapter, targetRoot, plan);
             }
             else
             {
                 using var archive = ArchiveFactory.Open(mod.SourcePath);
                 var adapter = new SharpCompressArchiveAdapter(archive);
-                return await InstallAsync(adapter, targetRoot);
+                return await InstallAsync(adapter, targetRoot, plan);
             }
         }
         catch (Exception ex)
@@ -77,7 +79,7 @@ public static class FileInstaller
     /// Extracts all files from <paramref name="archive"/> into <paramref name="targetRoot"/>.
     /// Testable variant that accepts IArchive for unit testing.
     /// </summary>
-    public static async Task<InstallResult> InstallAsync(IArchive archive, string targetRoot)
+    public static async Task<InstallResult> InstallAsync(IArchive archive, string targetRoot, InstallPlan? plan = null)
     {
         ArgumentNullException.ThrowIfNull(archive);
 
@@ -86,19 +88,68 @@ public static class FileInstaller
         var createdDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var backupRoot = CreateBackupRoot(targetRoot);
 
+        var planEntriesByPath = BuildPlanEntryMap(plan);
+        var orderedEntries = OrderEntries(archive.Entries, planEntriesByPath);
+
         try
         {
-            foreach (var entry in archive.Entries)
+            foreach (var installEntry in orderedEntries)
             {
-                if (entry.IsDirectory) continue;
+                var entry = installEntry.Entry;
+                if (entry.IsDirectory)
+                    continue;
 
-                var dest = PathSafety.GetSafePath(targetRoot, entry.Key);
-                var dir = Path.GetDirectoryName(dest);
+                var relativePath = InstallerSafetyPolicy.NormalizeRelativePath(entry.Key);
+                var destinationPath = PathSafety.GetSafePath(targetRoot, relativePath);
 
-                if (!string.IsNullOrEmpty(dir))
-                    TrackAndCreateDirectory(dir, createdDirectories);
+                planEntriesByPath.TryGetValue(relativePath, out var planEntry);
 
-                var preparedWrite = PrepareWrite(dest, backupRoot);
+                var destinationExists = File.Exists(destinationPath);
+                var action = ResolveAction(planEntry, relativePath, destinationExists);
+
+                if (action == InstallConflictAction.CancelInstall)
+                    throw new InvalidOperationException($"Install cancelled due to conflict policy: {relativePath}");
+
+                if (action == InstallConflictAction.KeepExisting && destinationExists)
+                {
+                    AppLogger.Info($"[INSTALL_SKIP_KEEP_EXISTING] {relativePath}");
+                    continue;
+                }
+
+                if (action == InstallConflictAction.Skip)
+                {
+                    AppLogger.Info($"[INSTALL_SKIP] {relativePath}");
+                    continue;
+                }
+
+                if (action == InstallConflictAction.RenameIncoming && destinationExists)
+                {
+                    destinationPath = ResolveRenamePath(targetRoot, destinationPath, planEntry?.RenamedTargetPath);
+                    destinationExists = File.Exists(destinationPath);
+                }
+
+                var directory = Path.GetDirectoryName(destinationPath);
+                if (!string.IsNullOrEmpty(directory))
+                    TrackAndCreateDirectory(directory, createdDirectories);
+
+                if (destinationExists && action == InstallConflictAction.BackupAndReplace)
+                {
+                    var preservePath = CreateTimestampedBackup(destinationPath);
+                    ChangeHistoryService.Instance.Record(
+                        ChangeHistoryAction.BackupCreated,
+                        "Installer preserved overwritten file before replacement.",
+                        affectedFile: destinationPath,
+                        detail: preservePath);
+                }
+
+                var preparedWrite = PrepareWrite(destinationPath, backupRoot);
+                var rollbackRecord = new RollbackFile
+                {
+                    DestinationPath = preparedWrite.DestinationPath,
+                    BackupPath = preparedWrite.BackupPath,
+                    WasCommitted = false,
+                };
+                rollbackFiles.Add(rollbackRecord);
 
                 try
                 {
@@ -114,6 +165,12 @@ public static class FileInstaller
                     }
 
                     CommitWrite(preparedWrite);
+                    rollbackRecord.WasCommitted = true;
+                    ChangeHistoryService.Instance.Record(
+                        ChangeHistoryAction.Installed,
+                        "Installer wrote file.",
+                        affectedFile: preparedWrite.DestinationPath,
+                        detail: action.ToString());
                 }
                 catch
                 {
@@ -121,12 +178,7 @@ public static class FileInstaller
                     throw;
                 }
 
-                rollbackFiles.Add(new RollbackFile
-                {
-                    DestinationPath = preparedWrite.DestinationPath,
-                    BackupPath = preparedWrite.BackupPath,
-                });
-                writtenFiles.Add(dest);
+                writtenFiles.Add(destinationPath);
             }
 
             DeleteBackupRoot(backupRoot);
@@ -148,11 +200,91 @@ public static class FileInstaller
             return new InstallResult
             {
                 Success = false,
-                IsPartial = rollbackFiles.Count > 0 || createdDirectories.Count > 0,
+                IsPartial = rollbackFiles.Any(f => f.WasCommitted) || createdDirectories.Count > 0,
                 FilesWritten = writtenFiles.Count,
                 Error = ex.Message,
                 WrittenFiles = []
             };
+        }
+    }
+
+    private static Dictionary<string, InstallPlanEntry> BuildPlanEntryMap(InstallPlan? plan)
+    {
+        return (plan?.Entries ?? [])
+            .GroupBy(e => InstallerSafetyPolicy.NormalizeRelativePath(e.ArchivePath), StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.Last(), StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static List<InstallEntry> OrderEntries(
+        IEnumerable<IArchiveEntry> archiveEntries,
+        IReadOnlyDictionary<string, InstallPlanEntry> planEntriesByPath)
+    {
+        var materialized = archiveEntries
+            .Where(e => !e.IsDirectory)
+            .Select((entry, index) => new InstallEntry(entry, index))
+            .ToList();
+
+        var hasStopThePed = materialized.Any(e => InstallerSafetyPolicy.IsStopThePedFile(e.Entry.Key));
+        var hasUltimateBackup = materialized.Any(e => InstallerSafetyPolicy.IsUltimateBackupFile(e.Entry.Key));
+
+        return materialized
+            .OrderBy(e =>
+            {
+                var key = InstallerSafetyPolicy.NormalizeRelativePath(e.Entry.Key);
+                return planEntriesByPath.TryGetValue(key, out var planned)
+                    ? planned.DependencyReason is null ? int.MaxValue : 0
+                    : int.MaxValue;
+            })
+            .ThenBy(e => InstallerSafetyPolicy.GetInstallOrderPriority(e.Entry.Key, hasStopThePed, hasUltimateBackup))
+            .ThenBy(e => e.OriginalIndex)
+            .ToList();
+    }
+
+    private static InstallConflictAction ResolveAction(
+        InstallPlanEntry? plannedEntry,
+        string relativePath,
+        bool destinationExists)
+    {
+        if (plannedEntry is not null)
+            return plannedEntry.PlannedAction;
+
+        return InstallerSafetyPolicy.DefaultConflictAction(relativePath, destinationExists);
+    }
+
+    private static string ResolveRenamePath(string targetRoot, string destinationPath, string? plannedRenamePath)
+    {
+        var candidate = plannedRenamePath;
+        if (!string.IsNullOrWhiteSpace(candidate))
+        {
+            var relative = Path.GetRelativePath(targetRoot, candidate);
+            return PathSafety.GetSafePath(targetRoot, relative);
+        }
+
+        var auto = InstallerSafetyPolicy.BuildIncomingRenamePath(destinationPath);
+        var autoRelative = Path.GetRelativePath(targetRoot, auto);
+        return PathSafety.GetSafePath(targetRoot, autoRelative);
+    }
+
+    private static string CreateTimestampedBackup(string destinationPath)
+    {
+        var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+        var backupBase = destinationPath + $".bak.{timestamp}";
+        if (!File.Exists(backupBase))
+        {
+            File.Copy(destinationPath, backupBase, overwrite: false);
+            return backupBase;
+        }
+
+        var index = 1;
+        while (true)
+        {
+            var numbered = backupBase + $"_{index}";
+            if (!File.Exists(numbered))
+            {
+                File.Copy(destinationPath, numbered, overwrite: false);
+                return numbered;
+            }
+            index++;
         }
     }
 
@@ -245,6 +377,9 @@ public static class FileInstaller
     {
         foreach (var file in files.AsEnumerable().Reverse())
         {
+            if (!file.WasCommitted)
+                continue;
+
             try
             {
                 if (File.Exists(file.DestinationPath))

@@ -260,12 +260,163 @@ public sealed class SetupDoctorService
                     Confidence = 1.0f,
                 });
             }
+
+            AddUltimateBackupStopThePedWarning(findings, gtaRoot);
+            AddPotentialTransportCoronerWarning(findings, gtaRoot);
+            AddSpecificKeybindOverlapWarning(findings, conflicts);
+            AddOverwriteWithoutBackupWarning(findings);
         }
 
         findings.AddRange(backupTask.Result);
         findings.AddRange(presetTask.Result);
 
         return Finalize(findings);
+    }
+
+    private static void AddUltimateBackupStopThePedWarning(List<DiagnosticFinding> findings, string gtaRoot)
+    {
+        var ultimateBackupDll = Path.Combine(gtaRoot, "plugins", "lspdfr", "UltimateBackup.dll");
+        var stopThePedDll = Path.Combine(gtaRoot, "plugins", "lspdfr", "StopThePed.dll");
+
+        if (!File.Exists(ultimateBackupDll) || File.Exists(stopThePedDll))
+            return;
+
+        findings.Add(new DiagnosticFinding
+        {
+            Category = "Dependencies",
+            Title = "Ultimate Backup installed without Stop The Ped",
+            Detail = "Ultimate Backup is installed, but Stop The Ped was not detected. Some Ultimate Backup units, such as Police Transport or Coroner-style integrations, may not work.",
+            RecommendedFix = "Install Stop The Ped before enabling transport/coroner-style Ultimate Backup features.",
+            AffectedPath = ultimateBackupDll,
+            Severity = DiagnosticSeverity.Warning,
+            Confidence = 1.0f,
+        });
+    }
+
+    private static void AddPotentialTransportCoronerWarning(List<DiagnosticFinding> findings, string gtaRoot)
+    {
+        var stopThePedDll = Path.Combine(gtaRoot, "plugins", "lspdfr", "StopThePed.dll");
+        if (File.Exists(stopThePedDll))
+            return;
+
+        var candidates = new[]
+        {
+            Path.Combine(gtaRoot, "plugins", "lspdfr", "UltimateBackup.ini"),
+            Path.Combine(gtaRoot, "plugins", "lspdfr", "UltimateBackup", "DefaultRegions.xml"),
+            Path.Combine(gtaRoot, "plugins", "lspdfr", "UltimateBackup", "backup.xml"),
+            Path.Combine(gtaRoot, "lspdfr", "data", "backup.xml"),
+            Path.Combine(gtaRoot, "lspdfr", "data", "agency.xml"),
+            Path.Combine(gtaRoot, "lspdfr", "data", "regions.xml"),
+            Path.Combine(gtaRoot, "lspdfr", "data", "customregions.xml"),
+            Path.Combine(gtaRoot, "lspdfr", "data", "units.xml"),
+        };
+
+        foreach (var file in candidates.Where(File.Exists))
+        {
+            string content;
+            try { content = File.ReadAllText(file); }
+            catch { continue; }
+
+            if (!InstallerSafetyPolicy.ReferencesTransportOrCoroner(content))
+                continue;
+
+            findings.Add(new DiagnosticFinding
+            {
+                Category = "Config",
+                Title = "Ultimate Backup config references Stop The Ped-dependent units",
+                Detail = "Ultimate Backup config references units that may require Stop The Ped.",
+                RecommendedFix = "Install Stop The Ped or adjust transport/coroner entries before using this backup config.",
+                AffectedPath = file,
+                Severity = DiagnosticSeverity.Warning,
+                Confidence = 0.9f,
+            });
+        }
+    }
+
+    private static void AddSpecificKeybindOverlapWarning(List<DiagnosticFinding> findings, IReadOnlyList<KeybindConflict> conflicts)
+    {
+        foreach (var conflict in conflicts)
+        {
+            var groups = conflict.Conflicts
+                .Select(entry => ClassifyKeybindOwner(entry.FilePath))
+                .Where(group => group is not null)
+                .Cast<string>()
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var includesLspdfr = groups.Contains("LSPDFR", StringComparer.OrdinalIgnoreCase);
+            var includesStopThePed = groups.Contains("StopThePed", StringComparer.OrdinalIgnoreCase);
+            var includesUltimateBackup = groups.Contains("UltimateBackup", StringComparer.OrdinalIgnoreCase);
+
+            if (!includesLspdfr)
+                continue;
+
+            if (!(includesStopThePed || includesUltimateBackup))
+                continue;
+
+            findings.Add(new DiagnosticFinding
+            {
+                Category = "Keybinds",
+                Title = "Potential LSPDFR / Stop The Ped / Ultimate Backup keybind overlap",
+                Detail = "LSPDFR, Stop The Ped, and Ultimate Backup keybinds may overlap. Review backup/interact keys.",
+                Severity = DiagnosticSeverity.Warning,
+                Confidence = 1.0f,
+            });
+            return;
+        }
+    }
+
+    private static string? ClassifyKeybindOwner(string filePath)
+    {
+        var file = Path.GetFileName(filePath);
+        if (file.Contains("stoptheped", StringComparison.OrdinalIgnoreCase))
+            return "StopThePed";
+        if (file.Contains("ultimatebackup", StringComparison.OrdinalIgnoreCase)
+            || file.Contains("backup", StringComparison.OrdinalIgnoreCase))
+            return "UltimateBackup";
+        if (file.Contains("lspdfr", StringComparison.OrdinalIgnoreCase))
+            return "LSPDFR";
+        return null;
+    }
+
+    private static void AddOverwriteWithoutBackupWarning(List<DiagnosticFinding> findings)
+    {
+        var history = ChangeHistoryService.Instance.Entries;
+        if (history.Count == 0)
+            return;
+
+        var recentWrites = history
+            .Where(e => e.Action == ChangeHistoryAction.Installed)
+            .Where(e => e.OccurredAt >= DateTime.UtcNow.AddDays(-2))
+            .Where(e => !string.IsNullOrWhiteSpace(e.AffectedFile))
+            .Where(e => InstallerSafetyPolicy.IsSensitiveOverwriteTarget(Path.GetFileName(e.AffectedFile!)))
+            .ToList();
+
+        if (recentWrites.Count == 0)
+            return;
+
+        var backupCreated = history
+            .Where(e => e.Action == ChangeHistoryAction.BackupCreated)
+            .Where(e => e.OccurredAt >= DateTime.UtcNow.AddDays(-2))
+            .Select(e => e.AffectedFile)
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var uncovered = recentWrites
+            .Where(entry => !backupCreated.Contains(entry.AffectedFile!))
+            .ToList();
+
+        if (uncovered.Count == 0)
+            return;
+
+        findings.Add(new DiagnosticFinding
+        {
+            Category = "Config",
+            Title = "Backup-related config may have been overwritten without a restorable original",
+            Detail = "Backup-related config may have been overwritten without a restorable original.",
+            Severity = DiagnosticSeverity.Warning,
+            Confidence = 0.7f,
+        });
     }
 
     private static IReadOnlyList<DiagnosticFinding> Finalize(List<DiagnosticFinding> findings)

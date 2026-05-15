@@ -89,6 +89,150 @@
             </Border>
 
             <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource TextMuted}" FontSize="12"/>
+
+            <!-- EUP Backup Easy Editor -->
+            <TextBlock Text="EUP BACKUP EASY EDITOR" Style="{StaticResource SectionLabel}" Margin="0,20,0,0"/>
+            <TextBlock Text="Select an installed EUP uniform and apply it to backup units. All edits create a timestamped backup first."
+                       Foreground="{StaticResource TextMuted}" FontSize="12" Margin="0,0,0,12"/>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Source: EUP Uniforms -->
+                <Border Grid.Column="0" Style="{StaticResource SectionCard}">
+                    <StackPanel>
+                        <TextBlock Text="EUP Uniforms" Foreground="{StaticResource TextMuted}"
+                                   FontSize="11" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                        <ComboBox ItemsSource="{Binding EupDepartments}"
+                                  SelectedItem="{Binding SelectedEupDepartment}"
+                                  Margin="0,0,0,4" ToolTip="Filter by department"/>
+                        <ComboBox ItemsSource="{Binding EupCounties}"
+                                  SelectedItem="{Binding SelectedEupCounty}"
+                                  Margin="0,0,0,4" ToolTip="Filter by county"/>
+                        <ComboBox ItemsSource="{Binding EupGenders}"
+                                  SelectedItem="{Binding SelectedEupGender}"
+                                  Margin="0,0,0,8" ToolTip="Filter by gender"/>
+                        <ListBox ItemsSource="{Binding EupUniforms}"
+                                 SelectedItem="{Binding SelectedEupUniform}"
+                                 Background="Transparent" BorderThickness="0" MaxHeight="200">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Margin="0,2">
+                                        <TextBlock Text="{Binding DisplayName}"
+                                                   Foreground="{StaticResource TextPrimary}" FontSize="12"/>
+                                        <TextBlock Foreground="{StaticResource TextMuted}" FontSize="10">
+                                            <Run Text="{Binding Department}"/>
+                                            <Run Text=" · "/>
+                                            <Run Text="{Binding Gender}"/>
+                                            <Run Text=" · "/>
+                                            <Run Text="{Binding PedModel}"/>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <Button Style="{StaticResource GhostButton}" Content="Refresh Uniforms"
+                                Command="{Binding RefreshEupUniformsCommand}" Margin="0,8,0,0" Padding="12,6"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Target: Backup Units -->
+                <Border Grid.Column="2" Style="{StaticResource SectionCard}">
+                    <StackPanel>
+                        <TextBlock Text="Backup Units" Foreground="{StaticResource TextMuted}"
+                                   FontSize="11" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                        <ComboBox ItemsSource="{Binding BackupDepartments}"
+                                  SelectedItem="{Binding SelectedBackupDepartment}"
+                                  Margin="0,0,0,4" ToolTip="Filter by department"/>
+                        <ComboBox ItemsSource="{Binding BackupCounties}"
+                                  SelectedItem="{Binding SelectedBackupCounty}"
+                                  Margin="0,0,0,4" ToolTip="Filter by county/region"/>
+                        <ComboBox ItemsSource="{Binding BackupCategories}"
+                                  SelectedItem="{Binding SelectedBackupCategory}"
+                                  Margin="0,0,0,8" ToolTip="Filter by unit category"/>
+                        <ListBox ItemsSource="{Binding BackupUnits}"
+                                 SelectedItem="{Binding SelectedBackupUnit}"
+                                 Background="Transparent" BorderThickness="0" MaxHeight="200">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Margin="0,2">
+                                        <TextBlock Text="{Binding Agency}"
+                                                   Foreground="{StaticResource TextPrimary}" FontSize="12"/>
+                                        <TextBlock Foreground="{StaticResource TextMuted}" FontSize="10">
+                                            <Run Text="{Binding UnitType}"/>
+                                            <Run Text=" · "/>
+                                            <Run Text="{Binding PedModel}"/>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <Button Style="{StaticResource GhostButton}" Content="Refresh Units"
+                                Command="{Binding RefreshBackupUnitsCommand}" Margin="0,8,0,0" Padding="12,6"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Preview + Apply -->
+                <Border Grid.Column="4" Style="{StaticResource SectionCard}">
+                    <StackPanel>
+                        <TextBlock Text="Preview &amp; Apply" Foreground="{StaticResource TextMuted}"
+                                   FontSize="11" FontWeight="SemiBold" Margin="0,0,0,8"/>
+
+                        <Button Style="{StaticResource PrimaryButton}" Content="Preview Assignment"
+                                Command="{Binding PreviewAssignmentCommand}"
+                                IsEnabled="{Binding CanPreview}" Padding="12,8" Margin="0,0,0,8"/>
+
+                        <!-- Mismatch warnings -->
+                        <ItemsControl ItemsSource="{Binding MismatchWarnings}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#3D2C00" CornerRadius="4" Padding="8,4" Margin="0,2">
+                                        <TextBlock Text="{Binding}" Foreground="#FFB347"
+                                                   FontSize="11" TextWrapping="Wrap"/>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Before/After -->
+                        <TextBlock Text="Before:" Foreground="{StaticResource TextMuted}"
+                                   FontSize="10" Margin="0,8,0,2"/>
+                        <TextBox Text="{Binding PreviewBefore, Mode=OneWay}" IsReadOnly="True"
+                                 FontFamily="Consolas" FontSize="10"
+                                 Background="#0D1117" Foreground="#8B949E"
+                                 MaxHeight="80" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap"/>
+                        <TextBlock Text="After:" Foreground="{StaticResource TextMuted}"
+                                   FontSize="10" Margin="0,6,0,2"/>
+                        <TextBox Text="{Binding PreviewAfter, Mode=OneWay}" IsReadOnly="True"
+                                 FontFamily="Consolas" FontSize="10"
+                                 Background="#0D1117" Foreground="#3FB950"
+                                 MaxHeight="80" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap"/>
+
+                        <TextBlock Text="{Binding ConfidenceLabel}" FontSize="11"
+                                   Foreground="{StaticResource TextMuted}" Margin="0,6,0,0"/>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <Button Style="{StaticResource PrimaryButton}" Content="Apply"
+                                    Command="{Binding ApplyAssignmentCommand}"
+                                    IsEnabled="{Binding CanApply}" Padding="16,8" Margin="0,0,8,0"/>
+                            <Button Style="{StaticResource GhostButton}" Content="Revert"
+                                    Command="{Binding RevertAssignmentCommand}"
+                                    IsEnabled="{Binding CanRevert}" Padding="12,8"/>
+                        </StackPanel>
+
+                        <TextBlock Text="{Binding EupStatusMessage}" FontSize="11"
+                                   Foreground="{StaticResource TextMuted}"
+                                   TextWrapping="Wrap" Margin="0,8,0,0"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
         </StackPanel>
     </ScrollViewer>
 </UserControl>

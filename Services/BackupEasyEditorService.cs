@@ -141,6 +141,229 @@ public class BackupEasyEditorService
         };
     }
 
+    // ── EUP assignment methods ────────────────────────────────────────────────
+
+    public List<EupUniformDefinition> GetEupUniforms(
+        string? department = null,
+        string? county = null,
+        EupGender? gender = null)
+    {
+        var svc = new EupOutfitDiscoveryService(_gtaPath);
+        return svc.Discover()
+            .Where(u => IsAny(department) ||
+                        u.Department.Equals(department ?? "", StringComparison.OrdinalIgnoreCase))
+            .Where(u => IsAny(county) ||
+                        u.County.Equals(county ?? "", StringComparison.OrdinalIgnoreCase))
+            .Where(u => gender is null || gender == EupGender.Any ||
+                        u.Gender == gender || u.Gender == EupGender.Unknown)
+            .ToList();
+    }
+
+    public List<BackupUnitDefinition> GetBackupUnits(
+        string? department = null,
+        string? county = null,
+        EupGender? gender = null,
+        string? category = null)
+    {
+        var files = new BackupConfigDiscoveryService(_gtaPath).DiscoverBackupXmlFiles();
+        var units = files.SelectMany(BackupXmlParser.Parse).ToList();
+        return BackupUnitFilter.Filter(units, department, county, gender, category);
+    }
+
+    /// <summary>
+    /// Generates a preview of applying the given EUP uniform to the given backup unit.
+    /// Enforces freemode ped compatibility and gender match. Never writes to disk.
+    /// </summary>
+    public static BackupUniformPatchPreview PreviewAssignment(
+        EupUniformDefinition uniform,
+        BackupUnitDefinition unit,
+        string xmlFilePath)
+    {
+        var mismatchWarnings = new List<string>();
+        var warnings = new List<string>();
+        bool canApply = true;
+        bool isReadOnly = false;
+
+        // 1. Freemode ped check — EUP components only work on freemode peds
+        if (uniform.Components.Count > 0 || uniform.Props.Count > 0)
+        {
+            if (!EupInferenceHelper.IsFreemodePed(unit.PedModel))
+            {
+                mismatchWarnings.Add(
+                    $"Target ped '{unit.PedModel ?? "unknown"}' may not support EUP component uniforms. " +
+                    "Use mp_m_freemode_01 or mp_f_freemode_01 for EUP outfits.");
+                canApply = false;
+                isReadOnly = true;
+            }
+        }
+
+        // 2. Gender × freemode ped check
+        if (EupInferenceHelper.IsFreemodePed(unit.PedModel))
+        {
+            var targetGender = EupInferenceHelper.InferGenderFromPedModel(unit.PedModel);
+
+            if (uniform.Gender == EupGender.Male && targetGender == EupGender.Female)
+            {
+                mismatchWarnings.Add(
+                    "Selected uniform is Male but target backup ped is mp_f_freemode_01 (Female).");
+                canApply = false;
+            }
+            else if (uniform.Gender == EupGender.Female && targetGender == EupGender.Male)
+            {
+                mismatchWarnings.Add(
+                    "Selected uniform is Female but target backup ped is mp_m_freemode_01 (Male).");
+                canApply = false;
+            }
+            else if (uniform.Gender == EupGender.Unknown)
+            {
+                warnings.Add("Uniform gender could not be determined. Review before applying.");
+                // CanApply stays true if ped is freemode and XML structure supported
+            }
+        }
+
+        // 3. Department mismatch (advisory warning, does not block)
+        if (uniform.Department != "Unknown" && unit.Agency.Length > 0 &&
+            !unit.Agency.Equals(uniform.Department, StringComparison.OrdinalIgnoreCase))
+        {
+            mismatchWarnings.Add(
+                $"Selected uniform appears {uniform.Department} but target unit is {unit.Agency}.");
+        }
+
+        // 4. County/region mismatch (advisory warning, does not block)
+        if (uniform.County != "Unknown" && uniform.County != "Statewide" &&
+            unit.Region.Length > 0 &&
+            !unit.Region.Equals(uniform.County, StringComparison.OrdinalIgnoreCase))
+        {
+            mismatchWarnings.Add(
+                $"Uniform county is {uniform.County} but backup unit region is {unit.Region}.");
+        }
+
+        // 5. EUP format supportability
+        bool formatSupported = uniform.Metadata.TryGetValue("Supported", out var sup) && sup == "true";
+        if (!formatSupported && uniform.Components.Count > 0)
+        {
+            warnings.Add("Unknown EUP format — preview only. Apply disabled until format is confirmed.");
+            canApply = false;
+            isReadOnly = true;
+        }
+
+        // 6. Build before/after preview lines from the XML file
+        string[] beforeLines = [];
+        string[] afterLines = [];
+        try
+        {
+            var rawLines = File.ReadAllLines(xmlFilePath);
+            beforeLines = rawLines
+                .Where(l => l.Contains(unit.Agency, StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+
+            var uniformNameToApply = uniform.DisplayName;
+            afterLines = beforeLines.Select(l =>
+            {
+                if (l.Contains("UniformName", StringComparison.OrdinalIgnoreCase)) return l;
+                if (l.TrimEnd().EndsWith("/>"))
+                    return l.TrimEnd()[..^2] + $" UniformName=\"{uniformNameToApply}\" />";
+                return l + $" <!-- UniformName=\"{uniformNameToApply}\" -->";
+            }).ToArray();
+
+            if (beforeLines.Length == 0)
+            {
+                warnings.Add($"No XML entries found matching agency '{unit.Agency}'. Cannot apply.");
+                canApply = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            warnings.Add($"Could not read XML file: {ex.Message}");
+            canApply = false;
+        }
+
+        float confidence = mismatchWarnings.Count == 0 ? uniform.Confidence
+                         : uniform.Confidence * 0.5f;
+
+        return new BackupUniformPatchPreview
+        {
+            SourceFile = xmlFilePath,
+            MappingName = uniform.DisplayName,
+            BeforeLines = beforeLines,
+            AfterLines = afterLines,
+            Warnings = [.. warnings],
+            MismatchWarnings = [.. mismatchWarnings],
+            CanApply = canApply && !isReadOnly,
+            IsReadOnlyPreview = isReadOnly,
+            Confidence = confidence,
+            TargetAgency = unit.Agency,
+            TargetUnitType = unit.UnitType,
+            TargetPedModel = unit.PedModel,
+            UniformNameToApply = uniform.DisplayName,
+        };
+    }
+
+    /// <summary>
+    /// Applies the preview to disk using XDocument-based stable node patching.
+    /// Creates a timestamped backup before writing. Never writes if CanApply is false.
+    /// </summary>
+    public static (bool Applied, string? BackupPath, string? Error) ApplyAssignment(
+        BackupUniformPatchPreview preview)
+    {
+        if (!preview.CanApply)
+            return (false, null, "Preview CanApply is false. Review warnings before applying.");
+
+        if (string.IsNullOrEmpty(preview.SourceFile) || !File.Exists(preview.SourceFile))
+            return (false, null, "Source file not found.");
+
+        if (string.IsNullOrEmpty(preview.UniformNameToApply))
+            return (false, null, "No uniform name specified in preview.");
+
+        // Timestamped backup — never overwrite a previous backup
+        var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+        var bakPath = BuildUniqueBackupPath(preview.SourceFile, timestamp);
+        try
+        {
+            File.Copy(preview.SourceFile, bakPath, overwrite: false);
+            Core.AppLogger.Info($"[BACKUP_EASY_EDITOR_BAK] {Path.GetFileName(bakPath)}");
+        }
+        catch (Exception ex)
+        {
+            return (false, null, $"Could not create backup: {ex.Message}");
+        }
+
+        var (changed, error) = BackupXmlParser.ApplyPatch(
+            preview.SourceFile,
+            preview.TargetAgency ?? "",
+            preview.TargetUnitType,
+            preview.TargetPedModel,
+            preview.UniformNameToApply);
+
+        if (error is not null || changed == 0)
+        {
+            // Delete the backup we just created since nothing was written
+            try { File.Delete(bakPath); } catch { }
+            return (false, null, error ?? "No changes applied — uniform may already be set.");
+        }
+
+        return (true, bakPath, null);
+    }
+
+    private static string BuildUniqueBackupPath(string sourceFile, string timestamp)
+    {
+        var basePath = sourceFile + $".bak.{timestamp}";
+        if (!File.Exists(basePath))
+            return basePath;
+
+        var attempt = 1;
+        while (true)
+        {
+            var candidate = $"{basePath}_{attempt}";
+            if (!File.Exists(candidate))
+                return candidate;
+            attempt++;
+        }
+    }
+
+    private static bool IsAny(string? value) =>
+        string.IsNullOrEmpty(value) || value.Equals("Any", StringComparison.OrdinalIgnoreCase);
+
     private bool EupAppears()
     {
         try

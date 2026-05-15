@@ -21,6 +21,10 @@ publish/
 publish*/
 *.zip
 *.lscache
+.lscache/
+artifacts/
+Releases/
+LSPDFRManager-v*/
 
 ## OS
 .DS_Store

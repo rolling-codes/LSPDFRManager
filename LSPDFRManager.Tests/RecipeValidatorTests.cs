@@ -112,4 +112,52 @@ public class RecipeValidatorTests : IDisposable
             f.Severity == DiagnosticSeverity.Warning &&
             f.Title.Contains("duplicate", StringComparison.OrdinalIgnoreCase));
     }
+
+
+    [Fact]
+    public void UltimateBackupWithoutStopThePed_ReturnsDependencyWarning()
+    {
+        CreateFile("plugins/lspdfr/UltimateBackup.dll");
+
+        var findings = new RecipeValidatorService(_tempDir).Validate();
+
+        Assert.Contains(findings, f =>
+            f.Severity == DiagnosticSeverity.Warning &&
+            f.Title.Contains("Ultimate Backup", StringComparison.OrdinalIgnoreCase) &&
+            f.Detail.Contains("Stop The Ped", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void UltimateBackupWithStopThePed_DoesNotReturnMissingStopThePedWarning()
+    {
+        CreateFile("plugins/lspdfr/UltimateBackup.dll");
+        CreateFile("plugins/lspdfr/StopThePed.dll");
+
+        var findings = new RecipeValidatorService(_tempDir).Validate();
+
+        Assert.DoesNotContain(findings, f =>
+            f.Title.Contains("Ultimate Backup", StringComparison.OrdinalIgnoreCase) &&
+            f.Detail.Contains("Stop The Ped", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void UltimateBackupTransportReferenceWithoutStopThePed_ReturnsConfigWarning()
+    {
+        CreateFile("plugins/lspdfr/UltimateBackup.dll");
+        CreateFile("plugins/lspdfr/UltimateBackup.ini");
+
+        File.WriteAllText(
+            Path.Combine(_tempDir, "plugins", "lspdfr", "UltimateBackup.ini"),
+            """
+            [Transport]
+            CoronerUnit=Enabled
+            """);
+
+        var findings = new RecipeValidatorService(_tempDir).Validate();
+
+        Assert.Contains(findings, f =>
+            f.Severity == DiagnosticSeverity.Warning &&
+            f.Title.Contains("may require Stop The Ped", StringComparison.OrdinalIgnoreCase));
+    }
+
 }

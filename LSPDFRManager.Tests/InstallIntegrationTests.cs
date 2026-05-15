@@ -99,7 +99,20 @@ public class InstallIntegrationTests : IDisposable
         using (var stream = File.Open(lockedFile, FileMode.Open, FileAccess.Read, FileShare.None))
         {
             var mod = new ModInfo { Name = "Locked Test", SourcePath = zipPath };
-            var result = await FileInstaller.InstallAsync(mod, _tempRoot);
+            var plan = new InstallPlan
+            {
+                Entries =
+                [
+                    new InstallPlanEntry
+                    {
+                        ArchivePath = "file2.dll",
+                        TargetPath = lockedFile,
+                        DestinationExists = true,
+                        PlannedAction = InstallConflictAction.BackupAndReplace,
+                    },
+                ],
+            };
+            var result = await FileInstaller.InstallAsync(mod, _tempRoot, plan);
 
             Assert.False(result.Success);
             // Rollback should have removed file1.dll

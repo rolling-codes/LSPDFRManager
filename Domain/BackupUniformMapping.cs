@@ -13,4 +13,10 @@ public sealed class BackupUniformMapping
     public Dictionary<string, string> Components { get; init; } = [];
     public Dictionary<string, string> Props { get; init; } = [];
     public Dictionary<string, string> Metadata { get; init; } = [];
+
+    // EUP compatibility fields
+    public EupGender Gender { get; init; } = EupGender.Unknown;
+    public string? RequiredPedModel { get; init; }
+    public string? TargetPedModel { get; init; }
+    public bool RequiresFreemodePed { get; init; } = true;
 }

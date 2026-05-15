@@ -33,4 +33,20 @@ public class DependencyScannerTests : CommandCenterTestBase
 
         Assert.Equal(DependencyStatus.Disabled, results.First(r => r.Name == "ScriptHookV.dll").Status);
     }
+
+
+    [Fact]
+    public void StopThePedAndUltimateBackup_DetectedWhenPresent()
+    {
+        var pluginDir = Path.Combine(GtaDir, "plugins", "lspdfr");
+        Directory.CreateDirectory(pluginDir);
+        File.WriteAllText(Path.Combine(pluginDir, "StopThePed.dll"), "");
+        File.WriteAllText(Path.Combine(pluginDir, "UltimateBackup.dll"), "");
+
+        var results = new DependencyScanner().Scan();
+
+        Assert.Equal(DependencyStatus.Installed, results.First(r => r.Name == "StopThePed.dll").Status);
+        Assert.Equal(DependencyStatus.Installed, results.First(r => r.Name == "UltimateBackup.dll").Status);
+    }
+
 }

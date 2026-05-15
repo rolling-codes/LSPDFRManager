@@ -18,34 +18,9 @@
 - **AppConfig** — App settings (GTA path, backup folder, etc.), synced to `config.json`.
 - **LspdfrStatusService** — Monitors live status of LSPDFR/GTA V processes (shown in sidebar).
 - **InstallQueue** — Background task processor; installs one mod at a time to avoid file conflicts.
+- **DiagnosticsOrchestrator** — Aggregates findings from all scanner services; deduplicates by Title+Path+Severity.
 
 Singletons use lazy-init. Modifications (Add, Remove, SetEnabled) trigger immediate Save to JSON. No locks — assume single-threaded UI access.
-
-## Core Workflows
-
-**Install Flow**
-1. User drag-drop or browse archive → InstallView / InstallViewModel
-2. ModDetector runs detection (file paths, extensions, archive name keywords) → confidence score
-3. User confirms type + author → FileInstaller extracts to GTA path, snapshots file system
-4. InstallQueue enqueues install, processes asynchronously
-5. Installed files tracked in InstalledMod → ModLibraryService saves to library.json
-
-**Enable/Disable**
-- Rename installed files with `.disabled` suffix (e.g., `plugin.dll` → `plugin.dll.disabled`)
-- GTA V/LSPDFR ignore `.disabled` files
-- Toggled via ModLibraryService.SetEnabled()
-- May fail silently if GTA V holds the file handle; check app.log for rename errors
-
-**Detection Scoring**
-- ModDetector analyzes path patterns, file extensions, archive names
-- Scores each ModType (LSPDFR Plugin, DLC, Replace, ASI, Script, EUP, Map, Sound) with confidence 0–100
-- Low confidence (< 50) warns user; user can override
-- Keywords in archive name can boost/flip detection (e.g., "dlcpack" → DLC)
-- Path patterns checked recursively (e.g., `plugins/lspdfr/` at any depth)
-
-**Backup/Restore**
-- BackupService ZIPs library.json, configs.json, key file copies
-- RestoreService extracts snapshot, restores app state
 
 ## Storage
 

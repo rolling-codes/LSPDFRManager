@@ -209,7 +209,20 @@ public class FileInstallerTests : IDisposable
         File.WriteAllText(Path.Combine(source, "config.ini"), "new content");
 
         var mod = new ModInfo { Name = "Overwrite", SourcePath = source };
-        var result = await FileInstaller.InstallAsync(mod, _tempRoot);
+        var plan = new InstallPlan
+        {
+            Entries =
+            [
+                new InstallPlanEntry
+                {
+                    ArchivePath = "config.ini",
+                    TargetPath = targetFile,
+                    DestinationExists = true,
+                    PlannedAction = InstallConflictAction.BackupAndReplace,
+                },
+            ],
+        };
+        var result = await FileInstaller.InstallAsync(mod, _tempRoot, plan);
 
         Assert.True(result.Success);
         var content = File.ReadAllText(targetFile);
