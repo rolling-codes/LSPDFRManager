@@ -40,11 +40,13 @@ public sealed class ModTypeDetectionService : IModTypeDetectionService
                 var ev = new List<string>();
                 float s = 0f;
 
-                // assembly.xml at root or one folder deep is the canonical OIV marker.
+                // assembly.xml at root or one folder deep is the canonical, unambiguous OIV
+                // marker — no other mod type uses it. Score at max so an OIV containing DLC
+                // content (dlcpacks/, .rpf) is never misidentified as VehicleDlc.
                 var asm = entries.FirstOrDefault(e =>
                     e == "assembly.xml" ||
                     (e.EndsWith("/assembly.xml") && e.Count(c => c == '/') == 1));
-                if (asm is not null) { ev.Add($"Found OIV assembly manifest: {asm}"); s += 0.9f; }
+                if (asm is not null) { ev.Add($"Found OIV assembly manifest: {asm}"); s += 1.0f; }
 
                 var oiv = entries.FirstOrDefault(e => e.EndsWith(".oiv"));
                 if (oiv is not null) { ev.Add($"Found .oiv entry: {oiv}"); s += 0.5f; }

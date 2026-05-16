@@ -368,7 +368,61 @@
                                         <TextBlock Text="OIV PACKAGE — CANNOT INSTALL AS LOOSE FILES"
                                                    Foreground="#FFFF6B00" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,4"/>
                                         <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
-                                                   Text="This is an OIV package. OIV packages must be installed through OpenIV or a compatible OIV installer (such as the one included with some mods). Normal file extraction is blocked to prevent a broken install."/>
+                                                   Text="This is an OIV package. OIV packages must be installed through OpenIV or a compatible OIV installer (such as the one included with some mods). Normal file extraction is blocked to prevent a broken install."
+                                                   Margin="0,0,0,6"/>
+
+                                        <!-- OIV metadata card (shown when assembly.xml parsed successfully) -->
+                                        <Border Visibility="{Binding ReviewHasOivMetadata, Converter={StaticResource BoolToVis}}"
+                                                Background="#22000000" BorderBrush="#44FF6B00"
+                                                BorderThickness="1" CornerRadius="3" Padding="8,6">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+
+                                                <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource DetailLabel}"
+                                                           Text="NAME" Margin="0,0,8,2"/>
+                                                <TextBlock Grid.Row="0" Grid.Column="1" FontSize="11"
+                                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                                           Text="{Binding ReviewOivName}" TextWrapping="Wrap"/>
+
+                                                <TextBlock Grid.Row="1" Grid.Column="0" Style="{StaticResource DetailLabel}"
+                                                           Text="VERSION" Margin="0,0,8,2"/>
+                                                <TextBlock Grid.Row="1" Grid.Column="1" FontSize="11"
+                                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                                           Text="{Binding ReviewOivVersion}"/>
+
+                                                <TextBlock Grid.Row="2" Grid.Column="0" Style="{StaticResource DetailLabel}"
+                                                           Text="AUTHOR" Margin="0,0,8,2"/>
+                                                <TextBlock Grid.Row="2" Grid.Column="1" FontSize="11"
+                                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                                           Text="{Binding ReviewOivAuthor}" TextWrapping="Wrap"/>
+
+                                                <TextBlock Grid.Row="3" Grid.Column="0" Style="{StaticResource DetailLabel}"
+                                                           Text="TARGET" Margin="0,0,8,2"
+                                                           Visibility="{Binding ReviewOivTargetGame, Converter={StaticResource StringToVis}}"/>
+                                                <TextBlock Grid.Row="3" Grid.Column="1" FontSize="11"
+                                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                                           Text="{Binding ReviewOivTargetGame}"
+                                                           Visibility="{Binding ReviewOivTargetGame, Converter={StaticResource StringToVis}}"/>
+
+                                                <TextBlock Grid.Row="4" Grid.Column="0" Style="{StaticResource DetailLabel}"
+                                                           Text="FILES" Margin="0,0,8,0"/>
+                                                <TextBlock Grid.Row="4" Grid.Column="1" FontSize="11"
+                                                           Foreground="{StaticResource TextSecondaryBrush}">
+                                                    <Run Text="{Binding ReviewOivFileCount, Mode=OneWay}"/>
+                                                    <Run Text="file(s) declared in manifest"/>
+                                                </TextBlock>
+                                            </Grid>
+                                        </Border>
                                     </StackPanel>
                                 </Border>
 

@@ -239,6 +239,15 @@ public class InstallViewModel : ObservableObject
             OnPropertyChanged(nameof(ReviewHasNotApplicableDependencies));
             OnPropertyChanged(nameof(ReviewIsOivPrimary));
             OnPropertyChanged(nameof(ReviewIsOivSecondary));
+            OnPropertyChanged(nameof(ReviewOivMetadata));
+            OnPropertyChanged(nameof(ReviewHasOivMetadata));
+            OnPropertyChanged(nameof(ReviewOivName));
+            OnPropertyChanged(nameof(ReviewOivVersion));
+            OnPropertyChanged(nameof(ReviewOivAuthor));
+            OnPropertyChanged(nameof(ReviewOivDescription));
+            OnPropertyChanged(nameof(ReviewOivTargetGame));
+            OnPropertyChanged(nameof(ReviewOivFileCount));
+            OnPropertyChanged(nameof(ReviewOivTargetPaths));
         }
     }
 
@@ -374,6 +383,17 @@ public class InstallViewModel : ObservableObject
     public bool ReviewIsOivSecondary =>
         !ReviewIsOivPrimary &&
         (_reviewPlan?.ModTypeResult?.SecondaryTypes.Any(t => t.Type == ModType.OivPackage) ?? false);
+
+    public OivPackage? ReviewOivMetadata => _reviewPlan?.OivMetadata;
+    public bool ReviewHasOivMetadata => _reviewPlan?.OivMetadata?.IsValid == true;
+    public string ReviewOivName => _reviewPlan?.OivMetadata?.Name ?? "";
+    public string ReviewOivVersion => _reviewPlan?.OivMetadata?.Version ?? "";
+    public string ReviewOivAuthor => _reviewPlan?.OivMetadata?.Author ?? "";
+    public string ReviewOivDescription => _reviewPlan?.OivMetadata?.Description ?? "";
+    public string ReviewOivTargetGame => _reviewPlan?.OivMetadata?.TargetGame ?? "";
+    public int ReviewOivFileCount => _reviewPlan?.OivMetadata?.Files.Count ?? 0;
+    public IEnumerable<string> ReviewOivTargetPaths =>
+        _reviewPlan?.OivMetadata?.Files.Select(f => f.InstallPath) ?? [];
 
     /// <summary>Non-dependency warnings (path conflicts, overwrites, etc.).</summary>
     public IEnumerable<string> ReviewGeneralWarnings =>

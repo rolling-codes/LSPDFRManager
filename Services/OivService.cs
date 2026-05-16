@@ -147,30 +147,56 @@ public static class OivService
             if (xmlEntry is null)
                 return InvalidPackage("assembly.xml not found in OIV package.", oivPath);
 
+            using var stream = xmlEntry.Open();
+            return ParseFromStream(stream, oivPath);
+        }
+        catch (InvalidDataException ex)
+        {
+            AppLogger.Error($"[OIV_ERROR] Not a valid ZIP/OIV: {oivPath}", ex);
+            return InvalidPackage($"Not a valid OIV package: {ex.Message}", oivPath);
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Error($"[OIV_ERROR] Parse failed: {oivPath}", ex);
+            return InvalidPackage($"Parse error: {ex.Message}", oivPath);
+        }
+    }
+
+    /// <summary>
+    /// Parses an already-opened assembly.xml stream into an OivPackage.
+    /// Used by SmartInstallPlanner, which has the stream buffered from the archive.
+    /// Returns a package with IsValid=false and ValidationError set on failure.
+    /// </summary>
+    public static OivPackage ParseFromStream(Stream assemblyXmlStream, string? sourcePath = null)
+    {
+        try
+        {
             XDocument doc;
             try
             {
-                using var stream = xmlEntry.Open();
-                doc = XDocument.Load(stream);
+                doc = XDocument.Load(assemblyXmlStream);
             }
             catch (Exception ex)
             {
-                return InvalidPackage($"assembly.xml parse error: {ex.Message}", oivPath);
+                return InvalidPackage($"assembly.xml parse error: {ex.Message}", sourcePath);
             }
 
             AppLogger.Info($"[OIV_VALIDATE] Validating assembly.xml structure");
 
             var root = doc.Root;
             if (root is null || root.Name != "package")
-                return InvalidPackage("assembly.xml root element must be <package>.", oivPath);
+                return InvalidPackage("assembly.xml root element must be <package>.", sourcePath);
 
             var meta = root.Element("metadata");
             if (meta is null)
-                return InvalidPackage("assembly.xml missing <metadata> element.", oivPath);
+                return InvalidPackage("assembly.xml missing <metadata> element.", sourcePath);
 
             var name = meta.Element("name")?.Value ?? "";
             var author = meta.Element("author")?.Value ?? "";
             var description = meta.Element("description")?.Value ?? "";
+            var targetGame = meta.Element("targetGame")?.Value
+                ?? meta.Element("target")?.Value
+                ?? "";
 
             var verElem = meta.Element("version");
             var major = verElem?.Element("major")?.Value ?? "1";
@@ -206,20 +232,16 @@ public static class OivService
                 Version = version,
                 Author = author,
                 Description = description,
+                TargetGame = string.IsNullOrWhiteSpace(targetGame) ? "Grand Theft Auto V" : targetGame,
                 Files = files,
-                SourcePath = oivPath,
+                SourcePath = sourcePath,
                 IsValid = true
             };
         }
-        catch (InvalidDataException ex)
-        {
-            AppLogger.Error($"[OIV_ERROR] Not a valid ZIP/OIV: {oivPath}", ex);
-            return InvalidPackage($"Not a valid OIV package: {ex.Message}", oivPath);
-        }
         catch (Exception ex)
         {
-            AppLogger.Error($"[OIV_ERROR] Parse failed: {oivPath}", ex);
-            return InvalidPackage($"Parse error: {ex.Message}", oivPath);
+            AppLogger.Error($"[OIV_ERROR] ParseFromStream failed", ex);
+            return InvalidPackage($"Parse error: {ex.Message}", sourcePath);
         }
     }
 

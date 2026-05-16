@@ -19,6 +19,7 @@ public class SmartInstallPlanner
         var entries = new List<InstallPlanEntry>();
         var warnings = new List<string>();
         var blockingIssues = new List<string>();
+        OivPackage? oivMetadata = null;
         var orderReasons = new List<string>();
         string? readmeContent = null;
 
@@ -32,7 +33,18 @@ public class SmartInstallPlanner
             warnings.Add($"Dependency: {dep.Name} — {dep.Reason}");
 
         if (modTypeResult.PrimaryType == ModType.OivPackage)
+        {
             blockingIssues.Add(InstallerSafetyPolicy.OivPrimaryBlockMessage);
+            var asmEntry = sourceEntries.FirstOrDefault(e =>
+                string.Equals(e.RelativePath, "assembly.xml", StringComparison.OrdinalIgnoreCase) ||
+                (e.RelativePath.EndsWith("/assembly.xml", StringComparison.OrdinalIgnoreCase) &&
+                 e.RelativePath.Count(c => c == '/') == 1));
+            if (asmEntry is not null)
+            {
+                try { oivMetadata = OivService.ParseFromStream(asmEntry.OpenStream(), archivePath); }
+                catch { /* parse failure is non-fatal; metadata stays null */ }
+            }
+        }
         else if (modTypeResult.SecondaryTypes.Any(t => t.Type == ModType.OivPackage))
             warnings.Add(InstallerSafetyPolicy.OivSecondaryWarningMessage);
 
@@ -152,6 +164,7 @@ public class SmartInstallPlanner
             OrderReasons = orderReasons.Distinct(StringComparer.Ordinal).ToList(),
             RequiresManualConfirmation = blockingIssues.Count > 0,
             ProbeResult = probeResult,
+            OivMetadata = oivMetadata,
         };
     }
 

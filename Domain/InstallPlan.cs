@@ -17,4 +17,7 @@ public class InstallPlan
     public List<string> OrderReasons { get; init; } = [];
     public bool RequiresManualConfirmation { get; init; }
     public DependencyProbeResult? ProbeResult { get; init; }
+
+    /// <summary>Parsed OIV manifest metadata — populated only when PrimaryType is OivPackage.</summary>
+    public OivPackage? OivMetadata { get; init; }
 }
