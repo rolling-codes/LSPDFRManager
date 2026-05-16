@@ -237,6 +237,8 @@ public class InstallViewModel : ObservableObject
             OnPropertyChanged(nameof(ReviewHasPresentDependencies));
             OnPropertyChanged(nameof(ReviewHasUnknownDependencies));
             OnPropertyChanged(nameof(ReviewHasNotApplicableDependencies));
+            OnPropertyChanged(nameof(ReviewIsOivPrimary));
+            OnPropertyChanged(nameof(ReviewIsOivSecondary));
         }
     }
 
@@ -361,6 +363,17 @@ public class InstallViewModel : ObservableObject
     public bool ReviewHasPresentDependencies => ReviewPresentDependencies.Any();
     public bool ReviewHasUnknownDependencies => ReviewUnknownDependencies.Any();
     public bool ReviewHasNotApplicableDependencies => ReviewNotApplicableDependencies.Any();
+
+    // ── OIV guardrail ────────────────────────────────────────────────────────
+
+    /// <summary>True when the detected primary type is OIV — blocks normal install.</summary>
+    public bool ReviewIsOivPrimary =>
+        _reviewPlan?.ModTypeResult?.PrimaryType == ModType.OivPackage;
+
+    /// <summary>True when OIV appears as a secondary/mixed type but is not the primary.</summary>
+    public bool ReviewIsOivSecondary =>
+        !ReviewIsOivPrimary &&
+        (_reviewPlan?.ModTypeResult?.SecondaryTypes.Any(t => t.Type == ModType.OivPackage) ?? false);
 
     /// <summary>Non-dependency warnings (path conflicts, overwrites, etc.).</summary>
     public IEnumerable<string> ReviewGeneralWarnings =>

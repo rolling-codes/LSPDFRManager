@@ -31,6 +31,11 @@ public class SmartInstallPlanner
         foreach (var dep in depResult.Warnings)
             warnings.Add($"Dependency: {dep.Name} — {dep.Reason}");
 
+        if (modTypeResult.PrimaryType == ModType.OivPackage)
+            blockingIssues.Add(InstallerSafetyPolicy.OivPrimaryBlockMessage);
+        else if (modTypeResult.SecondaryTypes.Any(t => t.Type == ModType.OivPackage))
+            warnings.Add(InstallerSafetyPolicy.OivSecondaryWarningMessage);
+
         var hasStopThePedInBatch = sourceEntries.Any(e => InstallerSafetyPolicy.IsStopThePedFile(e.RelativePath));
         var hasUltimateBackupInBatch = sourceEntries.Any(e => InstallerSafetyPolicy.IsUltimateBackupFile(e.RelativePath));
         var stopThePedInstalled = IsStopThePedInstalled(gtaPath);

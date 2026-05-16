@@ -286,6 +286,12 @@ public static class InstallerSafetyPolicy
         return null;
     }
 
+    public const string OivPrimaryBlockMessage =
+        "This archive is an OIV package. OIV packages must be installed through OpenIV or a compatible OIV package installer — they cannot be extracted as loose files. Normal install is blocked.";
+
+    public const string OivSecondaryWarningMessage =
+        "This archive may contain OIV package content. If it includes an assembly.xml or .oiv entry, use OpenIV or a compatible OIV package installer for those files instead of extracting them directly.";
+
     public static string GetUltimateBackupMissingStpWarning()
     {
         return "Ultimate Backup detected. Some Ultimate Backup features, including Police Transport and Coroner-style units, require Stop The Ped. Install Stop The Ped first or ensure it is already installed.";

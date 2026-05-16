@@ -360,6 +360,30 @@
                                     </StackPanel>
                                 </Border>
 
+                                <!-- OIV primary block banner -->
+                                <Border Visibility="{Binding ReviewIsOivPrimary, Converter={StaticResource BoolToVis}}"
+                                        Background="#33FF6B00" BorderBrush="#FFFF6B00"
+                                        BorderThickness="1" CornerRadius="4" Padding="10,8" Margin="0,0,0,8">
+                                    <StackPanel>
+                                        <TextBlock Text="OIV PACKAGE — CANNOT INSTALL AS LOOSE FILES"
+                                                   Foreground="#FFFF6B00" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,4"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
+                                                   Text="This is an OIV package. OIV packages must be installed through OpenIV or a compatible OIV installer (such as the one included with some mods). Normal file extraction is blocked to prevent a broken install."/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- OIV secondary/mixed warning -->
+                                <Border Visibility="{Binding ReviewIsOivSecondary, Converter={StaticResource BoolToVis}}"
+                                        Background="#22FFAA00" BorderBrush="#FFAA7700"
+                                        BorderThickness="1" CornerRadius="4" Padding="10,8" Margin="0,0,0,8">
+                                    <StackPanel>
+                                        <TextBlock Text="OIV CONTENT DETECTED"
+                                                   Foreground="#FFCC8800" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,4"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
+                                                   Text="This archive may contain OIV package content (assembly.xml or .oiv files). Those files should be applied through OpenIV or a compatible OIV installer rather than extracted directly."/>
+                                    </StackPanel>
+                                </Border>
+
                                 <!-- Blocking issues (red — disables Confirm) -->
                                 <ItemsControl ItemsSource="{Binding ReviewPlan.BlockingIssues}"
                                               Visibility="{Binding ReviewHasBlockingIssues, Converter={StaticResource BoolToVis}}">
