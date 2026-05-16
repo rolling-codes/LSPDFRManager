@@ -39,6 +39,8 @@ public class InstalledModFileService
             .SelectMany(other => other.InstalledFiles)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
+        var deletedFileDirs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
         foreach (var file in mod.InstalledFiles.Distinct(StringComparer.OrdinalIgnoreCase))
         {
             if (sharedFiles.Contains(file))
@@ -49,12 +51,56 @@ public class InstalledModFileService
 
             DeleteIfExists(file);
             DeleteIfExists(GetDisabledPath(file));
+
+            var dir = Path.GetDirectoryName(file);
+            if (!string.IsNullOrEmpty(dir))
+                deletedFileDirs.Add(dir);
         }
+
+        if (!string.IsNullOrEmpty(mod.InstallPath))
+            PruneEmptyDirectories(deletedFileDirs, mod.InstallPath);
 
         if (mod.Type == ModType.VehicleDlc && !string.IsNullOrWhiteSpace(mod.DlcPackName) &&
             !IsDlcPackUsedByOtherMod(mod, installedMods))
         {
             DlcListService.RemoveEntry(mod.DlcPackName);
+        }
+    }
+
+    private static void PruneEmptyDirectories(IEnumerable<string> candidates, string installRoot)
+    {
+        var root = Path.GetFullPath(installRoot).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+        // Work deepest-first so parent dirs can also be pruned once children are removed
+        var sorted = candidates
+            .Select(d => Path.GetFullPath(d).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
+            .Where(d => d.StartsWith(root, StringComparison.OrdinalIgnoreCase) && !d.Equals(root, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(d => d.Length)
+            .ToList();
+
+        var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var dir in sorted)
+        {
+            var current = dir;
+            while (!string.IsNullOrEmpty(current) &&
+                   current.StartsWith(root, StringComparison.OrdinalIgnoreCase) &&
+                   !current.Equals(root, StringComparison.OrdinalIgnoreCase) &&
+                   visited.Add(current))
+            {
+                try
+                {
+                    if (Directory.Exists(current) && !Directory.EnumerateFileSystemEntries(current).Any())
+                        Directory.Delete(current);
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.Warning($"Prune directory '{current}' failed: {ex.Message}");
+                    break;
+                }
+
+                current = Path.GetDirectoryName(current) ?? "";
+            }
         }
     }
 

@@ -11,6 +11,7 @@
     <converters:StringToVisibilityConverter     x:Key="StringToVis"/>
     <converters:InverseBoolConverter            x:Key="InverseBool"/>
     <converters:NullToCollapsedConverter        x:Key="NullToCollapsed"/>
+    <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVis"/>
     <converters:ZeroToVisibilityConverter       x:Key="ZeroToVisible"/>
     <converters:NonZeroToVisibilityConverter    x:Key="NonZeroToVisible"/>
     <BooleanToVisibilityConverter               x:Key="BoolToVis"/>

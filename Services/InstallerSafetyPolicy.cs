@@ -35,6 +35,58 @@ public static class InstallerSafetyPolicy
         ".ini", ".xml", ".json", ".cfg", ".meta", ".dat", ".ytd", ".ytf", ".ydd", ".ymt",
     ];
 
+    private static readonly HashSet<string> JunkDirectoryPrefixes =
+    [
+        "__macosx/",
+        ".cache/",
+        "temp/",
+        "tmp/",
+        "logs/",
+        "log/",
+        "error-cache/",
+        "auto-error-cache/",
+        "crash-cache/",
+        "errorcache/",
+        "screenshots/",
+        "documentation/",
+        "docs-only/",
+    ];
+
+    private static readonly HashSet<string> JunkExtensions =
+    [
+        ".tmp",
+        ".log",
+        ".bak",
+        ".cache",
+    ];
+
+    /// <summary>
+    /// Returns true when the archive entry should be excluded from extraction — junk folders,
+    /// temp files, logs, macOS metadata, and other artifacts that should never land in GTA V root.
+    /// </summary>
+    public static bool IsJunkEntry(string relativePath)
+    {
+        var normalized = NormalizeRelativePath(relativePath).ToLowerInvariant();
+
+        foreach (var prefix in JunkDirectoryPrefixes)
+        {
+            if (normalized.StartsWith(prefix, StringComparison.Ordinal) ||
+                normalized.Contains("/" + prefix, StringComparison.Ordinal))
+                return true;
+        }
+
+        var extension = Path.GetExtension(normalized);
+        if (JunkExtensions.Contains(extension))
+            return true;
+
+        // macOS extended attribute sidecar files stored inside any folder
+        var fileName = Path.GetFileName(normalized);
+        if (fileName.StartsWith("._", StringComparison.Ordinal) || fileName == ".ds_store")
+            return true;
+
+        return false;
+    }
+
     public static string NormalizeRelativePath(string path)
     {
         return path
