@@ -162,40 +162,84 @@ public static class OivService
         }
     }
 
-    // Maximum assembly.xml size accepted before parsing (1 MB).
-    private const long MaxAssemblyXmlBytes = 1 * 1024 * 1024;
+    // Maximum assembly.xml size accepted before parsing (1 MB / ~1M chars).
+    // Aligns with MaxCharactersInDocument so both limits tell the same story.
+    private const long MaxAssemblyXmlBytes       = 1 * 1024 * 1024;
+    private const long MaxAssemblyXmlChars        = 1_000_000;
+    private const long MaxAssemblyXmlEntityChars  = 1_024;
 
     /// <summary>
     /// Parses an already-opened assembly.xml stream into an OivPackage.
     /// Used by SmartInstallPlanner, which has the stream buffered from the archive.
     /// Returns a package with IsValid=false and ValidationError set on failure.
-    /// Caller must dispose the stream.
+    /// Caller owns and must dispose the stream; this method does not close it.
     /// </summary>
     public static OivPackage ParseFromStream(Stream assemblyXmlStream, string? sourcePath = null)
     {
         try
         {
-            if (assemblyXmlStream.CanSeek && assemblyXmlStream.Length > MaxAssemblyXmlBytes)
-                return InvalidPackage($"assembly.xml exceeds maximum allowed size ({MaxAssemblyXmlBytes / 1024} KB).", sourcePath);
+            // ── Size gate ────────────────────────────────────────────────────────
+            // For seekable streams check length directly. For non-seekable streams
+            // (e.g. ZipArchiveEntry.Open()) read into a capped buffer so the limit
+            // is enforced regardless of stream type.
+            Stream parseStream;
+            bool   ownedBuffer = false;
+
+            if (assemblyXmlStream.CanSeek)
+            {
+                if (assemblyXmlStream.Length > MaxAssemblyXmlBytes)
+                    return InvalidPackage(
+                        $"assembly.xml exceeds the {MaxAssemblyXmlBytes / 1024} KB size limit.", sourcePath);
+                parseStream = assemblyXmlStream;
+            }
+            else
+            {
+                // Read up to limit + 1 byte so we can detect oversize without reading the whole file.
+                var buffer = new byte[MaxAssemblyXmlBytes + 1];
+                int totalRead = 0, read;
+                while (totalRead < buffer.Length &&
+                       (read = assemblyXmlStream.Read(buffer, totalRead, buffer.Length - totalRead)) > 0)
+                    totalRead += read;
+
+                if (totalRead > MaxAssemblyXmlBytes)
+                    return InvalidPackage(
+                        $"assembly.xml exceeds the {MaxAssemblyXmlBytes / 1024} KB size limit.", sourcePath);
+
+                parseStream  = new MemoryStream(buffer, 0, totalRead, writable: false);
+                ownedBuffer  = true;
+            }
 
             XDocument doc;
             try
             {
-                // Use XmlReader with safe limits to prevent DTD-based DoS and unbounded
-                // memory/CPU usage from attacker-controlled XML content.
+                // XmlReader with hard limits prevents DTD-based DoS and unbounded
+                // memory/CPU from attacker-controlled XML. CloseInput=false ensures
+                // the caller-owned underlying stream is not closed when the reader
+                // is disposed.
                 var settings = new System.Xml.XmlReaderSettings
                 {
-                    DtdProcessing         = System.Xml.DtdProcessing.Prohibit,
-                    MaxCharactersInDocument = 500_000,
-                    MaxCharactersFromEntities = 1_024,
-                    XmlResolver           = null,
+                    DtdProcessing           = System.Xml.DtdProcessing.Prohibit,
+                    MaxCharactersInDocument  = MaxAssemblyXmlChars,
+                    MaxCharactersFromEntities = MaxAssemblyXmlEntityChars,
+                    XmlResolver             = null,
+                    CloseInput              = false,
+                    IgnoreComments          = true,
+                    IgnoreProcessingInstructions = true,
                 };
-                using var reader = System.Xml.XmlReader.Create(assemblyXmlStream, settings);
-                doc = XDocument.Load(reader);
+                using var reader = System.Xml.XmlReader.Create(parseStream, settings);
+                doc = XDocument.Load(reader, LoadOptions.None);
             }
             catch (Exception ex)
             {
-                return InvalidPackage($"assembly.xml parse error: {ex.Message}", sourcePath);
+                if (ownedBuffer) parseStream.Dispose();
+                var hint = ex.Message.Contains("characters") || ex.Message.Contains("limit")
+                    ? $" (limit: {MaxAssemblyXmlChars:N0} characters)"
+                    : "";
+                return InvalidPackage($"assembly.xml parse error: {ex.Message}{hint}", sourcePath);
+            }
+            finally
+            {
+                if (ownedBuffer) parseStream.Dispose();
             }
 
             AppLogger.Info($"[OIV_VALIDATE] Validating assembly.xml structure");

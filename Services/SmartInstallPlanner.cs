@@ -54,7 +54,7 @@ public class SmartInstallPlanner
                 }
                 catch (Exception ex)
                 {
-                    AppLogger.Warning($"[PLANNER] Failed to open OIV manifest stream: {ex.Message}");
+                    AppLogger.Warning($"[PLANNER] Failed to open OIV manifest stream in {archivePath}: {ex}");
                     warnings.Add($"Could not read OIV manifest: {ex.Message}");
                 }
             }
