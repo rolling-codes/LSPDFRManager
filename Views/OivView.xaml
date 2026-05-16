@@ -29,7 +29,7 @@
                          Foreground="{StaticResource TextPrimary}"/>
         </StackPanel>
 
-        <!-- Status bar -->
+        <!-- Status bar (installer only) -->
         <Border DockPanel.Dock="Bottom"
                 Background="{StaticResource Surface}"
                 CornerRadius="8" Padding="12,8"
@@ -50,137 +50,385 @@
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <Grid>
 
-                <!-- ── CREATOR PANEL ─────────────────────────────────────── -->
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <!--  CREATOR                                                    -->
+                <!-- ═══════════════════════════════════════════════════════════ -->
                 <StackPanel Visibility="{Binding IsCreatorMode, Converter={StaticResource BoolToVis}}">
 
-                    <TextBlock Text="PACKAGE METADATA" Style="{StaticResource SectionLabel}"/>
-                    <Border Style="{StaticResource CardPanel}" Margin="0,0,0,16" Padding="20">
-                        <Grid>
+                    <!-- ── Step indicator ────────────────────────────────── -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+                        <Border CornerRadius="12" Padding="10,4" Margin="0,0,6,0">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="{StaticResource Surface2}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsCreatorStep0}" Value="True">
+                                            <Setter Property="Background" Value="{StaticResource Accent}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Text="1  Edit" FontSize="12" FontWeight="SemiBold">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsCreatorStep0}" Value="True">
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Border>
+                        <TextBlock Text="›" Foreground="{StaticResource TextFaint}" FontSize="18"
+                                   VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <Border CornerRadius="12" Padding="10,4" Margin="0,0,6,0">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="{StaticResource Surface2}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsCreatorStep1}" Value="True">
+                                            <Setter Property="Background" Value="{StaticResource Accent}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Text="2  Review" FontSize="12" FontWeight="SemiBold">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsCreatorStep1}" Value="True">
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Border>
+                        <TextBlock Text="›" Foreground="{StaticResource TextFaint}" FontSize="18"
+                                   VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <Border CornerRadius="12" Padding="10,4">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="{StaticResource Surface2}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsCreatorStep2}" Value="True">
+                                            <Setter Property="Background" Value="{StaticResource SuccessGreen}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Text="3  Done" FontSize="12" FontWeight="SemiBold">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsCreatorStep2}" Value="True">
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- ── STEP 0: Edit ──────────────────────────────────── -->
+                    <StackPanel Visibility="{Binding IsCreatorStep0, Converter={StaticResource BoolToVis}}">
+
+                        <TextBlock Text="PACKAGE METADATA" Style="{StaticResource SectionLabel}"/>
+                        <Border Style="{StaticResource CardPanel}" Margin="0,0,0,16" Padding="20">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="20"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Style="{StaticResource DetailLabel}" Text="PACKAGE NAME *"/>
+                                    <TextBox Text="{Binding CreatorName, UpdateSourceTrigger=PropertyChanged}"
+                                             Margin="0,0,0,12"/>
+
+                                    <TextBlock Style="{StaticResource DetailLabel}" Text="VERSION"/>
+                                    <TextBox Text="{Binding CreatorVersion, UpdateSourceTrigger=PropertyChanged}"
+                                             Margin="0,0,0,12"/>
+
+                                    <TextBlock Style="{StaticResource DetailLabel}" Text="AUTHOR"/>
+                                    <TextBox Text="{Binding CreatorAuthor, UpdateSourceTrigger=PropertyChanged}"
+                                             Margin="0,0,0,12"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Style="{StaticResource DetailLabel}" Text="DESCRIPTION"/>
+                                    <TextBox Text="{Binding CreatorDescription, UpdateSourceTrigger=PropertyChanged}"
+                                             TextWrapping="Wrap" AcceptsReturn="True"
+                                             Height="90" VerticalScrollBarVisibility="Auto"
+                                             Margin="0,0,0,12"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Files list -->
+                        <DockPanel Margin="0,0,0,8">
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                <Button Style="{StaticResource PrimaryButton}"
+                                        Content="Add Files"
+                                        Command="{Binding AddCreatorFileCommand}"
+                                        Padding="16,8"
+                                        AutomationProperties.Name="Add files to OIV package"/>
+                            </StackPanel>
+                            <TextBlock Text="CONTENT FILES" Style="{StaticResource SectionLabel}"
+                                       VerticalAlignment="Center"/>
+                        </DockPanel>
+
+                        <Border Style="{StaticResource CardPanel}" Margin="0,0,0,16" MinHeight="120">
+                            <Grid>
+                                <TextBlock Text="No files added yet. Click 'Add Files' to include files in the package."
+                                           Foreground="{StaticResource TextFaint}" FontSize="13"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           TextAlignment="Center" TextWrapping="Wrap" Margin="20"
+                                           Visibility="{Binding CreatorFiles.Count, Converter={StaticResource ZeroToVisible}, FallbackValue=Collapsed}"/>
+
+                                <ItemsControl ItemsSource="{Binding CreatorFiles}"
+                                              Visibility="{Binding CreatorFiles.Count, Converter={StaticResource NonZeroToVisible}, FallbackValue=Visible}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="{StaticResource Border}"
+                                                    BorderThickness="0,0,0,1"
+                                                    Padding="0,8">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="20"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="32"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0"
+                                                               Text="{Binding SourcePath}"
+                                                               Foreground="{StaticResource TextPrimary}"
+                                                               FontSize="12"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="1"
+                                                               Text="&#xE72A;" FontFamily="Segoe MDL2 Assets"
+                                                               Foreground="{StaticResource TextFaint}"
+                                                               FontSize="11" VerticalAlignment="Center"
+                                                               HorizontalAlignment="Center"/>
+                                                    <TextBox Grid.Column="2"
+                                                             Text="{Binding InstallPath, UpdateSourceTrigger=PropertyChanged}"
+                                                             FontSize="12" VerticalAlignment="Center"/>
+                                                    <Button Grid.Column="3"
+                                                            Style="{StaticResource GhostButton}"
+                                                            Content="&#xE711;" FontFamily="Segoe MDL2 Assets"
+                                                            FontSize="11"
+                                                            Command="{Binding DataContext.RemoveCreatorFileCommand,
+                                                                RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Padding="6,4"
+                                                            AutomationProperties.Name="Remove this file from package"/>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Grid>
+                        </Border>
+
+                        <!-- Output path -->
+                        <TextBlock Text="OUTPUT PATH *" Style="{StaticResource SectionLabel}"/>
+                        <Grid Margin="0,4,0,16">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="20"/>
-                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Style="{StaticResource DetailLabel}" Text="PACKAGE NAME *"/>
-                                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
-                                         Margin="0,0,0,12"/>
-
-                                <TextBlock Style="{StaticResource DetailLabel}" Text="VERSION"/>
-                                <TextBox Text="{Binding Version, UpdateSourceTrigger=PropertyChanged}"
-                                         Margin="0,0,0,12"/>
-
-                                <TextBlock Style="{StaticResource DetailLabel}" Text="AUTHOR"/>
-                                <TextBox Text="{Binding Author, UpdateSourceTrigger=PropertyChanged}"
-                                         Margin="0,0,0,12"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Style="{StaticResource DetailLabel}" Text="DESCRIPTION"/>
-                                <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
-                                         TextWrapping="Wrap" AcceptsReturn="True"
-                                         Height="90" VerticalScrollBarVisibility="Auto"
-                                         Margin="0,0,0,12"/>
-                            </StackPanel>
+                            <TextBox Grid.Column="0"
+                                     Text="{Binding CreatorOutputPath, UpdateSourceTrigger=PropertyChanged}"
+                                     IsReadOnly="True"/>
+                            <Button Grid.Column="2"
+                                    Style="{StaticResource GhostButton}"
+                                    Content="Browse…"
+                                    Command="{Binding BrowseCreatorOutputCommand}"
+                                    Padding="14,8"
+                                    AutomationProperties.Name="Browse for output path"/>
                         </Grid>
-                    </Border>
 
-                    <!-- Files list -->
-                    <DockPanel Margin="0,0,0,8">
-                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                            <Button Style="{StaticResource PrimaryButton}"
-                                    Content="Add Files"
-                                    Command="{Binding AddFileCommand}"
-                                    Padding="16,8"
-                                    AutomationProperties.Name="Add files to OIV package"/>
-                        </StackPanel>
-                        <TextBlock Text="CONTENT FILES" Style="{StaticResource SectionLabel}"
-                                   VerticalAlignment="Center"/>
-                    </DockPanel>
+                        <Button Style="{StaticResource PrimaryButton}"
+                                Content="Review Plan"
+                                Command="{Binding BuildPlanCommand}"
+                                HorizontalAlignment="Left"
+                                Padding="24,10"
+                                AutomationProperties.Name="Scan files and build package plan"/>
+                    </StackPanel>
 
-                    <Border Style="{StaticResource CardPanel}" Margin="0,0,0,16" MinHeight="120">
-                        <Grid>
-                            <!-- Empty state -->
-                            <TextBlock Text="No files added yet. Click 'Add Files' to include files in the package."
-                                       Foreground="{StaticResource TextFaint}" FontSize="13"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       TextAlignment="Center" TextWrapping="Wrap" Margin="20"
-                                       Visibility="{Binding Files.Count, Converter={StaticResource ZeroToVisible}, FallbackValue=Collapsed}"/>
+                    <!-- ── STEP 1: Review ────────────────────────────────── -->
+                    <StackPanel Visibility="{Binding IsCreatorStep1, Converter={StaticResource BoolToVis}}">
 
-                            <ItemsControl ItemsSource="{Binding Files}"
-                                          Visibility="{Binding Files.Count, Converter={StaticResource NonZeroToVisible}, FallbackValue=Visible}">
+                        <!-- Error banner -->
+                        <Border Background="#33FF3333" CornerRadius="8" Padding="14,10" Margin="0,0,0,12"
+                                Visibility="{Binding PlanHasErrors, Converter={StaticResource BoolToVis}}">
+                            <StackPanel>
+                                <TextBlock Text="CANNOT EXPORT — PLAN HAS ERRORS"
+                                           Foreground="#FFFF6060" FontSize="12" FontWeight="Bold" Margin="0,0,0,6"/>
+                                <ItemsControl ItemsSource="{Binding PlanErrors}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}" Foreground="#FFFF9090"
+                                                       FontSize="12" TextWrapping="Wrap" Margin="0,2"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Warning banner -->
+                        <Border Background="#33FFAA00" CornerRadius="8" Padding="14,10" Margin="0,0,0,12"
+                                Visibility="{Binding PlanHasWarnings, Converter={StaticResource BoolToVis}}">
+                            <StackPanel>
+                                <TextBlock Text="WARNINGS" Foreground="{StaticResource WarnAmber}"
+                                           FontSize="12" FontWeight="Bold" Margin="0,0,0,6"/>
+                                <ItemsControl ItemsSource="{Binding PlanWarnings}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}" Foreground="{StaticResource WarnAmber}"
+                                                       FontSize="12" TextWrapping="Wrap" Margin="0,2"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Plan summary card -->
+                        <TextBlock Text="PLAN SUMMARY" Style="{StaticResource SectionLabel}"/>
+                        <Border Style="{StaticResource CardPanel}" Padding="16" Margin="0,0,0,16">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="16"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Name:"
+                                           Foreground="{StaticResource TextMuted}" FontSize="12"/>
+                                <TextBlock Grid.Row="0" Grid.Column="2"
+                                           Text="{Binding CreatorPlan.Name}"
+                                           Foreground="{StaticResource TextPrimary}" FontSize="12"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Files:"
+                                           Foreground="{StaticResource TextMuted}" FontSize="12" Margin="0,4,0,0"/>
+                                <TextBlock Grid.Row="1" Grid.Column="2"
+                                           Text="{Binding PlanFileCount}"
+                                           Foreground="{StaticResource TextPrimary}" FontSize="12" Margin="0,4,0,0"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Total size:"
+                                           Foreground="{StaticResource TextMuted}" FontSize="12" Margin="0,4,0,0"/>
+                                <TextBlock Grid.Row="2" Grid.Column="2"
+                                           Text="{Binding PlanSizeLabel}"
+                                           Foreground="{StaticResource TextPrimary}" FontSize="12" Margin="0,4,0,0"/>
+
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Output:"
+                                           Foreground="{StaticResource TextMuted}" FontSize="12" Margin="0,4,0,0"/>
+                                <TextBlock Grid.Row="3" Grid.Column="2"
+                                           Text="{Binding CreatorOutputPath}"
+                                           Foreground="{StaticResource TextPrimary}" FontSize="12" Margin="0,4,0,0"
+                                           TextTrimming="CharacterEllipsis"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- File list -->
+                        <TextBlock Text="FILES TO PACKAGE" Style="{StaticResource SectionLabel}"/>
+                        <Border Style="{StaticResource CardPanel}" Padding="0" Margin="0,0,0,16"
+                                MinHeight="80">
+                            <ItemsControl ItemsSource="{Binding PlanFiles}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <Border BorderBrush="{StaticResource Border}"
-                                                BorderThickness="0,0,0,1"
-                                                Padding="0,8">
+                                                BorderThickness="0,0,0,1" Padding="16,8">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*"/>
                                                     <ColumnDefinition Width="20"/>
                                                     <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="32"/>
+                                                    <ColumnDefinition Width="70"/>
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Grid.Column="0"
                                                            Text="{Binding SourcePath}"
-                                                           Foreground="{StaticResource TextPrimary}"
-                                                           FontSize="12"
-                                                           TextTrimming="CharacterEllipsis"
+                                                           Foreground="{StaticResource TextMuted}"
+                                                           FontSize="11" TextTrimming="CharacterEllipsis"
                                                            VerticalAlignment="Center"/>
                                                 <TextBlock Grid.Column="1"
                                                            Text="&#xE72A;" FontFamily="Segoe MDL2 Assets"
                                                            Foreground="{StaticResource TextFaint}"
-                                                           FontSize="11" VerticalAlignment="Center"
+                                                           FontSize="10" VerticalAlignment="Center"
                                                            HorizontalAlignment="Center"/>
-                                                <TextBox Grid.Column="2"
-                                                         Text="{Binding InstallPath, UpdateSourceTrigger=PropertyChanged}"
-                                                         FontSize="12" VerticalAlignment="Center"/>
-                                                <Button Grid.Column="3"
-                                                        Style="{StaticResource GhostButton}"
-                                                        Content="&#xE711;" FontFamily="Segoe MDL2 Assets"
-                                                        FontSize="11"
-                                                        Command="{Binding DataContext.RemoveFileCommand,
-                                                            RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                        CommandParameter="{Binding}"
-                                                        Padding="6,4"
-                                                        AutomationProperties.Name="Remove this file from package"/>
+                                                <TextBlock Grid.Column="2"
+                                                           Text="{Binding InstallPath}"
+                                                           Foreground="{StaticResource TextPrimary}"
+                                                           FontSize="12" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="3"
+                                                           Foreground="{StaticResource TextFaint}"
+                                                           FontSize="11" VerticalAlignment="Center"
+                                                           HorizontalAlignment="Right">
+                                                    <TextBlock.Text>
+                                                        <MultiBinding StringFormat="{}{0:N0} B">
+                                                            <Binding Path="SizeBytes"/>
+                                                        </MultiBinding>
+                                                    </TextBlock.Text>
+                                                </TextBlock>
                                             </Grid>
                                         </Border>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
-                        </Grid>
-                    </Border>
+                        </Border>
 
-                    <!-- Output path + create -->
-                    <TextBlock Text="OUTPUT PATH *" Style="{StaticResource SectionLabel}"/>
-                    <Grid Margin="0,4,0,16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="8"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBox Grid.Column="0"
-                                 Text="{Binding OutputPath, UpdateSourceTrigger=PropertyChanged}"
-                                 IsReadOnly="True"/>
-                        <Button Grid.Column="2"
-                                Style="{StaticResource GhostButton}"
-                                Content="Browse..."
-                                Command="{Binding BrowseOutputCommand}"
-                                Padding="14,8"
-                                AutomationProperties.Name="Browse for output path"/>
-                    </Grid>
+                        <!-- Actions -->
+                        <StackPanel Orientation="Horizontal">
+                            <Button Style="{StaticResource GhostButton}"
+                                    Content="← Back"
+                                    Command="{Binding BackToEditCommand}"
+                                    Padding="16,10" Margin="0,0,8,0"
+                                    AutomationProperties.Name="Back to edit step"/>
+                            <Button Style="{StaticResource PrimaryButton}"
+                                    Content="Export Package"
+                                    Command="{Binding ExportCommand}"
+                                    Padding="24,10"
+                                    AutomationProperties.Name="Export OIV package to output path"/>
+                        </StackPanel>
+                    </StackPanel>
 
-                    <Button Style="{StaticResource PrimaryButton}"
-                            Content="Create OIV Package"
-                            Command="{Binding CreatePackageCommand}"
-                            HorizontalAlignment="Left"
-                            Padding="24,10"/>
+                    <!-- ── STEP 2: Done ──────────────────────────────────── -->
+                    <StackPanel Visibility="{Binding IsCreatorStep2, Converter={StaticResource BoolToVis}}"
+                                HorizontalAlignment="Center" Margin="0,40,0,0">
+                        <TextBlock Text="&#xE73E;" FontFamily="Segoe MDL2 Assets" FontSize="48"
+                                   Foreground="{StaticResource SuccessGreen}"
+                                   HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                        <TextBlock Text="{Binding ExportStatus}"
+                                   Foreground="{StaticResource TextPrimary}" FontSize="14"
+                                   HorizontalAlignment="Center" TextWrapping="Wrap"
+                                   TextAlignment="Center" Margin="0,0,0,24"/>
+                        <Button Style="{StaticResource GhostButton}"
+                                Content="Create Another Package"
+                                Command="{Binding ResetCreatorCommand}"
+                                HorizontalAlignment="Center"
+                                Padding="20,10"
+                                AutomationProperties.Name="Reset creator to start a new package"/>
+                    </StackPanel>
+
                 </StackPanel>
 
-                <!-- ── INSTALLER PANEL ───────────────────────────────────── -->
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <!--  INSTALLER (unchanged)                                      -->
+                <!-- ═══════════════════════════════════════════════════════════ -->
                 <StackPanel Visibility="{Binding IsInstallerMode, Converter={StaticResource BoolToVis}}">
 
-                    <!-- OIV file picker -->
                     <TextBlock Text="OIV PACKAGE" Style="{StaticResource SectionLabel}"/>
                     <Grid Margin="0,4,0,16">
                         <Grid.ColumnDefinitions>
@@ -194,13 +442,12 @@
                                  Foreground="{StaticResource TextPrimary}"/>
                         <Button Grid.Column="2"
                                 Style="{StaticResource PrimaryButton}"
-                                Content="Browse OIV..."
+                                Content="Browse OIV…"
                                 Command="{Binding BrowseOivCommand}"
                                 Padding="16,8"
                                 AutomationProperties.Name="Browse for OIV package file"/>
                     </Grid>
 
-                    <!-- Parse error banner -->
                     <Border Style="{StaticResource WarningBanner}"
                             Margin="0,0,0,12"
                             Visibility="{Binding ParseError, Converter={StaticResource NullToCollapsed}, FallbackValue=Collapsed}">
@@ -209,7 +456,6 @@
                                    FontSize="13" TextWrapping="Wrap"/>
                     </Border>
 
-                    <!-- Package info -->
                     <Border Style="{StaticResource CardPanel}"
                             Margin="0,0,0,16" Padding="16"
                             Visibility="{Binding HasParsedPackage, Converter={StaticResource BoolToVis}}">
@@ -248,13 +494,11 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Target root override -->
                     <TextBlock Text="INSTALL ROOT (leave blank for GTA V directory)"
                                Style="{StaticResource SectionLabel}"/>
                     <TextBox Text="{Binding TargetRoot, UpdateSourceTrigger=PropertyChanged}"
                              Margin="0,4,0,16"/>
 
-                    <!-- Preview + Install actions -->
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                         <Button Style="{StaticResource GhostButton}"
                                 Content="Preview Install"
@@ -268,7 +512,6 @@
                                 AutomationProperties.Name="Install OIV package"/>
                     </StackPanel>
 
-                    <!-- Preview file list -->
                     <TextBlock Text="FILE PREVIEW" Style="{StaticResource SectionLabel}"
                                Visibility="{Binding PreviewEntries.Count, Converter={StaticResource NonZeroToVisible}, FallbackValue=Collapsed}"/>
                     <Border Style="{StaticResource CardPanel}"
@@ -287,9 +530,7 @@
                                                 <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
 
-                                            <!-- Action badge -->
-                                            <Border Grid.Column="0"
-                                                    CornerRadius="4" Padding="8,3">
+                                            <Border Grid.Column="0" CornerRadius="4" Padding="8,3">
                                                 <Border.Style>
                                                     <Style TargetType="Border">
                                                         <Setter Property="Background" Value="{StaticResource Surface2}"/>
@@ -299,9 +540,6 @@
                                                             </DataTrigger>
                                                             <DataTrigger Binding="{Binding Action}" Value="Replace">
                                                                 <Setter Property="Background" Value="{StaticResource WarningBackground}"/>
-                                                            </DataTrigger>
-                                                            <DataTrigger Binding="{Binding Action}" Value="Skip">
-                                                                <Setter Property="Background" Value="{StaticResource Surface2}"/>
                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>

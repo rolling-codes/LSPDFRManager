@@ -5,49 +5,15 @@ using LSPDFRManager.Services;
 
 namespace LSPDFRManager.ViewModels;
 
-/// <summary>
-/// ViewModel for the OIV Creator and Installer.
-/// Toggle between modes with <see cref="IsCreatorMode"/>.
-/// </summary>
 public class OivViewModel : ObservableObject
 {
-    private bool _isCreatorMode = true;
-    private bool _isWorking;
-    private string _statusMessage = "";
-
-    // ── Creator fields ────────────────────────────────────────────────────────
-    private string _name = "";
-    private string _version = "1.0";
-    private string _author = "";
-    private string _description = "";
-    private string _outputPath = "";
-
-    // ── Installer fields ──────────────────────────────────────────────────────
-    private string _selectedOivPath = "";
-    private OivPackage? _parsedPackage;
-    private string _targetRoot = "";
-
-    public OivViewModel()
-    {
-        // Creator commands
-        AddFileCommand       = new RelayCommand(AddFile);
-        RemoveFileCommand    = new RelayCommand<OivFileEntry>(RemoveFile);
-        BrowseOutputCommand  = new RelayCommand(BrowseOutput);
-        CreatePackageCommand = new RelayCommand(
-            () => _ = CreatePackageAsync(),
-            () => CanCreate);
-
-        // Installer commands
-        BrowseOivCommand = new RelayCommand(BrowseOiv);
-        PreviewCommand   = new RelayCommand(
-            () => _ = PreviewAsync(),
-            () => _parsedPackage is { IsValid: true } && !IsWorking);
-        InstallCommand   = new RelayCommand(
-            () => _ = InstallAsync(),
-            () => _parsedPackage is { IsValid: true } && !IsWorking);
-    }
+    // ── Services ──────────────────────────────────────────────────────────────
+    private readonly IOivSourceScanner    _scanner   = new OivSourceScanner();
+    private readonly IOivPackageValidator _validator = new OivPackageValidator();
+    private readonly IOivPackageBuilder   _builder   = new OivPackageBuilder();
 
     // ── Mode ──────────────────────────────────────────────────────────────────
+    private bool _isCreatorMode = true;
 
     public bool IsCreatorMode
     {
@@ -62,6 +28,8 @@ public class OivViewModel : ObservableObject
     public bool IsInstallerMode => !_isCreatorMode;
 
     // ── Shared ────────────────────────────────────────────────────────────────
+    private bool   _isWorking;
+    private string _statusMessage = "";
 
     public bool IsWorking
     {
@@ -75,153 +43,281 @@ public class OivViewModel : ObservableObject
         private set => SetProperty(ref _statusMessage, value);
     }
 
-    // ── Creator properties ────────────────────────────────────────────────────
+    // =========================================================================
+    // CREATOR — wizard (steps 0 = Edit, 1 = Review, 2 = Done)
+    // =========================================================================
 
-    public string Name
+    private int            _creatorStep;
+    private string         _creatorName        = "";
+    private string         _creatorVersion     = "1.0";
+    private string         _creatorAuthor      = "";
+    private string         _creatorDescription = "";
+    private OivPackageKind _creatorKind        = OivPackageKind.Basic;
+    private string         _creatorOutputPath  = "";
+    private OivPackagePlan? _creatorPlan;
+    private string         _exportStatus       = "";
+
+    // ── Wizard step ───────────────────────────────────────────────────────────
+
+    public int CreatorStep
     {
-        get => _name;
-        set
+        get => _creatorStep;
+        private set
         {
-            if (SetProperty(ref _name, value))
-                OnPropertyChanged(nameof(CanCreate));
+            if (SetProperty(ref _creatorStep, value))
+            {
+                OnPropertyChanged(nameof(IsCreatorStep0));
+                OnPropertyChanged(nameof(IsCreatorStep1));
+                OnPropertyChanged(nameof(IsCreatorStep2));
+            }
         }
     }
 
-    public string Version
-    {
-        get => _version;
-        set => SetProperty(ref _version, value);
-    }
+    public bool IsCreatorStep0 => _creatorStep == 0;
+    public bool IsCreatorStep1 => _creatorStep == 1;
+    public bool IsCreatorStep2 => _creatorStep == 2;
 
-    public string Author
-    {
-        get => _author;
-        set => SetProperty(ref _author, value);
-    }
+    // ── Metadata fields ───────────────────────────────────────────────────────
 
-    public string Description
+    public string CreatorName
     {
-        get => _description;
-        set => SetProperty(ref _description, value);
-    }
-
-    public string OutputPath
-    {
-        get => _outputPath;
+        get => _creatorName;
         set
         {
-            if (SetProperty(ref _outputPath, value))
-                OnPropertyChanged(nameof(CanCreate));
+            if (SetProperty(ref _creatorName, value))
+                OnPropertyChanged(nameof(CanBuildPlan));
         }
     }
 
-    public ObservableCollection<OivFileEntry> Files { get; } = [];
+    public string CreatorVersion
+    {
+        get => _creatorVersion;
+        set => SetProperty(ref _creatorVersion, value);
+    }
 
-    public bool CanCreate =>
-        !string.IsNullOrWhiteSpace(Name) &&
-        !string.IsNullOrWhiteSpace(OutputPath) &&
-        Files.Count > 0 &&
+    public string CreatorAuthor
+    {
+        get => _creatorAuthor;
+        set => SetProperty(ref _creatorAuthor, value);
+    }
+
+    public string CreatorDescription
+    {
+        get => _creatorDescription;
+        set => SetProperty(ref _creatorDescription, value);
+    }
+
+    public OivPackageKind CreatorKind
+    {
+        get => _creatorKind;
+        set => SetProperty(ref _creatorKind, value);
+    }
+
+    public string CreatorOutputPath
+    {
+        get => _creatorOutputPath;
+        set
+        {
+            if (SetProperty(ref _creatorOutputPath, value))
+                OnPropertyChanged(nameof(CanExport));
+        }
+    }
+
+    // ── Source file list ──────────────────────────────────────────────────────
+
+    public ObservableCollection<OivFileEntry> CreatorFiles { get; } = [];
+
+    public bool CanBuildPlan =>
+        !string.IsNullOrWhiteSpace(CreatorName) &&
+        CreatorFiles.Count > 0 &&
         !IsWorking;
+
+    // ── Plan / review ─────────────────────────────────────────────────────────
+
+    public OivPackagePlan? CreatorPlan
+    {
+        get => _creatorPlan;
+        private set
+        {
+            if (SetProperty(ref _creatorPlan, value))
+            {
+                OnPropertyChanged(nameof(PlanHasErrors));
+                OnPropertyChanged(nameof(PlanHasWarnings));
+                OnPropertyChanged(nameof(PlanErrors));
+                OnPropertyChanged(nameof(PlanWarnings));
+                OnPropertyChanged(nameof(PlanFileCount));
+                OnPropertyChanged(nameof(PlanSizeLabel));
+                OnPropertyChanged(nameof(CanExport));
+            }
+        }
+    }
+
+    public bool   PlanHasErrors   => _creatorPlan?.Errors.Count > 0;
+    public bool   PlanHasWarnings => _creatorPlan?.Warnings.Count > 0;
+    public IReadOnlyList<string> PlanErrors   => _creatorPlan?.Errors   ?? [];
+    public IReadOnlyList<string> PlanWarnings => _creatorPlan?.Warnings ?? [];
+    public int    PlanFileCount   => _creatorPlan?.Files.Count ?? 0;
+    public string PlanSizeLabel   => _creatorPlan?.TotalSizeLabel ?? "";
+    public IReadOnlyList<OivPackageFile> PlanFiles => _creatorPlan?.Files ?? [];
+
+    public bool CanExport =>
+        _creatorPlan is { IsValid: true } &&
+        !string.IsNullOrWhiteSpace(CreatorOutputPath) &&
+        !IsWorking;
+
+    public string ExportStatus
+    {
+        get => _exportStatus;
+        private set => SetProperty(ref _exportStatus, value);
+    }
 
     // ── Creator commands ──────────────────────────────────────────────────────
 
-    public ICommand AddFileCommand { get; }
-    public ICommand RemoveFileCommand { get; }
-    public ICommand BrowseOutputCommand { get; }
-    public ICommand CreatePackageCommand { get; }
+    public ICommand AddCreatorFileCommand    { get; }
+    public ICommand RemoveCreatorFileCommand { get; }
+    public ICommand BrowseCreatorOutputCommand { get; }
+    public ICommand BuildPlanCommand         { get; }
+    public ICommand BackToEditCommand        { get; }
+    public ICommand ExportCommand            { get; }
+    public ICommand ResetCreatorCommand      { get; }
 
-    private void AddFile()
+    private void AddCreatorFile()
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
-            Title = "Select File to Include in OIV Package",
+            Title = "Select Files to Include in OIV Package",
             Filter = "All Files|*.*",
             Multiselect = true
         };
 
-        if (dialog.ShowDialog() != true)
-            return;
+        if (dialog.ShowDialog() != true) return;
 
         foreach (var filePath in dialog.FileNames)
         {
-            var fileName = Path.GetFileName(filePath);
-            Files.Add(new OivFileEntry
+            CreatorFiles.Add(new OivFileEntry
             {
-                SourcePath = filePath,
-                InstallPath = fileName,
-                Action = OivFileAction.Add
+                SourcePath   = filePath,
+                InstallPath  = Path.GetFileName(filePath),
+                Action       = OivFileAction.Add
             });
         }
 
-        OnPropertyChanged(nameof(CanCreate));
+        OnPropertyChanged(nameof(CanBuildPlan));
     }
 
-    private void RemoveFile(OivFileEntry? entry)
+    private void RemoveCreatorFile(OivFileEntry? entry)
     {
-        if (entry is not null)
-        {
-            Files.Remove(entry);
-            OnPropertyChanged(nameof(CanCreate));
-        }
+        if (entry is null) return;
+        CreatorFiles.Remove(entry);
+        OnPropertyChanged(nameof(CanBuildPlan));
     }
 
-    private void BrowseOutput()
+    private void BrowseCreatorOutput()
     {
         var dialog = new Microsoft.Win32.SaveFileDialog
         {
-            Title = "Save OIV Package",
-            Filter = "OIV Package|*.oiv",
+            Title      = "Save OIV Package As",
+            Filter     = "OIV Package|*.oiv",
             DefaultExt = ".oiv",
-            FileName = string.IsNullOrWhiteSpace(Name) ? "package" : Name
+            FileName   = string.IsNullOrWhiteSpace(CreatorName) ? "package" : CreatorName
         };
 
         if (dialog.ShowDialog() == true)
-            OutputPath = dialog.FileName;
+            CreatorOutputPath = dialog.FileName;
     }
 
-    private async Task CreatePackageAsync()
+    private void BuildPlan()
     {
-        if (!CanCreate) return;
+        if (!CanBuildPlan) return;
 
-        IsWorking = true;
-        StatusMessage = "Creating package...";
+        var template = new OivPackagePlan
+        {
+            Name        = CreatorName,
+            Version     = CreatorVersion,
+            Author      = CreatorAuthor,
+            Description = CreatorDescription,
+            Kind        = CreatorKind,
+        };
+
+        // Source scanner: walk each file entry using its SourcePath directly.
+        var sourcePaths = CreatorFiles.Select(f => f.SourcePath).ToList();
+        var scanned  = _scanner.Scan(sourcePaths, template);
+
+        // Merge user-edited install paths from the UI list.
+        // The scanner sets InstallPath = filename; the user may have changed it.
+        var userPaths = CreatorFiles
+            .Where(f => File.Exists(f.SourcePath))
+            .ToDictionary(f => f.SourcePath, f => f.InstallPath, StringComparer.OrdinalIgnoreCase);
+
+        var mergedFiles = scanned.Files
+            .Select(f => userPaths.TryGetValue(f.SourcePath, out var ip)
+                ? f with { InstallPath = ip }
+                : f)
+            .ToList();
+
+        var merged = scanned with { Files = mergedFiles };
+
+        CreatorPlan = _validator.Validate(merged);
+        CreatorStep = 1;
+    }
+
+    private async Task ExportAsync()
+    {
+        if (!CanExport) return;
+
+        IsWorking  = true;
+        ExportStatus = "Building package…";
 
         try
         {
-            var pkg = new OivPackage
-            {
-                Name = Name,
-                Version = Version,
-                Author = Author,
-                Description = Description,
-                Files = Files.ToList()
-            };
-
-            var success = await Task.Run(() => OivService.CreatePackage(pkg, OutputPath));
+            var result = await _builder.BuildAsync(CreatorPlan!, CreatorOutputPath);
 
             UiDispatcher.Invoke(() =>
             {
-                StatusMessage = success
-                    ? $"Package created: {Path.GetFileName(OutputPath)}"
-                    : $"Failed: {pkg.ValidationError ?? "Unknown error"}";
+                ExportStatus = result.Success
+                    ? $"Package created: {Path.GetFileName(CreatorOutputPath)} ({result.FilesWritten} file(s))"
+                    : $"Export failed: {result.Error}";
+
+                if (result.Success)
+                    CreatorStep = 2;
             });
         }
         catch (Exception ex)
         {
-            AppLogger.Error("[OIV_CREATE] Unexpected error in CreatePackageAsync", ex);
-            UiDispatcher.Invoke(() => StatusMessage = $"Error: {ex.Message}");
+            AppLogger.Error("[OIV_EXPORT] Unexpected error", ex);
+            UiDispatcher.Invoke(() => ExportStatus = $"Error: {ex.Message}");
         }
         finally
         {
             UiDispatcher.Invoke(() =>
             {
                 IsWorking = false;
-                OnPropertyChanged(nameof(CanCreate));
+                OnPropertyChanged(nameof(CanExport));
             });
         }
     }
 
-    // ── Installer properties ──────────────────────────────────────────────────
+    private void ResetCreator()
+    {
+        CreatorFiles.Clear();
+        CreatorPlan       = null;
+        CreatorName        = "";
+        CreatorVersion     = "1.0";
+        CreatorAuthor      = "";
+        CreatorDescription = "";
+        CreatorKind        = OivPackageKind.Basic;
+        CreatorOutputPath  = "";
+        ExportStatus       = "";
+        CreatorStep        = 0;
+    }
+
+    // =========================================================================
+    // INSTALLER (unchanged from before)
+    // =========================================================================
+
+    private string       _selectedOivPath = "";
+    private OivPackage?  _parsedPackage;
+    private string       _targetRoot = "";
 
     public string SelectedOivPath
     {
@@ -248,32 +344,29 @@ public class OivViewModel : ObservableObject
         }
     }
 
-    public bool HasParsedPackage => _parsedPackage is { IsValid: true };
-    public string? ParseError => _parsedPackage is { IsValid: false } ? _parsedPackage.ValidationError : null;
+    public bool    HasParsedPackage => _parsedPackage is { IsValid: true };
+    public string? ParseError       => _parsedPackage is { IsValid: false } ? _parsedPackage.ValidationError : null;
 
     public ObservableCollection<OivFileEntry> PreviewEntries { get; } = [];
 
-    // ── Installer commands ────────────────────────────────────────────────────
-
     public ICommand BrowseOivCommand { get; }
-    public ICommand PreviewCommand { get; }
-    public ICommand InstallCommand { get; }
+    public ICommand PreviewCommand   { get; }
+    public ICommand InstallCommand   { get; }
 
     private void BrowseOiv()
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
-            Title = "Select OIV Package",
+            Title  = "Select OIV Package",
             Filter = "OIV Packages|*.oiv|All Files|*.*"
         };
 
-        if (dialog.ShowDialog() != true)
-            return;
+        if (dialog.ShowDialog() != true) return;
 
         SelectedOivPath = dialog.FileName;
         PreviewEntries.Clear();
         ParsedPackage = null;
-        StatusMessage = "Parsing package...";
+        StatusMessage = "Parsing package…";
 
         try
         {
@@ -294,7 +387,7 @@ public class OivViewModel : ObservableObject
         if (_parsedPackage is null || !_parsedPackage.IsValid) return;
 
         IsWorking = true;
-        StatusMessage = "Calculating preview...";
+        StatusMessage = "Calculating preview…";
 
         try
         {
@@ -307,8 +400,7 @@ public class OivViewModel : ObservableObject
             UiDispatcher.Invoke(() =>
             {
                 PreviewEntries.Clear();
-                foreach (var e in entries)
-                    PreviewEntries.Add(e);
+                foreach (var e in entries) PreviewEntries.Add(e);
 
                 StatusMessage = $"Preview: {entries.Count(e => e.Action == OivFileAction.Add)} add, " +
                                 $"{entries.Count(e => e.Action == OivFileAction.Replace)} replace";
@@ -330,7 +422,7 @@ public class OivViewModel : ObservableObject
         if (_parsedPackage is null || !_parsedPackage.IsValid) return;
 
         IsWorking = true;
-        StatusMessage = "Installing...";
+        StatusMessage = "Installing…";
 
         try
         {
@@ -347,10 +439,7 @@ public class OivViewModel : ObservableObject
                     : $"Install failed: {result.Error}";
 
                 if (result.Success)
-                {
-                    // Refresh preview to show updated state
                     _ = PreviewAsync();
-                }
             });
         }
         catch (Exception ex)
@@ -362,5 +451,26 @@ public class OivViewModel : ObservableObject
         {
             UiDispatcher.Invoke(() => IsWorking = false);
         }
+    }
+
+    // ── Constructor ───────────────────────────────────────────────────────────
+
+    public OivViewModel()
+    {
+        AddCreatorFileCommand    = new RelayCommand(AddCreatorFile);
+        RemoveCreatorFileCommand = new RelayCommand<OivFileEntry>(RemoveCreatorFile);
+        BrowseCreatorOutputCommand = new RelayCommand(BrowseCreatorOutput);
+        BuildPlanCommand         = new RelayCommand(BuildPlan, () => CanBuildPlan);
+        BackToEditCommand        = new RelayCommand(() => CreatorStep = 0);
+        ExportCommand            = new RelayCommand(() => _ = ExportAsync(), () => CanExport);
+        ResetCreatorCommand      = new RelayCommand(ResetCreator);
+
+        BrowseOivCommand = new RelayCommand(BrowseOiv);
+        PreviewCommand   = new RelayCommand(
+            () => _ = PreviewAsync(),
+            () => _parsedPackage is { IsValid: true } && !IsWorking);
+        InstallCommand   = new RelayCommand(
+            () => _ = InstallAsync(),
+            () => _parsedPackage is { IsValid: true } && !IsWorking);
     }
 }
