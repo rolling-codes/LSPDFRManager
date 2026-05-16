@@ -6,7 +6,7 @@ namespace LSPDFRManager.Tests;
 public class VersionAndBrowseGuardTests
 {
     [Fact]
-    public void AssemblyVersion_Is_3_7_5_0()
+    public void AssemblyVersion_Is_3_7_7_0()
     {
         var version = typeof(MainViewModel).Assembly.GetName().Version;
         Assert.NotNull(version);
