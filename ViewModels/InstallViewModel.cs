@@ -226,8 +226,17 @@ public class InstallViewModel : ObservableObject
             OnPropertyChanged(nameof(ReviewHasEvidence));
             OnPropertyChanged(nameof(ReviewDependencyWarnings));
             OnPropertyChanged(nameof(ReviewHasDependencyWarnings));
+            OnPropertyChanged(nameof(ReviewShowDependencyWarnings));
             OnPropertyChanged(nameof(ReviewGeneralWarnings));
             OnPropertyChanged(nameof(ReviewHasGeneralWarnings));
+            OnPropertyChanged(nameof(ReviewMissingDependencies));
+            OnPropertyChanged(nameof(ReviewPresentDependencies));
+            OnPropertyChanged(nameof(ReviewUnknownDependencies));
+            OnPropertyChanged(nameof(ReviewNotApplicableDependencies));
+            OnPropertyChanged(nameof(ReviewHasMissingDependencies));
+            OnPropertyChanged(nameof(ReviewHasPresentDependencies));
+            OnPropertyChanged(nameof(ReviewHasUnknownDependencies));
+            OnPropertyChanged(nameof(ReviewHasNotApplicableDependencies));
         }
     }
 
@@ -323,6 +332,35 @@ public class InstallViewModel : ObservableObject
 
     public bool ReviewHasDependencyWarnings =>
         _reviewPlan?.Warnings.Any(w => w.StartsWith("Dependency:", StringComparison.Ordinal)) ?? false;
+
+    /// <summary>
+    /// Show legacy dependency warnings only when no probe result is available.
+    /// Probe results supersede the raw warning strings.
+    /// </summary>
+    public bool ReviewShowDependencyWarnings =>
+        ReviewHasDependencyWarnings &&
+        (_reviewPlan?.ProbeResult is null || _reviewPlan.ProbeResult.Probes.Count == 0);
+
+    // ── Probe-based dependency status ────────────────────────────────────────
+
+    public IEnumerable<DependencyProbe> ReviewMissingDependencies =>
+        _reviewPlan?.ProbeResult?.Probes.Where(p => p.Status == DependencyProbeStatus.Missing) ?? [];
+
+    public IEnumerable<DependencyProbe> ReviewPresentDependencies =>
+        _reviewPlan?.ProbeResult?.Probes.Where(p => p.Status == DependencyProbeStatus.Present) ?? [];
+
+    public IEnumerable<DependencyProbe> ReviewUnknownDependencies =>
+        _reviewPlan?.ProbeResult?.Probes.Where(p => p.Status == DependencyProbeStatus.Unknown) ?? [];
+
+    public IEnumerable<DependencyProbe> ReviewNotApplicableDependencies =>
+        _reviewPlan?.ProbeResult?.Probes.Where(p => p.Status == DependencyProbeStatus.NotApplicable) ?? [];
+
+    public bool ReviewHasMissingDependencies =>
+        _reviewPlan?.ProbeResult?.HasMissingRequired ?? false;
+
+    public bool ReviewHasPresentDependencies => ReviewPresentDependencies.Any();
+    public bool ReviewHasUnknownDependencies => ReviewUnknownDependencies.Any();
+    public bool ReviewHasNotApplicableDependencies => ReviewNotApplicableDependencies.Any();
 
     /// <summary>Non-dependency warnings (path conflicts, overwrites, etc.).</summary>
     public IEnumerable<string> ReviewGeneralWarnings =>

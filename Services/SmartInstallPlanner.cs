@@ -8,6 +8,7 @@ public class SmartInstallPlanner
     private readonly ModDetector                 _detector     = new();
     private readonly IModTypeDetectionService    _typeDetector = new ModTypeDetectionService();
     private readonly IDependencyDetectionService _depDetector  = new DependencyDetectionService();
+    private readonly IDependencyProbeService     _probeService = new DependencyProbeService();
 
     private sealed record SourceEntry(string RelativePath, Func<Stream> OpenStream, int SourceIndex);
 
@@ -26,6 +27,7 @@ public class SmartInstallPlanner
         var entryPaths    = sourceEntries.Select(e => e.RelativePath).ToList();
         var modTypeResult = _typeDetector.Detect(entryPaths, Path.GetFileName(archivePath));
         var depResult     = _depDetector.Detect(modTypeResult);
+        var probeResult   = _probeService.Probe(gtaPath, depResult);
         foreach (var dep in depResult.Warnings)
             warnings.Add($"Dependency: {dep.Name} — {dep.Reason}");
 
@@ -144,6 +146,7 @@ public class SmartInstallPlanner
             InstallOrder = installOrder,
             OrderReasons = orderReasons.Distinct(StringComparer.Ordinal).ToList(),
             RequiresManualConfirmation = blockingIssues.Count > 0,
+            ProbeResult = probeResult,
         };
     }
 

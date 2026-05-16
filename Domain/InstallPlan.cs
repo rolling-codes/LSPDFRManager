@@ -16,4 +16,5 @@ public class InstallPlan
     public List<string> InstallOrder { get; init; } = [];
     public List<string> OrderReasons { get; init; } = [];
     public bool RequiresManualConfirmation { get; init; }
+    public DependencyProbeResult? ProbeResult { get; init; }
 }
