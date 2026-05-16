@@ -23,7 +23,7 @@
                          VerticalAlignment="Center"
                          Foreground="{StaticResource TextPrimary}"/>
             <RadioButton Content="Installer"
-                         IsChecked="{Binding IsInstallerMode}"
+                         IsChecked="{Binding IsCreatorMode, Converter={StaticResource InverseBool}}"
                          GroupName="OivMode"
                          VerticalAlignment="Center"
                          Foreground="{StaticResource TextPrimary}"/>
