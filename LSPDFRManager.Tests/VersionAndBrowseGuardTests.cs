@@ -10,7 +10,7 @@ public class VersionAndBrowseGuardTests
     {
         var version = typeof(MainViewModel).Assembly.GetName().Version;
         Assert.NotNull(version);
-        Assert.Equal(new Version(3, 7, 6, 0), version);
+        Assert.Equal(new Version(3, 7, 7, 0), version);
     }
 
     [Fact]

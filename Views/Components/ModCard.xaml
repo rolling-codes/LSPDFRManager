@@ -85,7 +85,7 @@
                            Foreground="{StaticResource TextFaint}"
                            FontSize="11"
                            Margin="0,4,0,0"
-                           Visibility="{Binding TotalSizeDisplay, Converter={StaticResource StringToVisibility}}"/>
+                           Visibility="{Binding TotalSizeDisplay, Converter={StaticResource StringToVis}}"/>
 
                 <!-- Error banner -->
                 <Border Background="{StaticResource ErrorBackground}"
