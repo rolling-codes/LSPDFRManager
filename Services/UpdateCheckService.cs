@@ -45,6 +45,10 @@ public class UpdateCheckService
                 DownloadUrl = htmlUrl,
             };
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
         catch
         {
             return new UpdateCheckResult

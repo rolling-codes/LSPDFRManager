@@ -703,8 +703,8 @@ public class OivViewModel : ObservableObject
 
     private void RefreshCreatorCommands()
     {
-        _buildPlanCommand.RaiseCanExecuteChanged();
-        _exportCommand.RaiseCanExecuteChanged();
+        _buildPlanCommand?.RaiseCanExecuteChanged();
+        _exportCommand?.RaiseCanExecuteChanged();
     }
 
     // ── Constructor ───────────────────────────────────────────────────────────

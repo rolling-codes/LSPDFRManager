@@ -73,10 +73,13 @@ public sealed class OivPackageBuilder : IOivPackageBuilder
     private static string ValidateEntryPath(string installPath)
     {
         var normalized = installPath.Replace('\\', '/').TrimStart('/');
+        if (string.IsNullOrWhiteSpace(normalized))
+            throw new InvalidOperationException($"Empty install path rejected: '{installPath}'");
+
         foreach (var segment in normalized.Split('/'))
         {
             var s = segment.Trim();
-            if (s == ".." || s == ".")
+            if (s.Length == 0 || s == ".." || s == ".")
                 throw new InvalidOperationException($"Unsafe install path rejected: '{installPath}'");
         }
         return normalized;

@@ -27,7 +27,7 @@ public sealed class AsyncAppCommand : IAppCommand
                 return;
 
             _isRunning = value;
-            UiDispatcher.Invoke(() => CanExecuteChanged?.Invoke(this, EventArgs.Empty));
+            UiDispatcher.BeginInvoke(() => CanExecuteChanged?.Invoke(this, EventArgs.Empty));
         }
     }
 
