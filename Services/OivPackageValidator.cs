@@ -17,19 +17,19 @@ public sealed class OivPackageValidator : IOivPackageValidator
         if (plan.Files.Count == 0)
             errors.Add("Package must contain at least one file.");
 
-        // Install path safety: normalize separators then reject traversal, rooted, and absolute paths.
+        // Install path safety: normalize once, then reject traversal, rooted, and absolute paths.
         foreach (var f in plan.Files)
         {
-            var ip = f.InstallPath.Replace('\\', '/');
+            var ip = f.InstallPath.Replace('\\', '/').Trim();
 
-            if (ip.Split('/').Any(seg => { var s = seg.Trim(); return s.Length == 0 || s is ".." or "."; }))
-                errors.Add($"Suspicious install path (path traversal or empty segment): {f.InstallPath}");
-            else if (ip.StartsWith('/'))
-                errors.Add($"Install path must be relative (starts with '/'): {f.InstallPath}");
-            else if (ip.Length >= 2 && ip[1] == ':')
+            if (ip.Length >= 2 && ip[1] == ':')
                 errors.Add($"Install path must be relative (drive letter): {f.InstallPath}");
             else if (ip.StartsWith("//"))
                 errors.Add($"Install path must be relative (UNC path): {f.InstallPath}");
+            else if (ip.StartsWith('/'))
+                errors.Add($"Install path must be relative (starts with '/'): {f.InstallPath}");
+            else if (ip.Split('/').Any(seg => { var s = seg.Trim(); return s.Length == 0 || s is ".." or "."; }))
+                errors.Add($"Suspicious install path (path traversal or empty segment): {f.InstallPath}");
         }
 
         // Duplicate install paths

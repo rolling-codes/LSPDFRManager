@@ -6,7 +6,9 @@ namespace LSPDFRManager.Services;
 
 public class UpdateCheckService
 {
-    private const string CurrentVersion = "3.5.0";
+    private static readonly string CurrentVersion =
+        System.Reflection.Assembly.GetExecutingAssembly()
+            .GetName().Version?.ToString(3) ?? "0.0.0";
     private const string ReleasesApiUrl = "https://api.github.com/repos/rolling-codes/LSPDFRManager/releases/latest";
 
     private readonly HttpClient _http = new();

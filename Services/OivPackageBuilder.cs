@@ -72,16 +72,24 @@ public sealed class OivPackageBuilder : IOivPackageBuilder
 
     private static string ValidateEntryPath(string installPath)
     {
-        var normalized = installPath.Replace('\\', '/').TrimStart('/');
-        if (string.IsNullOrWhiteSpace(normalized))
+        // Reject rooted/UNC before normalization (drive letters survive TrimStart('/'))
+        if (Path.IsPathRooted(installPath))
+            throw new InvalidOperationException($"Rooted install path rejected: '{installPath}'");
+
+        var normalized = installPath.Replace('\\', '/').Trim();
+        if (string.IsNullOrEmpty(normalized))
             throw new InvalidOperationException($"Empty install path rejected: '{installPath}'");
 
-        foreach (var segment in normalized.Split('/'))
+        // Reject UNC after normalization
+        if (normalized.StartsWith("//"))
+            throw new InvalidOperationException($"UNC install path rejected: '{installPath}'");
+
+        foreach (var segment in normalized.TrimStart('/').Split('/'))
         {
             var s = segment.Trim();
             if (s.Length == 0 || s == ".." || s == ".")
                 throw new InvalidOperationException($"Unsafe install path rejected: '{installPath}'");
         }
-        return normalized;
+        return normalized.TrimStart('/');
     }
 }
