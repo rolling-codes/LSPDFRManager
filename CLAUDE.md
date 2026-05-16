@@ -21,15 +21,15 @@ dotnet publish LSPDFRManager.csproj -c Release -r win-x64 --self-contained true 
 
 **Build release ZIP (framework-dependent)** — update version number as needed
 ```bash
-dotnet publish LSPDFRManager.csproj -c Release -r win-x64 --self-contained false -o publish/v3.7.9 -p:DebugType=None -p:DebugSymbols=false
-New-Item -ItemType Directory -Path release-package/LSPDFRManager-v3.7.9 -Force
-Copy-Item -Path publish/v3.7.9/* -Destination release-package/LSPDFRManager-v3.7.9 -Recurse
-Compress-Archive -Path release-package/LSPDFRManager-v3.7.9 -DestinationPath LSPDFRManager-v3.7.9-win-x64.zip
+dotnet publish LSPDFRManager.csproj -c Release -r win-x64 --self-contained false -o publish/v3.7.10 -p:DebugType=None -p:DebugSymbols=false
+New-Item -ItemType Directory -Path release-package/LSPDFRManager-v3.7.10 -Force
+Copy-Item -Path publish/v3.7.10/* -Destination release-package/LSPDFRManager-v3.7.10 -Recurse
+Compress-Archive -Path release-package/LSPDFRManager-v3.7.10 -DestinationPath LSPDFRManager-v3.7.10-win-x64.zip
 ```
 
 > **If `dotnet publish` fails with WPF temp-file copy errors** (race with the IDE holding `obj/`), use msbuild directly:
 > ```bash
-> dotnet msbuild LSPDFRManager.csproj -t:Publish -p:Configuration=Release -p:RuntimeIdentifier=win-x64 -p:SelfContained=false -p:PublishDir=publish/v3.7.8 -p:DebugType=None -p:DebugSymbols=false
+> dotnet msbuild LSPDFRManager.csproj -t:Publish -p:Configuration=Release -p:RuntimeIdentifier=win-x64 -p:SelfContained=false -p:PublishDir=publish/v3.7.10 -p:DebugType=None -p:DebugSymbols=false
 > ```
 
 ## Testing
