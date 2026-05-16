@@ -25,6 +25,7 @@ public sealed class OivPackageBuilder : IOivPackageBuilder
         if (string.IsNullOrWhiteSpace(outputPath))
             return new OivBuildResult(false, "Output path is required.");
 
+        var tempPath = outputPath + ".tmp";
         try
         {
             var dir = Path.GetDirectoryName(outputPath);
@@ -33,12 +34,17 @@ public sealed class OivPackageBuilder : IOivPackageBuilder
 
             var xml = _xmlWriter.Write(plan);
 
-            var filesWritten = await Task.Run(() => WriteZip(plan, outputPath, xml));
+            var filesWritten = await Task.Run(() => WriteZip(plan, tempPath, xml));
+
+            // Atomic replace: move temp over final destination only on full success.
+            File.Move(tempPath, outputPath, overwrite: true);
+
             return new OivBuildResult(true, FilesWritten: filesWritten);
         }
         catch (Exception ex)
         {
             AppLogger.Error("[OIV_BUILD] Failed to build OIV package", ex);
+            try { if (File.Exists(tempPath)) File.Delete(tempPath); } catch { }
             return new OivBuildResult(false, ex.Message);
         }
     }

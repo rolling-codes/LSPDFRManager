@@ -85,7 +85,10 @@ public class OivViewModel : ObservableObject
         set
         {
             if (SetProperty(ref _creatorName, value))
+            {
                 OnPropertyChanged(nameof(CanBuildPlan));
+                RefreshCreatorCommands();
+            }
         }
     }
 
@@ -119,7 +122,10 @@ public class OivViewModel : ObservableObject
         set
         {
             if (SetProperty(ref _creatorOutputPath, value))
+            {
                 OnPropertyChanged(nameof(CanExport));
+                RefreshCreatorCommands();
+            }
         }
     }
 
@@ -147,13 +153,15 @@ public class OivViewModel : ObservableObject
                 OnPropertyChanged(nameof(PlanWarnings));
                 OnPropertyChanged(nameof(PlanFileCount));
                 OnPropertyChanged(nameof(PlanSizeLabel));
+                OnPropertyChanged(nameof(PlanFiles));
                 OnPropertyChanged(nameof(CanExport));
+                RefreshCreatorCommands();
             }
         }
     }
 
-    public bool   PlanHasErrors   => _creatorPlan?.Errors.Count > 0;
-    public bool   PlanHasWarnings => _creatorPlan?.Warnings.Count > 0;
+    public bool   PlanHasErrors   => (_creatorPlan?.Errors.Count   ?? 0) > 0;
+    public bool   PlanHasWarnings => (_creatorPlan?.Warnings.Count ?? 0) > 0;
     public IReadOnlyList<string> PlanErrors   => _creatorPlan?.Errors   ?? [];
     public IReadOnlyList<string> PlanWarnings => _creatorPlan?.Warnings ?? [];
     public int    PlanFileCount   => _creatorPlan?.Files.Count ?? 0;
@@ -244,10 +252,11 @@ public class OivViewModel : ObservableObject
         var scanned  = _scanner.Scan(sourcePaths, template);
 
         // Merge user-edited install paths from the UI list.
-        // The scanner sets InstallPath = filename; the user may have changed it.
+        // Last entry wins when the same SourcePath appears more than once (avoids ToDictionary crash).
         var userPaths = CreatorFiles
             .Where(f => File.Exists(f.SourcePath))
-            .ToDictionary(f => f.SourcePath, f => f.InstallPath, StringComparer.OrdinalIgnoreCase);
+            .GroupBy(f => f.SourcePath, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.Last().InstallPath, StringComparer.OrdinalIgnoreCase);
 
         var mergedFiles = scanned.Files
             .Select(f => userPaths.TryGetValue(f.SourcePath, out var ip)
@@ -270,7 +279,20 @@ public class OivViewModel : ObservableObject
 
         try
         {
-            var result = await _builder.BuildAsync(CreatorPlan!, CreatorOutputPath);
+            // Re-validate immediately before building — guards against stale plan state.
+            var freshPlan = _validator.Validate(CreatorPlan!);
+            if (!freshPlan.IsValid)
+            {
+                UiDispatcher.Invoke(() =>
+                {
+                    CreatorPlan  = freshPlan;
+                    ExportStatus = "Export blocked — plan has new validation errors. Review and try again.";
+                    IsWorking    = false;
+                });
+                return;
+            }
+
+            var result = await _builder.BuildAsync(freshPlan, CreatorOutputPath);
 
             UiDispatcher.Invoke(() =>
             {
@@ -453,6 +475,14 @@ public class OivViewModel : ObservableObject
         }
     }
 
+    private void RefreshCreatorCommands()
+    {
+        // CommandManager.InvalidateRequerySuggested re-queries all RelayCommand.CanExecute
+        // bindings on the next UI tick — covers BuildPlanCommand and ExportCommand.
+        ((RelayCommand)BuildPlanCommand).RaiseCanExecuteChanged();
+        ((RelayCommand)ExportCommand).RaiseCanExecuteChanged();
+    }
+
     // ── Constructor ───────────────────────────────────────────────────────────
 
     public OivViewModel()
@@ -464,6 +494,12 @@ public class OivViewModel : ObservableObject
         BackToEditCommand        = new RelayCommand(() => CreatorStep = 0);
         ExportCommand            = new RelayCommand(() => _ = ExportAsync(), () => CanExport);
         ResetCreatorCommand      = new RelayCommand(ResetCreator);
+
+        CreatorFiles.CollectionChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(CanBuildPlan));
+            RefreshCreatorCommands();
+        };
 
         BrowseOivCommand = new RelayCommand(BrowseOiv);
         PreviewCommand   = new RelayCommand(

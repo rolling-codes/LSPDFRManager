@@ -44,8 +44,14 @@ public sealed class OivAssemblyXmlWriter : IOivAssemblyXmlWriter
 
     private static (string major, string minor) SplitVersion(string v)
     {
-        var parts = v.Split('.');
-        return (parts.Length > 0 ? parts[0] : "1",
-                parts.Length > 1 ? parts[1] : "0");
+        // Strip a leading 'v' (e.g. "v1.2" → "1.2"), then take the first two numeric segments.
+        var trimmed = v.TrimStart('v', 'V');
+        var parts   = trimmed.Split('.');
+        var major   = ParseSegment(parts.Length > 0 ? parts[0] : "", 1);
+        var minor   = ParseSegment(parts.Length > 1 ? parts[1] : "", 0);
+        return (major.ToString(), minor.ToString());
     }
+
+    private static int ParseSegment(string s, int fallback) =>
+        int.TryParse(s, out var n) ? n : fallback;
 }

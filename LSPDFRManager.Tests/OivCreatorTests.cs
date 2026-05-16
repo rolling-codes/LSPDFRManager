@@ -399,6 +399,107 @@ public class OivCreatorTests : CommandCenterTestBase
         Assert.Contains("target=\"Five\"", xml);
     }
 
+    // ── Validator: install path security (sec_001) ───────────────────────────
+
+    [Theory]
+    [InlineData("..")]
+    [InlineData("../etc/passwd")]
+    [InlineData("plugins\\..\\evil")]
+    public void Validator_TraversalInstallPath_AddsError(string installPath)
+    {
+        var f    = WriteFile("x.dll");
+        var plan = new OivPackagePlan
+        {
+            Name  = "Mod",
+            Files = [new OivPackageFile(f, installPath, 4)]
+        };
+
+        var result = new OivPackageValidator().Validate(plan);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.Contains("traversal") || e.Contains("path"));
+    }
+
+    [Theory]
+    [InlineData("/plugins/lspdfr/mod.dll")]
+    [InlineData("C:\\plugins\\mod.dll")]
+    [InlineData("//server/share/mod.dll")]
+    public void Validator_RootedInstallPath_AddsError(string installPath)
+    {
+        var f    = WriteFile("x.dll");
+        var plan = new OivPackagePlan
+        {
+            Name  = "Mod",
+            Files = [new OivPackageFile(f, installPath, 4)]
+        };
+
+        var result = new OivPackageValidator().Validate(plan);
+
+        Assert.False(result.IsValid);
+    }
+
+    [Fact]
+    public void Validator_RelativeForwardSlashPath_IsValid()
+    {
+        var f    = WriteFile("mod.dll");
+        var plan = new OivPackagePlan
+        {
+            Name  = "Mod",
+            Files = [new OivPackageFile(f, "plugins/lspdfr/mod.dll", 4)]
+        };
+
+        var result = new OivPackageValidator().Validate(plan);
+
+        Assert.True(result.IsValid);
+    }
+
+    // ── OivAssemblyXmlWriter: version parsing (qual_002) ──────────────────────
+
+    [Theory]
+    [InlineData("1.0",   "1", "0")]
+    [InlineData("2.3",   "2", "3")]
+    [InlineData("v1.2",  "1", "2")]
+    [InlineData("1",     "1", "0")]
+    [InlineData("1.2.3", "1", "2")]
+    [InlineData("abc",   "1", "0")]
+    public void XmlWriter_VersionParsing(string version, string major, string minor)
+    {
+        var f    = WriteFile("x.dll");
+        var plan = new OivPackagePlan
+        {
+            Name    = "M",
+            Version = version,
+            Files   = [new OivPackageFile(f, "x.dll", 4)]
+        };
+
+        var xml = new OivAssemblyXmlWriter().Write(plan);
+
+        Assert.Contains($"<major>{major}</major>", xml);
+        Assert.Contains($"<minor>{minor}</minor>", xml);
+    }
+
+    // ── OivPackageBuilder: temp-then-move (qual_001) ──────────────────────────
+
+    [Fact]
+    public async Task Builder_NoPartialFileOnFailure()
+    {
+        // Plan references a file that will vanish before the builder reads it.
+        var f    = WriteFile("gone.dll", "data");
+        var out_ = Path.Combine(TempDir, "partial.oiv");
+        var plan = new OivPackagePlan
+        {
+            Name  = "T",
+            Files = [new OivPackageFile(f, "gone.dll", 4)]
+        };
+
+        File.Delete(f); // remove source so builder fails mid-copy
+
+        var result = await new OivPackageBuilder().BuildAsync(plan, out_);
+
+        Assert.False(result.Success);
+        Assert.False(File.Exists(out_), "Partial .oiv must not remain on disk after failure");
+    }
+
     // ── End-to-end pipeline ───────────────────────────────────────────────────
 
     [Fact]

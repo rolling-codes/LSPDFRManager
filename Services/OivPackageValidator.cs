@@ -17,9 +17,20 @@ public sealed class OivPackageValidator : IOivPackageValidator
         if (plan.Files.Count == 0)
             errors.Add("Package must contain at least one file.");
 
-        // Path traversal guard
-        foreach (var f in plan.Files.Where(f => f.InstallPath.Contains("..")))
-            errors.Add($"Suspicious install path (path traversal): {f.InstallPath}");
+        // Install path safety: normalize separators then reject traversal, rooted, and absolute paths.
+        foreach (var f in plan.Files)
+        {
+            var ip = f.InstallPath.Replace('\\', '/');
+
+            if (ip.Contains(".."))
+                errors.Add($"Suspicious install path (path traversal): {f.InstallPath}");
+            else if (ip.StartsWith('/'))
+                errors.Add($"Install path must be relative (starts with '/'): {f.InstallPath}");
+            else if (ip.Length >= 2 && ip[1] == ':')
+                errors.Add($"Install path must be relative (drive letter): {f.InstallPath}");
+            else if (ip.StartsWith("//"))
+                errors.Add($"Install path must be relative (UNC path): {f.InstallPath}");
+        }
 
         // Duplicate install paths
         var dupes = plan.Files
