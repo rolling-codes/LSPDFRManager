@@ -21,18 +21,29 @@ dotnet publish LSPDFRManager.csproj -c Release -r win-x64 --self-contained true 
 
 **Build release ZIP (framework-dependent)** — update version number as needed
 ```bash
-dotnet publish LSPDFRManager.csproj -c Release -r win-x64 --self-contained false -o publish/v3.7.6 -p:DebugType=None -p:DebugSymbols=false
-New-Item -ItemType Directory -Path release-package/LSPDFRManager-v3.7.6 -Force
-Copy-Item -Path publish/v3.7.6/* -Destination release-package/LSPDFRManager-v3.7.6 -Recurse
-Compress-Archive -Path release-package/LSPDFRManager-v3.7.6 -DestinationPath LSPDFRManager-v3.7.6-win-x64.zip
+dotnet publish LSPDFRManager.csproj -c Release -r win-x64 --self-contained false -o publish/v3.7.7 -p:DebugType=None -p:DebugSymbols=false
+New-Item -ItemType Directory -Path release-package/LSPDFRManager-v3.7.7 -Force
+Copy-Item -Path publish/v3.7.7/* -Destination release-package/LSPDFRManager-v3.7.7 -Recurse
+Compress-Archive -Path release-package/LSPDFRManager-v3.7.7 -DestinationPath LSPDFRManager-v3.7.7-win-x64.zip
 ```
+
+> **If `dotnet publish` fails with WPF temp-file copy errors** (race with the IDE holding `obj/`), use msbuild directly:
+> ```bash
+> dotnet msbuild LSPDFRManager.csproj -t:Publish -p:Configuration=Release -p:RuntimeIdentifier=win-x64 -p:SelfContained=false -p:PublishDir=publish/v3.7.7 -p:DebugType=None -p:DebugSymbols=false
+> ```
 
 ## Testing
 
 **Run all tests**
 ```bash
-dotnet test
+dotnet test LSPDFRManager.Tests/LSPDFRManager.Tests.csproj
 ```
+
+> If `dotnet test` fails with a coverage file lock error (`msCoverageSourceRootsMapping` cannot be read), the VS Code test extension is holding the file. Build with msbuild first, then run with `--no-build`:
+> ```bash
+> dotnet msbuild LSPDFRManager.Tests/LSPDFRManager.Tests.csproj -p:CollectCoverage=false -v:q
+> dotnet test LSPDFRManager.Tests/LSPDFRManager.Tests.csproj --no-build
+> ```
 
 **Run single test class**
 ```bash
@@ -48,7 +59,7 @@ dotnet test -v detailed
 
 - File-scoped namespaces: `namespace LSPDFRManager.ViewModels;` (no braces)
 - Nullable reference types enabled: `string?` for nullable, `string` for non-null
-- Singletons (`AppConfig`, `ModLibraryService`) must be reset in tests — call `Instance = null` (or equivalent reset) before and after each test class
+- Singletons (`AppConfig`, `ModLibraryService`, `TransactionService`) must be reset in tests — call `Instance = null` / `AppDataPaths.OverrideRoot()` before and after each test class
 - No mocking of file I/O or singletons in tests — use real temp directories and JSON serialization
 
 ## Installer Safety (Hard Constraint)
@@ -64,7 +75,7 @@ External archive libraries (SharpCompress) must stay behind the `IArchive`/`IArc
 ## Repository
 
 - Repository: https://github.com/rolling-codes/LSPDFRManager
-- Current release notes: [RELEASE_v3.7.6.md](RELEASE_v3.7.6.md)
+- Current release notes: [RELEASE_v3.7.7.md](RELEASE_v3.7.7.md)
 
 ## Focus Files
 
