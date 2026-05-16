@@ -81,6 +81,12 @@
                                VerticalAlignment="Center" Text="{Binding RiskSummary}"/>
                 </StackPanel>
 
+                <TextBlock Text="{Binding TotalSizeDisplay}"
+                           Foreground="{StaticResource TextFaint}"
+                           FontSize="11"
+                           Margin="0,4,0,0"
+                           Visibility="{Binding TotalSizeDisplay, Converter={StaticResource StringToVisibility}}"/>
+
                 <!-- Error banner -->
                 <Border Background="{StaticResource ErrorBackground}"
                         BorderBrush="{StaticResource DangerBrush}" BorderThickness="1"
@@ -99,6 +105,30 @@
 
             <!-- Toggle + uninstall -->
             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button FontFamily="Segoe MDL2 Assets"
+                        FontSize="16"
+                        Margin="0,0,8,0"
+                        Command="{Binding ToggleFavoriteCommand}"
+                        ToolTip="Toggle favorite">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource IconButton}">
+                            <Setter Property="Content" Value="&#xE734;"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+                                    <Setter Property="Foreground" Value="#F59E0B"/>
+                                    <Setter Property="Content" Value="&#xE735;"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+                <Button Style="{StaticResource IconButton}"
+                        Content="&#xE8C8;"
+                        FontFamily="Segoe MDL2 Assets"
+                        FontSize="16"
+                        Margin="0,0,8,0"
+                        Command="{Binding CopyNameCommand}"
+                        ToolTip="Copy mod name to clipboard"/>
                 <CheckBox Style="{StaticResource ToggleSwitch}"
                           IsChecked="{Binding IsEnabled, Mode=OneWay}"
                           Command="{Binding ToggleCommand}"

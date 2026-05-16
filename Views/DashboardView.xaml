@@ -119,6 +119,114 @@
                 </Grid>
             </Border>
 
+            <!-- PATROL READINESS -->
+            <TextBlock Text="PATROL READINESS"
+                       Foreground="{StaticResource TextMuted}"
+                       FontSize="11" FontWeight="ExtraBold"
+                       Margin="0,24,0,8"/>
+            <Border Style="{StaticResource TelemetryCard}" Margin="0,0,0,16">
+                <StackPanel>
+
+                    <!-- Header row: status + check button -->
+                    <DockPanel Margin="0,0,0,12">
+                        <Button DockPanel.Dock="Right"
+                                Content="Check Now"
+                                Command="{Binding Readiness.CheckCommand}"
+                                IsEnabled="{Binding Readiness.IsChecking, Converter={StaticResource InverseBool}}"
+                                Padding="12,5"
+                                Style="{StaticResource GhostButton}"/>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Readiness.StatusText}"
+                                       FontSize="15" FontWeight="Bold"
+                                       Foreground="{StaticResource TextStrong}"
+                                       Margin="0,0,12,0"/>
+                            <TextBlock Text="{Binding Readiness.CheckedAt}"
+                                       Foreground="{StaticResource TextFaint}"
+                                       FontSize="11"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </DockPanel>
+
+                    <!-- Checking indicator -->
+                    <Border Visibility="{Binding Readiness.IsChecking, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}"
+                            Margin="0,0,0,8">
+                        <TextBlock Text="Checking…" Foreground="{StaticResource TextMuted}" FontSize="12"/>
+                    </Border>
+
+                    <!-- Blocking issues -->
+                    <ItemsControl ItemsSource="{Binding Readiness.BlockingIssues}"
+                                  Visibility="{Binding Readiness.HasBlockingIssues, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}"
+                                  Margin="0,0,0,8">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Margin="0,2,0,2">
+                                    <TextBlock Text="&#x2715; " Foreground="{StaticResource DangerBrush}"
+                                               FontWeight="Bold" FontSize="12"/>
+                                    <TextBlock Text="{Binding}" Foreground="{StaticResource DangerBrush}"
+                                               FontSize="12" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Warnings -->
+                    <ItemsControl ItemsSource="{Binding Readiness.Warnings}"
+                                  Visibility="{Binding Readiness.HasWarnings, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}"
+                                  Margin="0,0,0,8">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Margin="0,2,0,2">
+                                    <TextBlock Text="&#x26A0; " Foreground="#F59E0B"
+                                               FontWeight="Bold" FontSize="12"/>
+                                    <TextBlock Text="{Binding}" Foreground="#F59E0B"
+                                               FontSize="12" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Passing checks count -->
+                    <TextBlock Visibility="{Binding Readiness.HasPassingChecks, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}"
+                               Foreground="{StaticResource TextFaint}" FontSize="11" Margin="0,4,0,0">
+                        <Run Text="{Binding Readiness.PassingChecks.Count, Mode=OneWay}"/>
+                        <Run Text=" checks passed"/>
+                    </TextBlock>
+
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="COMPATIBILITY" Style="{StaticResource SectionLabel}"/>
+            <Border Style="{StaticResource TelemetryCard}" Margin="0,0,0,16" BorderBrush="{StaticResource AccentBorder}" BorderThickness="1">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,10">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Content="Refresh"
+                                Command="{Binding Compatibility.RefreshCommand}" Padding="10,5"/>
+                        <TextBlock Text="Detected component versions" Foreground="{StaticResource TextMuted}" FontSize="12" VerticalAlignment="Center"/>
+                    </DockPanel>
+
+                    <Border Visibility="{Binding Compatibility.IsRefreshing, Converter={StaticResource BoolToVis}}" Padding="0,4,0,8">
+                        <TextBlock Text="Detecting…" Foreground="{StaticResource TextFaint}" FontSize="12"/>
+                    </Border>
+
+                    <ItemsControl ItemsSource="{Binding CompatibilityRows}" Visibility="{Binding Compatibility.HasBundle, Converter={StaticResource BoolToVis}}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,3,0,3">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="160"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="80"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="{Binding Name}" Foreground="{StaticResource TextMuted}" FontSize="12"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Version}" Foreground="{StaticResource TextStrong}" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding StatusLabel}" Foreground="{StaticResource TextSubtle}" FontSize="11" HorizontalAlignment="Right"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
             <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource TextMuted}" FontSize="12"/>
         </StackPanel>
     </ScrollViewer>

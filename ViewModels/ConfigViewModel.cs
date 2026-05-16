@@ -15,8 +15,13 @@ public class ConfigViewModel : ObservableObject
     private ConfigEntry? _selectedConfig;
     private string _editContent = "";
     private string _statusMessage = "";
+    private bool _showRawEditor = false;
+    private string _entrySearch = "";
+    private IniConfigEntry? _selectedEntry;
+    private List<IniConfigEntry> _allParsedEntries = [];
 
     public ObservableCollection<ConfigEntry> Configs => _configs.Configs;
+    public ObservableCollection<IniConfigEntry> ParsedEntries { get; } = [];
 
     public ConfigEntry? SelectedConfig
     {
@@ -25,12 +30,36 @@ public class ConfigViewModel : ObservableObject
         {
             SetProperty(ref _selectedConfig, value);
             EditContent = value?.ConfigContent ?? "";
+            SelectedEntry = null;
+            LoadParsedEntries(value);
             OnPropertyChanged(nameof(HasSelection));
             OnPropertyChanged(nameof(HasNoSelection));
+            OnPropertyChanged(nameof(ShowParsedEditor));
+            OnPropertyChanged(nameof(ShowRawEditor));
         }
     }
 
-    /// <summary>Editable copy of the selected config's content.</summary>
+    public IniConfigEntry? SelectedEntry
+    {
+        get => _selectedEntry;
+        set
+        {
+            SetProperty(ref _selectedEntry, value);
+            OnPropertyChanged(nameof(HasEntrySelection));
+        }
+    }
+
+    public string EntrySearch
+    {
+        get => _entrySearch;
+        set
+        {
+            if (SetProperty(ref _entrySearch, value))
+                RefreshParsedFilter();
+        }
+    }
+
+    /// <summary>Editable copy of the selected config's content (raw mode).</summary>
     public string EditContent
     {
         get => _editContent;
@@ -43,8 +72,31 @@ public class ConfigViewModel : ObservableObject
         set => SetProperty(ref _statusMessage, value);
     }
 
-    public bool HasSelection   => _selectedConfig is not null;
-    public bool HasNoSelection => _selectedConfig is null;
+    public bool ShowRawEditorToggle
+    {
+        get => _showRawEditor;
+        set
+        {
+            if (SetProperty(ref _showRawEditor, value))
+            {
+                OnPropertyChanged(nameof(ShowParsedEditor));
+                OnPropertyChanged(nameof(ShowRawEditor));
+            }
+        }
+    }
+
+    public bool ShowParsedEditor => HasSelection && !_showRawEditor && IsIniFile;
+    public bool ShowRawEditor    => HasSelection && (_showRawEditor || !IsIniFile);
+
+    public bool IsIniFile =>
+        _selectedConfig?.ConfigFileName.EndsWith(".ini", StringComparison.OrdinalIgnoreCase) == true;
+
+    public bool HasSelection    => _selectedConfig is not null;
+    public bool HasNoSelection  => _selectedConfig is null;
+    public bool HasEntrySelection => _selectedEntry is not null;
+
+    public ICommand SaveEntryCommand       { get; }
+    public ICommand ToggleRawEditorCommand { get; }
 
     public ICommand AddFromFileCommand    { get; }
     public ICommand SaveEditCommand       { get; }
@@ -54,6 +106,33 @@ public class ConfigViewModel : ObservableObject
 
     public ConfigViewModel()
     {
+        ToggleRawEditorCommand = new RelayCommand(() =>
+        {
+            ShowRawEditorToggle = !ShowRawEditorToggle;
+        });
+
+        SaveEntryCommand = new RelayCommand(
+            () =>
+            {
+                if (_selectedEntry is null || _selectedConfig is null) return;
+                if (string.IsNullOrEmpty(_selectedEntry.FilePath) || !File.Exists(_selectedEntry.FilePath))
+                {
+                    StatusMessage = "Source file not found — cannot save individual key.";
+                    return;
+                }
+                if (ParsedIniService.SaveEntry(_selectedEntry))
+                {
+                    _selectedEntry.RawValue = _selectedEntry.EditValue;
+                    _selectedEntry.IsDirty = false;
+                    StatusMessage = $"Saved {_selectedEntry.Key} = {_selectedEntry.EditValue}";
+                }
+                else
+                {
+                    StatusMessage = $"Save failed for key '{_selectedEntry.Key}'. Check app.log.";
+                }
+            },
+            () => _selectedEntry is not null && _selectedEntry.IsDirty);
+
         AddFromFileCommand = new RelayCommand(() =>
         {
             var dlg = new Microsoft.Win32.OpenFileDialog
@@ -177,6 +256,39 @@ public class ConfigViewModel : ObservableObject
         {
             return $"Validation failed: {ex.Message}";
         }
+    }
+
+    private void LoadParsedEntries(ConfigEntry? config)
+    {
+        ParsedEntries.Clear();
+        _allParsedEntries = [];
+        _entrySearch = "";
+        OnPropertyChanged(nameof(EntrySearch));
+
+        if (config is null ||
+            !config.ConfigFileName.EndsWith(".ini", StringComparison.OrdinalIgnoreCase) ||
+            string.IsNullOrEmpty(config.SourcePath) ||
+            !File.Exists(config.SourcePath))
+            return;
+
+        _allParsedEntries = ParsedIniService.Parse(config.SourcePath);
+        foreach (var e in _allParsedEntries)
+            ParsedEntries.Add(e);
+    }
+
+    private void RefreshParsedFilter()
+    {
+        ParsedEntries.Clear();
+        var q = _entrySearch.Trim();
+        var filtered = string.IsNullOrEmpty(q)
+            ? _allParsedEntries
+            : _allParsedEntries.Where(e =>
+                e.Key.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                e.Section.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                e.RawValue.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                (e.Comment?.Contains(q, StringComparison.OrdinalIgnoreCase) == true));
+        foreach (var e in filtered)
+            ParsedEntries.Add(e);
     }
 
     private static void WriteSourceConfigWithRollback(string sourcePath, string content)

@@ -48,7 +48,16 @@
                         <Button.Style><Style TargetType="Button" BasedOn="{StaticResource NavButton}"><Style.Triggers><DataTrigger Binding="{Binding IsHomeActive}" Value="True"><Setter Property="Background" Value="{StaticResource AccentActiveBg}"/><Setter Property="BorderBrush" Value="{StaticResource AccentBorder}"/><Setter Property="Foreground" Value="{StaticResource TextStrong}"/><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers></Style></Button.Style>
                     </Button>
                     <Button Command="{Binding NavigateCommand}" CommandParameter="Library">
-                        <Button.Content><StackPanel Orientation="Horizontal"><TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8F1;" FontSize="14" Width="20" TextAlignment="Center"/><TextBlock Text="Library" FontSize="13" Margin="10,0,0,0"/></StackPanel></Button.Content>
+                        <Button.Content>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8F1;" FontSize="14" Width="20" TextAlignment="Center"/>
+                                <TextBlock Text="Library" FontSize="13" Margin="10,0,0,0"/>
+                                <Border Background="#F59E0B" CornerRadius="8" Padding="5,1" Margin="8,0,0,0"
+                                        Visibility="{Binding HasDisabledMods, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
+                                    <TextBlock Text="{Binding DisabledModCount}" FontSize="10" FontWeight="Bold" Foreground="Black"/>
+                                </Border>
+                            </StackPanel>
+                        </Button.Content>
                         <Button.Style><Style TargetType="Button" BasedOn="{StaticResource NavButton}"><Style.Triggers><DataTrigger Binding="{Binding IsLibraryActive}" Value="True"><Setter Property="Background" Value="{StaticResource AccentActiveBg}"/><Setter Property="BorderBrush" Value="{StaticResource AccentBorder}"/><Setter Property="Foreground" Value="{StaticResource TextStrong}"/><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers></Style></Button.Style>
                     </Button>
                     <Button Command="{Binding NavigateCommand}" CommandParameter="Install">

@@ -1,15 +1,16 @@
 <UserControl x:Class="LSPDFRManager.Views.ConfigView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:domain="clr-namespace:LSPDFRManager.Domain"
              Background="{StaticResource Bg}"
              FontFamily="Segoe UI">
 
     <DockPanel Margin="28,24,28,16">
 
         <!-- Header -->
-        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,20">
+        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,16">
             <TextBlock Text="Plugin Configs" Style="{StaticResource SectionHeader}"/>
-            <TextBlock Text="View and edit configuration files (.ini, .xml, .cfg) for your installed plugins."
+            <TextBlock Text="Browse and edit configuration settings for your installed plugins."
                        Foreground="{StaticResource TextMuted}" FontSize="13"
                        TextWrapping="Wrap"/>
         </StackPanel>
@@ -27,64 +28,94 @@
                     Command="{Binding ExtractFromModCommand}"/>
         </StackPanel>
 
+        <!-- Status bar -->
         <TextBlock DockPanel.Dock="Bottom"
                    Text="{Binding StatusMessage}"
                    Foreground="{StaticResource TextMuted}"
                    FontSize="12" Margin="0,8,0,0"/>
 
-        <!-- Two-column layout -->
+        <!-- Resizable two-column layout -->
         <Grid DockPanel.Dock="Top">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="16"/>
-                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*" MinWidth="200"/>
+                <ColumnDefinition Width="6"/>
+                <ColumnDefinition Width="2*" MinWidth="280"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Config file list -->
-            <ListBox Grid.Column="0"
-                     ItemsSource="{Binding Configs}"
-                     SelectedItem="{Binding SelectedConfig}">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <Border Style="{StaticResource CardPanel}"
-                                CornerRadius="8" Padding="14,10" Margin="0,3">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel>
-                                    <TextBlock Text="{Binding ConfigFileName}"
-                                               Foreground="{StaticResource TextPrimary}"
-                                               FontSize="13" FontWeight="SemiBold"/>
-                                    <TextBlock Foreground="{StaticResource TextMuted}"
-                                               FontSize="11" Margin="0,3,0,0">
-                                        <Run Text="{Binding ModName, Mode=OneWay}"/>
-                                        <Run Text=" · "/>
-                                        <Run Text="{Binding LastModified, Mode=OneWay,
-                                                   StringFormat='{}{0:MMM d, yyyy}'}"/>
-                                    </TextBlock>
-                                </StackPanel>
-                                <Button Grid.Column="1"
-                                        Style="{StaticResource IconButton}"
-                                        Content="&#xE74D;"
-                                        FontFamily="Segoe MDL2 Assets"
-                                        Command="{Binding DataContext.DeleteConfigCommand,
-                                            RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                        CommandParameter="{Binding}"
-                                        ToolTip="Remove config"/>
-                            </Grid>
-                        </Border>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+            <!-- ── Left pane: config file list ── -->
+            <Border Grid.Column="0" Style="{StaticResource CardPanel}" CornerRadius="10" Padding="0">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top"
+                               Text="Config Files"
+                               Foreground="{StaticResource TextMuted}"
+                               FontSize="11" FontWeight="SemiBold"
+                               Margin="14,12,14,6"/>
+                    <ListBox DockPanel.Dock="Top"
+                             ItemsSource="{Binding Configs}"
+                             SelectedItem="{Binding SelectedConfig}"
+                             BorderThickness="0" Background="Transparent">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="Padding" Value="0"/>
+                                <Setter Property="Margin" Value="6,2"/>
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource Accent}"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border CornerRadius="6" Padding="10,8">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding ConfigFileName}"
+                                                       Foreground="{StaticResource TextPrimary}"
+                                                       FontSize="13" FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Foreground="{StaticResource TextMuted}"
+                                                       FontSize="11" Margin="0,2,0,0"
+                                                       TextTrimming="CharacterEllipsis">
+                                                <Run Text="{Binding ModName, Mode=OneWay}"/>
+                                            </TextBlock>
+                                        </StackPanel>
+                                        <Button Grid.Column="1"
+                                                Style="{StaticResource IconButton}"
+                                                Content="&#xE74D;"
+                                                FontFamily="Segoe MDL2 Assets"
+                                                Command="{Binding DataContext.DeleteConfigCommand,
+                                                    RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                CommandParameter="{Binding}"
+                                                ToolTip="Remove config"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
 
-            <!-- Editor panel -->
-            <Border Grid.Column="2" Style="{StaticResource CardPanel}"
-                    CornerRadius="10" Padding="16">
+            <!-- Drag handle -->
+            <GridSplitter Grid.Column="1"
+                          Width="6" HorizontalAlignment="Stretch"
+                          Background="{StaticResource BgAlt}"
+                          ResizeBehavior="PreviousAndNext"
+                          ResizeDirection="Columns"
+                          ShowsPreview="True"/>
+
+            <!-- ── Right pane: parsed editor or raw editor ── -->
+            <Border Grid.Column="2" Style="{StaticResource CardPanel}" CornerRadius="10" Padding="16">
                 <Grid>
 
-                    <!-- No selection -->
+                    <!-- No config selected -->
                     <StackPanel Style="{StaticResource EmptyState}"
                                 Visibility="{Binding HasNoSelection, Converter={StaticResource BoolToVis}}">
                         <TextBlock Text="&#xE9E9;" FontFamily="Segoe MDL2 Assets"
@@ -95,8 +126,189 @@
                                    TextAlignment="Center" TextWrapping="Wrap"/>
                     </StackPanel>
 
-                    <!-- Editor -->
-                    <DockPanel Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}">
+                    <!-- ── Parsed .ini editor (default for .ini files) ── -->
+                    <DockPanel Visibility="{Binding ShowParsedEditor, Converter={StaticResource BoolToVis}}">
+
+                        <!-- Top bar -->
+                        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
+                                <Button Style="{StaticResource GhostButton}"
+                                        Content="&#xE838;  Open Location"
+                                        FontFamily="Segoe MDL2 Assets, Segoe UI"
+                                        Command="{Binding OpenInExplorerCommand}"
+                                        Padding="8,6" Margin="0,0,6,0"/>
+                                <Button Style="{StaticResource GhostButton}"
+                                        Content="Raw"
+                                        ToolTip="Switch to raw text editor"
+                                        Padding="8,6"
+                                        Command="{Binding ToggleRawEditorCommand}"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="{Binding SelectedConfig.ConfigFileName}"
+                                           Foreground="{StaticResource TextPrimary}"
+                                           FontSize="14" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding SelectedConfig.SourcePath}"
+                                           Foreground="{StaticResource TextFaint}"
+                                           FontSize="10" TextTrimming="CharacterEllipsis"/>
+                            </StackPanel>
+                        </DockPanel>
+
+                        <!-- Search box -->
+                        <Border DockPanel.Dock="Top"
+                                Background="{StaticResource BgAlt}"
+                                CornerRadius="6" Padding="8,6" Margin="0,0,0,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="&#xE721;"
+                                           FontFamily="Segoe MDL2 Assets"
+                                           Foreground="{StaticResource TextMuted}"
+                                           VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBox Grid.Column="1"
+                                         Text="{Binding EntrySearch, UpdateSourceTrigger=PropertyChanged}"
+                                         Background="Transparent" BorderThickness="0"
+                                         Foreground="{StaticResource TextPrimary}"
+                                         FontSize="12" VerticalAlignment="Center"
+                                         CaretBrush="{StaticResource TextPrimary}">
+                                    <TextBox.Style>
+                                        <Style TargetType="TextBox">
+                                            <Style.Triggers>
+                                                <Trigger Property="Text" Value="">
+                                                    <Setter Property="Background">
+                                                        <Setter.Value>
+                                                            <VisualBrush AlignmentX="Left" Stretch="None">
+                                                                <VisualBrush.Visual>
+                                                                    <TextBlock Text="Search settings…"
+                                                                               Foreground="{StaticResource TextFaint}"
+                                                                               FontSize="12" Margin="2,0,0,0"/>
+                                                                </VisualBrush.Visual>
+                                                            </VisualBrush>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBox.Style>
+                                </TextBox>
+                            </Grid>
+                        </Border>
+
+                        <!-- Parsed entry list + inline editor (side by side when space allows) -->
+                        <Grid DockPanel.Dock="Top">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" MinWidth="180"/>
+                                <ColumnDefinition Width="5"/>
+                                <ColumnDefinition Width="*" MinWidth="180"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Entry list -->
+                            <ListBox Grid.Column="0"
+                                     ItemsSource="{Binding ParsedEntries}"
+                                     SelectedItem="{Binding SelectedEntry}"
+                                     BorderThickness="0" Background="Transparent"
+                                     VirtualizingPanel.IsVirtualizing="True"
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto">
+<ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                        <Setter Property="Padding" Value="0"/>
+                                        <Setter Property="Margin" Value="0,1"/>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type domain:IniConfigEntry}">
+                                        <Border Padding="10,6" CornerRadius="4">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding DisplayLabel}"
+                                                               Foreground="{StaticResource TextPrimary}"
+                                                               FontSize="12" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding Comment}"
+                                                               Foreground="{StaticResource TextFaint}"
+                                                               FontSize="10" TextTrimming="CharacterEllipsis"
+                                                               Visibility="{Binding Comment, Converter={StaticResource StringToVis}}"/>
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="1"
+                                                           Text="{Binding RawValue}"
+                                                           Foreground="{StaticResource TextMuted}"
+                                                           FontSize="11" VerticalAlignment="Center"
+                                                           MaxWidth="80" TextTrimming="CharacterEllipsis"
+                                                           Margin="8,0,0,0"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+
+                            <GridSplitter Grid.Column="1" Width="5"
+                                          HorizontalAlignment="Stretch"
+                                          Background="{StaticResource BgAlt}"
+                                          ResizeBehavior="PreviousAndNext"
+                                          ResizeDirection="Columns"/>
+
+                            <!-- Selected entry editor -->
+                            <Border Grid.Column="2"
+                                    Background="{StaticResource BgAlt}"
+                                    CornerRadius="8" Padding="14">
+                                <Grid>
+                                <!-- No entry selected -->
+                                <StackPanel Visibility="{Binding HasEntrySelection, Converter={StaticResource InverseBoolToVis}}"
+                                            VerticalAlignment="Center" HorizontalAlignment="Center">
+                                    <TextBlock Text="Select a setting to edit"
+                                               Foreground="{StaticResource TextFaint}"
+                                               FontSize="12" TextAlignment="Center"/>
+                                </StackPanel>
+
+                                <!-- Entry editor -->
+                                <StackPanel Visibility="{Binding HasEntrySelection, Converter={StaticResource BoolToVis}}"
+                                            DataContext="{Binding SelectedEntry}">
+                                    <TextBlock Text="{Binding SectionDisplay}"
+                                               Foreground="{StaticResource TextMuted}"
+                                               FontSize="10" FontWeight="SemiBold"
+                                               Margin="0,0,0,4"/>
+                                    <TextBlock Text="{Binding DisplayLabel}"
+                                               Foreground="{StaticResource TextPrimary}"
+                                               FontSize="15" FontWeight="SemiBold"
+                                               Margin="0,0,0,6" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding Comment}"
+                                               Foreground="{StaticResource TextMuted}"
+                                               FontSize="11" TextWrapping="Wrap"
+                                               Margin="0,0,0,12"
+                                               Visibility="{Binding Comment, Converter={StaticResource StringToVis}}"/>
+
+                                    <!-- Value editor (type-aware) -->
+                                    <TextBox Text="{Binding EditValue, UpdateSourceTrigger=PropertyChanged}"
+                                             Foreground="{StaticResource TextPrimary}"
+                                             FontSize="13" Padding="8,6"
+                                             BorderThickness="1"
+                                             TextWrapping="Wrap"
+                                             AcceptsReturn="False"/>
+
+                                    <TextBlock Text="{Binding InferredType, StringFormat='Type: {0}'}"
+                                               Foreground="{StaticResource TextFaint}"
+                                               FontSize="10" Margin="0,6,0,0"/>
+
+                                    <Button Style="{StaticResource PrimaryButton}"
+                                            Content="&#xE74E;  Save Setting"
+                                            FontFamily="Segoe MDL2 Assets, Segoe UI"
+                                            Command="{Binding DataContext.SaveEntryCommand,
+                                                RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            Padding="12,8" Margin="0,14,0,0"
+                                            HorizontalAlignment="Left"/>
+                                </StackPanel>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </DockPanel>
+
+                    <!-- ── Raw text editor (fallback / toggle) ── -->
+                    <DockPanel Visibility="{Binding ShowRawEditor, Converter={StaticResource BoolToVis}}">
 
                         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
                             <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
@@ -105,6 +317,11 @@
                                         FontFamily="Segoe MDL2 Assets, Segoe UI"
                                         Command="{Binding OpenInExplorerCommand}"
                                         Padding="8,6" Margin="0,0,6,0"/>
+                                <Button Style="{StaticResource GhostButton}"
+                                        Content="Parsed"
+                                        ToolTip="Switch to parsed settings view"
+                                        Padding="8,6" Margin="0,0,6,0"
+                                        Command="{Binding ToggleRawEditorCommand}"/>
                                 <Button Style="{StaticResource PrimaryButton}"
                                         Content="&#xE74E;  Save"
                                         FontFamily="Segoe MDL2 Assets, Segoe UI"
@@ -133,6 +350,7 @@
                                  Padding="10"
                                  MinHeight="300"/>
                     </DockPanel>
+
                 </Grid>
             </Border>
         </Grid>

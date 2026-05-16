@@ -125,6 +125,20 @@
                                 <Button Grid.Column="2" Style="{StaticResource GhostButton}" Content="&#xE70D;  Down" FontFamily="Segoe MDL2 Assets, Segoe UI" Command="{Binding MoveSelectedDownCommand}" HorizontalAlignment="Stretch" Padding="10,8"/>
                             </Grid>
                             <Button Style="{StaticResource GhostButton}" Content="&#xE838;  Open Folder" FontFamily="Segoe MDL2 Assets, Segoe UI" Command="{Binding OpenModFolderCommand}" HorizontalAlignment="Stretch" Padding="10,10"/>
+
+                            <Separator Margin="0,10,0,10" Background="{StaticResource BorderSubtle}"/>
+                            <Button Style="{StaticResource GhostButton}"
+                                    Content="&#xE72C;  Rollback Install"
+                                    FontFamily="Segoe MDL2 Assets, Segoe UI"
+                                    Command="{Binding RollbackCommand}"
+                                    HorizontalAlignment="Stretch"
+                                    Padding="10,8"/>
+                            <TextBlock Text="{Binding RollbackStatus}"
+                                       Foreground="{StaticResource TextMuted}"
+                                       FontSize="11"
+                                       TextWrapping="Wrap"
+                                       Margin="0,6,0,0"
+                                       Visibility="{Binding HasRollbackStatus, Converter={StaticResource BoolToVis}}"/>
                         </StackPanel>
 
                         <ScrollViewer VerticalScrollBarVisibility="Auto">

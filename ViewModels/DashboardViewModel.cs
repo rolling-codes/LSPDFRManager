@@ -27,6 +27,18 @@ public class DashboardViewModel : ObservableObject
     public ICommand LaunchRphCommand { get; }
     public ICommand RefreshCommand { get; }
 
+    public CompatibilityViewModel Compatibility { get; } = new();
+    public PatrolReadinessViewModel Readiness { get; } = new();
+
+    public IEnumerable<ComponentRow> CompatibilityRows =>
+    [
+        Compatibility.GtaRow,
+        Compatibility.LspdfrRow,
+        Compatibility.RphRow,
+        Compatibility.ShvRow,
+        Compatibility.ShvdnRow,
+    ];
+
     public DashboardViewModel()
     {
         ScanPluginsCommand = new RelayCommand(() => _ = RunScanAsync());
@@ -38,6 +50,11 @@ public class DashboardViewModel : ObservableObject
         LaunchGtaCommand = new RelayCommand(LaunchGta);
         LaunchRphCommand = new RelayCommand(LaunchRph);
         RefreshCommand = new RelayCommand(() => Status.Refresh());
+
+        Compatibility.PropertyChanged += (_, _) => OnPropertyChanged(nameof(CompatibilityRows));
+
+        _ = Compatibility.RefreshAsync();
+        _ = Readiness.CheckAsync();
     }
 
     private async Task RunScanAsync()

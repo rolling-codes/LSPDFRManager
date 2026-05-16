@@ -1,6 +1,8 @@
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Windows;
 using System.Windows.Input;
+using LSPDFRManager.Core;
 using LSPDFRManager.Domain;
 using LSPDFRManager.Services;
 
@@ -18,6 +20,7 @@ public class LibraryViewModel : ObservableObject
     private string _riskFilter = "All";
     private ModItemViewModel? _selectedMod;
     private List<(Guid Id, bool WasEnabled)>? _lastBulkToggle;
+    private string _rollbackStatus = "";
 
     public LibraryViewModel()
     {
@@ -44,7 +47,13 @@ public class LibraryViewModel : ObservableObject
                 RiskFilter = risk;
         });
 
+        RollbackCommand = new RelayCommand(
+            async () => await ExecuteRollbackAsync(),
+            () => SelectedMod is not null &&
+                  TransactionService.Instance.GetByModId(SelectedMod.Id) is not null);
+
         _library.Mods.CollectionChanged += OnLibraryChanged;
+        _library.ModUpdated += OnModUpdated;
         RefreshFiltered();
     }
 
@@ -112,6 +121,8 @@ public class LibraryViewModel : ObservableObject
             OnPropertyChanged(nameof(SelectedModFilesSample));
             OnPropertyChanged(nameof(HasMoreSelectedFiles));
             OnPropertyChanged(nameof(SelectedModFilesMoreText));
+            OnPropertyChanged(nameof(CanRollback));
+            RollbackStatus = "";
             CommandManager.InvalidateRequerySuggested();
         }
     }
@@ -160,6 +171,7 @@ public class LibraryViewModel : ObservableObject
 
     public List<string> SortOptions { get; } =
     [
+        "Favorites first",
         "Installed: Newest first",
         "Installed: Oldest first",
         "Name: A to Z",
@@ -168,6 +180,22 @@ public class LibraryViewModel : ObservableObject
         "Enabled first",
         "Load order",
     ];
+
+    public string RollbackStatus
+    {
+        get => _rollbackStatus;
+        private set
+        {
+            if (SetProperty(ref _rollbackStatus, value))
+                OnPropertyChanged(nameof(HasRollbackStatus));
+        }
+    }
+
+    public bool HasRollbackStatus => !string.IsNullOrEmpty(_rollbackStatus);
+
+    public bool CanRollback =>
+        SelectedMod is not null &&
+        TransactionService.Instance.GetByModId(SelectedMod.Id) is not null;
 
     public ICommand ToggleEnabledCommand { get; }
     public ICommand UninstallCommand { get; }
@@ -180,6 +208,7 @@ public class LibraryViewModel : ObservableObject
     public ICommand MoveSelectedDownCommand { get; }
     public ICommand ExportEnabledModsCommand { get; }
     public ICommand SetFilterCommand { get; }
+    public ICommand RollbackCommand { get; }
 
     private void Refresh()
     {
@@ -252,6 +281,12 @@ public class LibraryViewModel : ObservableObject
             Process.Start("explorer.exe", path);
     }
 
+    private void OnModUpdated(InstalledMod _)
+    {
+        RefreshFiltered();
+        RaiseCountsChanged();
+    }
+
     private void OnLibraryChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         RefreshFiltered();
@@ -301,6 +336,7 @@ public class LibraryViewModel : ObservableObject
 
         return SelectedSort switch
         {
+            "Favorites first" => mods.OrderByDescending(mod => mod.IsFavorite).ThenByDescending(mod => mod.InstalledAt),
             "Installed: Oldest first" => mods.OrderBy(mod => mod.InstalledAt),
             "Name: A to Z" => mods.OrderBy(mod => mod.Name, StringComparer.OrdinalIgnoreCase),
             "Name: Z to A" => mods.OrderByDescending(mod => mod.Name, StringComparer.OrdinalIgnoreCase),
@@ -338,4 +374,64 @@ public class LibraryViewModel : ObservableObject
         score >= 70 ? "Safe" :
         score >= 40 ? "Medium" :
         "High";
+
+    private async Task ExecuteRollbackAsync()
+    {
+        if (SelectedMod is null) return;
+
+        var transaction = TransactionService.Instance.GetByModId(SelectedMod.Id);
+        if (transaction is null)
+        {
+            RollbackStatus = "No transaction record found — rollback unavailable.";
+            return;
+        }
+
+        var modName = SelectedMod.Name;
+        var modId = SelectedMod.Id;
+
+        var confirm = MessageBox.Show(
+            $"Roll back the installation of \"{modName}\"?\n\nFiles added by this install will be removed and overwritten files will be restored.",
+            "Confirm Rollback",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (confirm != MessageBoxResult.Yes) return;
+
+        try
+        {
+            var result = await Task.Run(() => TransactionService.Instance.Rollback(transaction.Id));
+
+            // All UI-state mutations on the UI thread to avoid ObservableCollection cross-thread exceptions
+            if (result.IsUnavailable)
+            {
+                RollbackStatus = $"Rollback unavailable: {result.Error}";
+                return;
+            }
+
+            // Only remove the mod record when rollback succeeded or was partial (user-modified files skipped).
+            // If restore failures occurred, keep the library record so the user can still see which mod owns the files.
+            bool removeFromLibrary = result.IsComplete || result.IsPartial;
+            if (removeFromLibrary)
+                _library.Remove(modId);
+
+            Refresh();
+            OnPropertyChanged(nameof(CanRollback));
+            CommandManager.InvalidateRequerySuggested();
+
+            RollbackStatus = result switch
+            {
+                { IsComplete: true } => $"Rollback complete — \"{modName}\" removed.",
+                { IsPartial: true }  => $"Partial rollback: {result.SkippedFiles.Count} file(s) modified since install were kept. \"{modName}\" removed from library.",
+                { IsFailed: true }   => $"Rollback failed: {result.FailedFiles.Count} file(s) could not be restored" +
+                                        (result.SkippedFiles.Count > 0 ? $", {result.SkippedFiles.Count} skipped (modified)." : ".") +
+                                        " Check app.log. Mod kept in library.",
+                _                    => "Rollback finished.",
+            };
+        }
+        catch (Exception ex)
+        {
+            RollbackStatus = $"Rollback error: {ex.Message}";
+            AppLogger.Error("[ROLLBACK] Unexpected error during rollback", ex);
+        }
+    }
 }

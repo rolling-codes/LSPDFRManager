@@ -25,12 +25,36 @@ public class ModItemViewModel : ObservableObject
 
         ToggleCommand = new RelayCommand(ToggleEnabled);
         UninstallCommand = new RelayCommand(Uninstall);
+
+        ToggleFavoriteCommand = new RelayCommand(() =>
+        {
+            _mod.IsFavorite = !_mod.IsFavorite;
+            OnPropertyChanged(nameof(IsFavorite));
+            _library.SaveProxy();
+        });
+
+        CopyNameCommand = new RelayCommand(() =>
+        {
+            var text = string.IsNullOrWhiteSpace(_mod.Version)
+                ? _mod.Name
+                : $"{_mod.Name} v{_mod.Version}";
+            try
+            {
+                System.Windows.Clipboard.SetText(text);
+            }
+            catch (System.Runtime.InteropServices.ExternalException)
+            {
+                // Clipboard is locked by another process — silently ignore
+            }
+        });
     }
 
     public InstalledMod Model => _mod;
 
     public ICommand ToggleCommand { get; }
     public ICommand UninstallCommand { get; }
+    public ICommand ToggleFavoriteCommand { get; }
+    public ICommand CopyNameCommand { get; }
 
     public Guid Id => _mod.Id;
     public string Name => _mod.Name;
@@ -41,6 +65,8 @@ public class ModItemViewModel : ObservableObject
     public DateTime InstalledAt => _mod.InstalledAt;
     public string DlcPackName => _mod.DlcPackName;
     public List<string> InstalledFiles => _mod.InstalledFiles;
+    public bool IsFavorite => _mod.IsFavorite;
+    public string TotalSizeDisplay => _mod.TotalSizeDisplay;
 
     public bool IsEnabled
     {

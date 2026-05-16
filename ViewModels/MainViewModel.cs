@@ -38,6 +38,24 @@ public class MainViewModel : ObservableObject
         // Load persistent services
         ChangeHistoryService.Instance.Load();
         RestorePointService.Instance.Load();
+
+        ModLibraryService.Instance.Mods.CollectionChanged += (_, _) =>
+        {
+            UiDispatcher.Invoke(() =>
+            {
+                OnPropertyChanged(nameof(DisabledModCount));
+                OnPropertyChanged(nameof(HasDisabledMods));
+            });
+        };
+
+        ModLibraryService.Instance.ModUpdated += _ =>
+        {
+            UiDispatcher.Invoke(() =>
+            {
+                OnPropertyChanged(nameof(DisabledModCount));
+                OnPropertyChanged(nameof(HasDisabledMods));
+            });
+        };
     }
 
     public DashboardViewModel DashboardVM { get; } = new();
@@ -78,6 +96,11 @@ public class MainViewModel : ObservableObject
     }
 
     public bool HasGlobalError => !string.IsNullOrWhiteSpace(GlobalErrorMessage);
+
+    public int DisabledModCount =>
+        ModLibraryService.Instance.Mods.Count(m => !m.IsEnabled);
+
+    public bool HasDisabledMods => DisabledModCount > 0;
 
     public string GtaStatusText => AppConfig.Instance.GtaPath;
     public string AppVersionText =>
