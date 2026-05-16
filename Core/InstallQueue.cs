@@ -142,113 +142,113 @@ public class InstallQueue : IDisposable
                 DlcPackName = installed.DlcPackName,
             });
 
-            ModLibraryService.Instance.Add(installed);
+ModLibraryService.Instance.Add(installed);
 
-            if (isDlc)
-                DlcListService.AddEntry(installed.DlcPackName);
+if (isDlc)
+    DlcListService.AddEntry(installed.DlcPackName);
 
-            InstallCompleted?.Invoke(installed);
-            AppLogger.Info($"[INSTALL_SUCCESS] {mod.Name} | filesWritten={result.FilesWritten} | type={mod.Type}");
+InstallCompleted?.Invoke(installed);
+AppLogger.Info($"[INSTALL_SUCCESS] {mod.Name} | filesWritten={result.FilesWritten} | type={mod.Type}");
 
-            TryDeleteTempSource(mod.SourcePath);
-            queued.Completion.TrySetResult(result);
+TryDeleteTempSource(mod.SourcePath);
+queued.Completion.TrySetResult(result);
         }
         catch (Exception ex)
         {
-            AppLogger.Error($"[INSTALL_EXCEPTION] {mod.Name}", ex);
+    AppLogger.Error($"[INSTALL_EXCEPTION] {mod.Name}", ex);
 
-            var result = new InstallResult
-            {
-                Success = false,
-                Error = ex.Message,
-            };
+    var result = new InstallResult
+    {
+        Success = false,
+        Error = ex.Message,
+    };
 
-            InstallFailed?.Invoke(mod, ex.Message);
-            InstallFailedWithResult?.Invoke(mod, result);
-            queued.Completion.TrySetResult(result);
-        }
+    InstallFailed?.Invoke(mod, ex.Message);
+    InstallFailedWithResult?.Invoke(mod, result);
+    queued.Completion.TrySetResult(result);
+}
     }
 
     private static InstalledMod CreateInstalledMod(ModInfo mod, string gtaPath, InstallResult result)
-    {
-        var installedFiles = result.WrittenFiles.Count > 0
-            ? result.WrittenFiles
-            : mod.Files
-                .Select(file => Path.Combine(gtaPath, file.Replace('/', Path.DirectorySeparatorChar)))
-                .ToList();
+{
+    var installedFiles = result.WrittenFiles.Count > 0
+        ? result.WrittenFiles
+        : mod.Files
+            .Select(file => Path.Combine(gtaPath, file.Replace('/', Path.DirectorySeparatorChar)))
+            .ToList();
 
-        return new InstalledMod
-        {
-            Name = mod.Name,
-            Type = mod.Type,
-            TypeLabel = mod.TypeLabel,
-            TypeColor = mod.TypeColor,
-            Version = mod.Version ?? "",
-            Author = mod.Author ?? "",
-            SourcePath = mod.SourcePath,
-            InstallPath = gtaPath,
-            DlcPackName = mod.DlcPackName ?? "",
-            InstalledFiles = installedFiles,
-            DetectionScore = (int)Math.Round(mod.Confidence * 100),
-        };
+    return new InstalledMod
+    {
+        Name = mod.Name,
+        Type = mod.Type,
+        TypeLabel = mod.TypeLabel,
+        TypeColor = mod.TypeColor,
+        Version = mod.Version ?? "",
+        Author = mod.Author ?? "",
+        SourcePath = mod.SourcePath,
+        InstallPath = gtaPath,
+        DlcPackName = mod.DlcPackName ?? "",
+        InstalledFiles = installedFiles,
+        DetectionScore = (int)Math.Round(mod.Confidence * 100),
+    };
+}
+
+private void HandleFailedInstall(ModInfo mod, InstallResult result)
+{
+    AppLogger.Error(
+        $"[INSTALL_FAILED] {mod.Name} | partial={result.IsPartial} | filesWritten={result.FilesWritten}");
+
+    InstallFailed?.Invoke(mod, result.Error ?? "Unknown error");
+    InstallFailedWithResult?.Invoke(mod, result);
+}
+
+private static void TryCleanupBackupFolder(string backupFolder)
+{
+    try
+    {
+        if (Directory.Exists(backupFolder))
+            Directory.Delete(backupFolder, recursive: true);
     }
-
-    private void HandleFailedInstall(ModInfo mod, InstallResult result)
+    catch (Exception ex)
     {
-        AppLogger.Error(
-            $"[INSTALL_FAILED] {mod.Name} | partial={result.IsPartial} | filesWritten={result.FilesWritten}");
-
-        InstallFailed?.Invoke(mod, result.Error ?? "Unknown error");
-        InstallFailedWithResult?.Invoke(mod, result);
+        AppLogger.Warning($"[INSTALL] Could not clean up backup folder: {ex.Message}");
     }
+}
 
-    private static void TryCleanupBackupFolder(string backupFolder)
+private static void TryDeleteTempSource(string sourcePath)
+{
+    if (!AppConfig.Instance.DeleteTempAfterInstall) return;
+
+    var tempDownloadDir = Path.Combine(Path.GetTempPath(), "LSPDFRManager_downloads");
+    if (!sourcePath.StartsWith(tempDownloadDir, StringComparison.OrdinalIgnoreCase)) return;
+
+    try
     {
-        try
+        if (File.Exists(sourcePath))
         {
-            if (Directory.Exists(backupFolder))
-                Directory.Delete(backupFolder, recursive: true);
-        }
-        catch (Exception ex)
-        {
-            AppLogger.Warning($"[INSTALL] Could not clean up backup folder: {ex.Message}");
-        }
-    }
-
-    private static void TryDeleteTempSource(string sourcePath)
-    {
-        if (!AppConfig.Instance.DeleteTempAfterInstall) return;
-
-        var tempDownloadDir = Path.Combine(Path.GetTempPath(), "LSPDFRManager_downloads");
-        if (!sourcePath.StartsWith(tempDownloadDir, StringComparison.OrdinalIgnoreCase)) return;
-
-        try
-        {
-            if (File.Exists(sourcePath))
-            {
-                File.Delete(sourcePath);
-                AppLogger.Info($"[CLEANUP] Deleted temp source: {sourcePath}");
-            }
-        }
-        catch (Exception ex)
-        {
-            AppLogger.Error($"[CLEANUP] Could not delete temp source: {sourcePath}", ex);
+            File.Delete(sourcePath);
+            AppLogger.Info($"[CLEANUP] Deleted temp source: {sourcePath}");
         }
     }
-
-    public void Dispose()
+    catch (Exception ex)
     {
-        _cts.Cancel();
-        _signal.Dispose();
-        _cts.Dispose();
+        AppLogger.Error($"[CLEANUP] Could not delete temp source: {sourcePath}", ex);
     }
+}
 
-    private sealed class QueuedInstall
-    {
-        public QueuedInstall(ModInfo mod) => Mod = mod;
+public void Dispose()
+{
+    _cts.Cancel();
+    _signal.Dispose();
+    _cts.Dispose();
+}
 
-        public ModInfo Mod { get; }
-        public TaskCompletionSource<InstallResult> Completion { get; } =
-            new(TaskCreationOptions.RunContinuationsAsynchronously);
-    }
+private sealed class QueuedInstall
+{
+    public QueuedInstall(ModInfo mod) => Mod = mod;
+
+    public ModInfo Mod { get; }
+    public TaskCompletionSource<InstallResult> Completion { get; } =
+        new(TaskCreationOptions.RunContinuationsAsynchronously);
+}
 }
