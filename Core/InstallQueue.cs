@@ -100,18 +100,51 @@ public class InstallQueue : IDisposable
                 return;
             }
 
-            var result = await FileInstaller.InstallAsync(mod, gtaPath, plan).ConfigureAwait(false);
+            // Pre-allocate a transaction ID so the backup folder is ready before extraction starts
+            var transactionId = Guid.NewGuid();
+            var backupFolder = TransactionService.BackupFolderFor(transactionId);
+            Directory.CreateDirectory(backupFolder);
+
+            var result = await FileInstaller.InstallAsync(mod, gtaPath, plan, backupFolder).ConfigureAwait(false);
             if (!result.Success)
             {
+                TryCleanupBackupFolder(backupFolder);
                 HandleFailedInstall(mod, result);
                 queued.Completion.TrySetResult(result);
                 return;
             }
 
             var installed = CreateInstalledMod(mod, gtaPath, result);
+
+            // Calculate installed file sizes
+            long totalSize = 0;
+            foreach (var path in result.WrittenFiles)
+            {
+                try { if (File.Exists(path)) totalSize += new FileInfo(path).Length; } catch { }
+            }
+            installed.TotalSizeBytes = totalSize;
+
+            installed.TransactionId = transactionId;
+
+            var isDlc = installed.Type == ModType.VehicleDlc && !string.IsNullOrWhiteSpace(installed.DlcPackName);
+
+            // Save transaction BEFORE adding to library so a crash between the two never leaves
+            // a library record with a TransactionId that has no matching transaction on disk.
+            TransactionService.Instance.Add(new InstallTransaction
+            {
+                Id = transactionId,
+                ModId = installed.Id,
+                ModName = installed.Name,
+                FilesAdded = result.AddedFileRecords,
+                FilesOverwritten = result.OverwrittenFileRecords,
+                BackupFolder = backupFolder,
+                WasDlcEntry = isDlc,
+                DlcPackName = installed.DlcPackName,
+            });
+
             ModLibraryService.Instance.Add(installed);
 
-            if (installed.Type == ModType.VehicleDlc && !string.IsNullOrWhiteSpace(installed.DlcPackName))
+            if (isDlc)
                 DlcListService.AddEntry(installed.DlcPackName);
 
             InstallCompleted?.Invoke(installed);
@@ -167,6 +200,19 @@ public class InstallQueue : IDisposable
 
         InstallFailed?.Invoke(mod, result.Error ?? "Unknown error");
         InstallFailedWithResult?.Invoke(mod, result);
+    }
+
+    private static void TryCleanupBackupFolder(string backupFolder)
+    {
+        try
+        {
+            if (Directory.Exists(backupFolder))
+                Directory.Delete(backupFolder, recursive: true);
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Warning($"[INSTALL] Could not clean up backup folder: {ex.Message}");
+        }
     }
 
     private static void TryDeleteTempSource(string sourcePath)

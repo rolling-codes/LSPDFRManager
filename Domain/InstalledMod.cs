@@ -10,6 +10,9 @@ public class InstalledMod
     /// <summary>Unique identifier for this installation record.</summary>
     public Guid Id { get; set; } = Guid.NewGuid();
 
+    /// <summary>Links this mod to its <see cref="InstallTransaction"/> for rollback. Null for mods installed before transaction tracking.</summary>
+    public Guid? TransactionId { get; set; }
+
     /// <summary>Display name shown in the Library.</summary>
     public string Name { get; set; } = "";
 
@@ -69,4 +72,25 @@ public class InstalledMod
 
     /// <summary>Thumbnail URL used for compact card/list rendering.</summary>
     public string? ThumbnailUrl { get; set; }
+
+    /// <summary>Whether the user has marked this mod as a favourite.</summary>
+    public bool IsFavorite { get; set; } = false;
+
+    /// <summary>Total size in bytes of all installed files.</summary>
+    public long TotalSizeBytes { get; set; }
+
+    /// <summary>Human-readable size string (e.g. "12.3 MB"). Empty when size is unknown.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string TotalSizeDisplay
+    {
+        get
+        {
+            if (TotalSizeBytes <= 0) return "";
+            string[] sizes = ["B", "KB", "MB", "GB"];
+            double len = TotalSizeBytes;
+            int order = 0;
+            while (len >= 1024 && order < sizes.Length - 1) { order++; len /= 1024; }
+            return $"{len:0.##} {sizes[order]}";
+        }
+    }
 }

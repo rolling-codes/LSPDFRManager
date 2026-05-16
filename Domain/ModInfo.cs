@@ -47,6 +47,13 @@ public class ModInfo
     /// <summary>Non-fatal warnings collected during detection (e.g. low confidence, missing DLC name).</summary>
     public List<string> Warnings { get; set; } = [];
 
+    /// <summary>
+    /// Archive root prefix to strip from entry keys before computing destination paths.
+    /// Set when the archive has a single top-level folder that should be ignored
+    /// (e.g. "LSPDFR_5.1/" in "LSPDFR_5.1/RAGEPluginHook.exe").
+    /// </summary>
+    public string ArchiveRootPrefix { get; set; } = "";
+
     /// <summary>Primary mod image URL, typically from lcpdfr page metadata.</summary>
     public string? ImageUrl { get; set; }
 

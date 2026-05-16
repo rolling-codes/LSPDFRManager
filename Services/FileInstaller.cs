@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using LSPDFRManager.Core;
 using LSPDFRManager.Domain;
 using SharpCompress.Archives;
@@ -18,6 +19,8 @@ public static class FileInstaller
         public string? BackupPath { get; init; }
         public bool ExistedBeforeInstall => BackupPath is not null;
         public bool WasCommitted { get; set; }
+        /// <summary>Set after rollback completes for this entry, preventing double execution.</summary>
+        public bool WasRolledBack { get; set; }
     }
 
     private sealed class PreparedWrite
@@ -43,26 +46,31 @@ public static class FileInstaller
     /// Extracts all files from <paramref name="mod"/> into <paramref name="targetRoot"/>.
     /// On partial failure, newly-created files are deleted and overwritten files are restored.
     /// </summary>
-    public static async Task<InstallResult> InstallAsync(ModInfo mod, string targetRoot, InstallPlan? plan = null)
+    /// <param name="persistentBackupFolder">
+    /// When provided, overwritten-file backups are written here and NOT deleted after a successful
+    /// install, enabling later user-initiated rollback via <c>TransactionService</c>.
+    /// </param>
+    public static async Task<InstallResult> InstallAsync(ModInfo mod, string targetRoot, InstallPlan? plan = null,
+        string? persistentBackupFolder = null, CancellationToken cancellationToken = default)
     {
         try
         {
             if (Directory.Exists(mod.SourcePath))
             {
                 var adapter = new DirectoryArchiveAdapter(mod.SourcePath);
-                return await InstallAsync(adapter, targetRoot, plan);
+                return await InstallAsync(adapter, targetRoot, plan, persistentBackupFolder, mod.ArchiveRootPrefix, cancellationToken);
             }
             else if (mod.SourcePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
             {
                 using var zip = ZipFile.OpenRead(mod.SourcePath);
                 var adapter = new ZipArchiveAdapter(zip);
-                return await InstallAsync(adapter, targetRoot, plan);
+                return await InstallAsync(adapter, targetRoot, plan, persistentBackupFolder, mod.ArchiveRootPrefix, cancellationToken);
             }
             else
             {
                 using var archive = ArchiveFactory.Open(mod.SourcePath);
                 var adapter = new SharpCompressArchiveAdapter(archive);
-                return await InstallAsync(adapter, targetRoot, plan);
+                return await InstallAsync(adapter, targetRoot, plan, persistentBackupFolder, mod.ArchiveRootPrefix, cancellationToken);
             }
         }
         catch (Exception ex)
@@ -79,14 +87,24 @@ public static class FileInstaller
     /// Extracts all files from <paramref name="archive"/> into <paramref name="targetRoot"/>.
     /// Testable variant that accepts IArchive for unit testing.
     /// </summary>
-    public static async Task<InstallResult> InstallAsync(IArchive archive, string targetRoot, InstallPlan? plan = null)
+    /// <param name="persistentBackupFolder">
+    /// When provided, backups of overwritten files are written here and kept after a successful install.
+    /// </param>
+    public static async Task<InstallResult> InstallAsync(IArchive archive, string targetRoot, InstallPlan? plan = null,
+        string? persistentBackupFolder = null, string archiveRootPrefix = "", CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(archive);
 
         var writtenFiles = new List<string>();
         var rollbackFiles = new List<RollbackFile>();
         var createdDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var backupRoot = CreateBackupRoot(targetRoot);
+        var addedRecords = new List<TransactionFileRecord>();
+        var overwrittenRecords = new List<TransactionFileRecord>();
+
+        bool isPersistentBackup = !string.IsNullOrEmpty(persistentBackupFolder);
+        var backupRoot = isPersistentBackup
+            ? persistentBackupFolder!
+            : CreateBackupRoot(targetRoot);
 
         var planEntriesByPath = BuildPlanEntryMap(plan);
         var orderedEntries = OrderEntries(archive.Entries, planEntriesByPath);
@@ -95,11 +113,24 @@ public static class FileInstaller
         {
             foreach (var installEntry in orderedEntries)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 var entry = installEntry.Entry;
                 if (entry.IsDirectory)
                     continue;
 
-                var relativePath = InstallerSafetyPolicy.NormalizeRelativePath(entry.Key);
+                var rawKey = InstallerSafetyPolicy.NormalizeRelativePath(entry.Key);
+                var relativePath = !string.IsNullOrEmpty(archiveRootPrefix) &&
+                                   rawKey.StartsWith(archiveRootPrefix, StringComparison.OrdinalIgnoreCase)
+                    ? rawKey[archiveRootPrefix.Length..]
+                    : rawKey;
+
+                if (InstallerSafetyPolicy.IsJunkEntry(relativePath))
+                {
+                    AppLogger.Info($"[INSTALL_SKIP_JUNK] {relativePath}");
+                    continue;
+                }
+
                 var destinationPath = PathSafety.GetSafePath(targetRoot, relativePath);
 
                 planEntriesByPath.TryGetValue(relativePath, out var planEntry);
@@ -159,7 +190,7 @@ public static class FileInstaller
                         AppLogger.Info($"[EXTRACT_START] {entry.Key} | size={entry.Size} bytes | buffer={bufferSize} bytes");
                         using (var destFile = new FileStream(preparedWrite.TempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, bufferSize, useAsync: true))
                         {
-                            await entryStream.CopyToAsync(destFile, bufferSize);
+                            await entryStream.CopyToAsync(destFile, bufferSize, cancellationToken);
                         }
                         AppLogger.Info($"[EXTRACT_OK] {entry.Key}");
                     }
@@ -171,6 +202,24 @@ public static class FileInstaller
                         "Installer wrote file.",
                         affectedFile: preparedWrite.DestinationPath,
                         detail: action.ToString());
+
+                    // Record per-file info for transaction tracking
+                    if (preparedWrite.ExistedBeforeInstall)
+                    {
+                        overwrittenRecords.Add(new TransactionFileRecord
+                        {
+                            DestinationPath = destinationPath,
+                            BackupPath = preparedWrite.BackupPath,
+                        });
+                    }
+                    else
+                    {
+                        addedRecords.Add(new TransactionFileRecord
+                        {
+                            DestinationPath = destinationPath,
+                            InstalledHash = TryComputeHash(destinationPath),
+                        });
+                    }
                 }
                 catch
                 {
@@ -181,21 +230,25 @@ public static class FileInstaller
                 writtenFiles.Add(destinationPath);
             }
 
-            DeleteBackupRoot(backupRoot);
+            // Only delete temp backup roots; persistent roots are kept for user-initiated rollback
+            if (!isPersistentBackup)
+                DeleteBackupRoot(backupRoot);
 
             return new InstallResult
             {
                 Success = true,
                 FilesWritten = writtenFiles.Count,
-                WrittenFiles = writtenFiles
+                WrittenFiles = writtenFiles,
+                AddedFileRecords = addedRecords,
+                OverwrittenFileRecords = overwrittenRecords,
             };
         }
         catch (Exception ex)
         {
             AppLogger.Error($"[EXTRACT_ERROR] rollback {rollbackFiles.Count} files", ex);
-            await RollbackAsync(rollbackFiles);
-            RollbackDirectories(createdDirectories, targetRoot);
-            DeleteBackupRoot(backupRoot);
+            var fileRollbackErrors = await RollbackAsync(rollbackFiles);
+            var dirRollbackErrors  = RollbackDirectories(createdDirectories, targetRoot);
+            DeleteBackupRoot(backupRoot); // always clean up on failure
 
             return new InstallResult
             {
@@ -203,6 +256,7 @@ public static class FileInstaller
                 IsPartial = rollbackFiles.Any(f => f.WasCommitted) || createdDirectories.Count > 0,
                 FilesWritten = writtenFiles.Count,
                 Error = ex.Message,
+                RollbackErrors = [.. fileRollbackErrors, .. dirRollbackErrors],
                 WrittenFiles = []
             };
         }
@@ -286,6 +340,17 @@ public static class FileInstaller
             }
             index++;
         }
+    }
+
+    private static string? TryComputeHash(string path)
+    {
+        try
+        {
+            if (new FileInfo(path).Length > 50 * 1024 * 1024) return null;
+            using var fs = File.OpenRead(path);
+            return Convert.ToHexString(SHA256.HashData(fs)).ToLowerInvariant();
+        }
+        catch { return null; }
     }
 
     private static string CreateBackupRoot(string targetRoot)
@@ -373,11 +438,13 @@ public static class FileInstaller
         }
     }
 
-    private static Task RollbackAsync(List<RollbackFile> files)
+    private static Task<List<string>> RollbackAsync(List<RollbackFile> files)
     {
+        var errors = new List<string>();
+
         foreach (var file in files.AsEnumerable().Reverse())
         {
-            if (!file.WasCommitted)
+            if (!file.WasCommitted || file.WasRolledBack)
                 continue;
 
             try
@@ -393,18 +460,23 @@ public static class FileInstaller
 
                     File.Move(file.BackupPath!, file.DestinationPath);
                 }
+
+                file.WasRolledBack = true;
             }
             catch (Exception ex)
             {
-                AppLogger.Warning($"Rollback '{file.DestinationPath}' failed: {ex.Message}");
+                var msg = $"Rollback failed for '{file.DestinationPath}': {ex.Message}";
+                errors.Add(msg);
+                AppLogger.Warning(msg);
             }
         }
 
-        return Task.CompletedTask;
+        return Task.FromResult(errors);
     }
 
-    private static void RollbackDirectories(HashSet<string> createdDirectories, string targetRoot)
+    private static List<string> RollbackDirectories(HashSet<string> createdDirectories, string targetRoot)
     {
+        var errors = new List<string>();
         var root = Path.GetFullPath(targetRoot).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
         foreach (var directory in createdDirectories.OrderByDescending(path => path.Length))
@@ -420,9 +492,13 @@ public static class FileInstaller
             }
             catch (Exception ex)
             {
-                AppLogger.Warning($"Rollback directory '{directory}' failed: {ex.Message}");
+                var msg = $"Rollback directory failed for '{directory}': {ex.Message}";
+                errors.Add(msg);
+                AppLogger.Warning(msg);
             }
         }
+
+        return errors;
     }
 
     private static void DeleteBackupRoot(string backupRoot)
