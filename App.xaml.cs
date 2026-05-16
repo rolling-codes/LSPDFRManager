@@ -65,6 +65,18 @@ public partial class App : Application
             var exePath = Path.Combine(gtaPath, "GTA5.exe");
             if (!File.Exists(exePath))
                 issues.Add($"GTA5.exe was not found in:\n  {gtaPath}\n  Verify Settings points at the GTA V installation folder.");
+
+            // Verify write access to the GTA folder so install failures are caught early.
+            var writeProbe = Path.Combine(gtaPath, ".lspdfrmanager_write_test");
+            try
+            {
+                File.WriteAllText(writeProbe, "");
+                File.Delete(writeProbe);
+            }
+            catch
+            {
+                issues.Add($"GTA V folder is not writable:\n  {gtaPath}\n  The app must run as Administrator to install mods into a protected directory.");
+            }
         }
 
         AddDiskSpaceIssueIfNeeded(issues, AppDataPaths.Root, "App data");

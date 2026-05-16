@@ -42,6 +42,7 @@ release-worktree/
 ## Release artifacts (built locally, uploaded via GitHub Actions)
 release-package/
 zip-smoke/
+support-bundle*.zip
 
 ## Internal dev/planning docs (not for public repo)
 PHASE_C_STREAMING.md
