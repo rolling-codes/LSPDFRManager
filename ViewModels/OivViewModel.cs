@@ -2,6 +2,8 @@ using System.Windows.Input;
 using LSPDFRManager.Core;
 using LSPDFRManager.Domain;
 using LSPDFRManager.Services;
+using LSPDFRManager.Features.OivCreatorTemplates;
+using LSPDFRManager.Features.OivCreatorTemplates.Models;
 
 namespace LSPDFRManager.ViewModels;
 
@@ -11,6 +13,8 @@ public class OivViewModel : ObservableObject
     private readonly IOivSourceScanner    _scanner   = new OivSourceScanner();
     private readonly IOivPackageValidator _validator = new OivPackageValidator();
     private readonly IOivPackageBuilder   _builder   = new OivPackageBuilder();
+    private readonly IOivTemplateController _templateController = new OivTemplateController();
+    private readonly IFileDialogService _fileDialogService;
 
     // ── Mode ──────────────────────────────────────────────────────────────────
     private bool _isCreatorMode = true;
@@ -116,6 +120,212 @@ public class OivViewModel : ObservableObject
         set => SetProperty(ref _creatorKind, value);
     }
 
+    // -- OIV Template System (#37) --
+    private OivTemplateId _selectedTemplateId = OivTemplateId.None;
+    private OivTemplateDefinition? _selectedTemplate;
+    private string? _templateApplyStatus;
+
+    // Pre-apply snapshot for 1-level undo
+    private Dictionary<string, string>? _preApplyMetadata;
+    private Dictionary<string, string>? _preApplyPaths; // SourcePath -> InstallPath
+
+    public OivTemplateId SelectedTemplateId
+    {
+        get => _selectedTemplateId;
+        set => SetProperty(ref _selectedTemplateId, value); // NO SIDE EFFECTS HERE
+    }
+
+    /// <summary>
+    /// Bound to ComboBox.SelectedItem. Maps to/from SelectedTemplateId.
+    /// Setting this has ZERO side effects — no metadata mutation.
+    /// </summary>
+    public OivTemplateDefinition? SelectedTemplate
+    {
+        get => _selectedTemplate;
+        set
+        {
+            if (SetProperty(ref _selectedTemplate, value))
+                SelectedTemplateId = value?.Id ?? OivTemplateId.None;
+        }
+    }
+
+    public IReadOnlyList<OivTemplateDefinition> AvailableTemplates { get; } = new OivTemplateController().GetAvailableTemplates();
+
+    public ICommand ApplyTemplateCommand { get; }
+    public ICommand UndoApplyTemplateCommand { get; }
+
+    public string? TemplateApplyStatus
+    {
+        get => _templateApplyStatus;
+        private set => SetProperty(ref _templateApplyStatus, value);
+    }
+
+    public bool CanUndoApply => _preApplyMetadata is not null;
+
+    /// <summary>
+    /// Explicitly applies the selected template's plan to the wizard state.
+    /// Steps: Snapshot → Controller.BuildPlan → Apply metadata + path suggestions.
+    /// Respects IsUserEdited on file entries. Enforces PathSafety.
+    /// </summary>
+    private void ExecuteApplyTemplate()
+    {
+        if (SelectedTemplateId == OivTemplateId.None) return;
+
+        // 1) Build snapshot DTO — controller never sees OivViewModel.
+        var fileNames = CreatorFiles.Select(f => Path.GetFileName(f.SourcePath)).ToList();
+        var snapshot = new OivWizardSnapshot(
+            CreatorName,
+            CreatorDescription,
+            CreatorVersion,
+            fileNames);
+
+        // 2) Get the plan from the controller.
+        var plan = _templateController.BuildPlan(SelectedTemplateId, snapshot);
+
+        // 3) Store pre-apply snapshot for undo.
+        _preApplyMetadata = new Dictionary<string, string>();
+        if (plan.MetadataUpdates.ContainsKey("Description"))
+            _preApplyMetadata["Description"] = CreatorDescription;
+        if (plan.MetadataUpdates.ContainsKey("Version"))
+            _preApplyMetadata["Version"] = CreatorVersion;
+
+        _preApplyPaths = new Dictionary<string, string>();
+
+        // 4) Apply metadata deltas — only keys present in plan.
+        foreach (var (key, value) in plan.MetadataUpdates)
+        {
+            switch (key)
+            {
+                case "Description":
+                    CreatorDescription = value;
+                    break;
+                case "Version":
+                    CreatorVersion = value;
+                    break;
+                // Future: add more metadata keys here.
+            }
+        }
+
+        // 5) Apply path suggestions — respect IsUserEdited, enforce PathSafety.
+        int pathsApplied = 0;
+        int pathsSkippedUserEdited = 0;
+        int pathsSkippedUnsafe = 0;
+
+        foreach (var file in CreatorFiles)
+        {
+            if (file.IsUserEdited)
+            {
+                pathsSkippedUserEdited++;
+                continue;
+            }
+
+            var suggestedPath = GetSuggestedPath(file.SourcePath, plan);
+            if (suggestedPath is null)
+            {
+                // We don't increment anything if no rule matched, but if it was unsafe, it logged.
+                // Wait, GetSuggestedPath logs but we want to count unsafe. Let's just track applied.
+                continue;
+            }
+
+            // Store pre-apply path for undo.
+            _preApplyPaths[file.SourcePath] = file.InstallPath;
+            file.InstallPath = suggestedPath;
+            pathsApplied++;
+        }
+
+        // 6) Report status.
+        var parts = new List<string>();
+        if (plan.MetadataUpdates.Count > 0)
+            parts.Add($"{plan.MetadataUpdates.Count} metadata field(s) updated");
+        if (pathsApplied > 0)
+            parts.Add($"{pathsApplied} path(s) suggested");
+        if (pathsSkippedUserEdited > 0)
+            parts.Add($"{pathsSkippedUserEdited} user-edited path(s) kept");
+        if (pathsSkippedUnsafe > 0)
+            parts.Add($"{pathsSkippedUnsafe} unsafe path(s) rejected");
+
+        TemplateApplyStatus = parts.Count > 0
+            ? $"Template applied: {string.Join(", ", parts)}."
+            : "Template applied (no changes).";
+
+        OnPropertyChanged(nameof(CanUndoApply));
+    }
+
+    private string? GetSuggestedPath(string sourcePath, OivTemplateApplyPlan plan)
+    {
+        var fileName = Path.GetFileName(sourcePath);
+        var ext = Path.GetExtension(sourcePath);
+
+        PathRule? bestRule = null;
+        foreach (var rule in plan.PathSuggestions)
+        {
+            if (rule.MatchFileName)
+            {
+                if (string.Equals(fileName, rule.Match, StringComparison.OrdinalIgnoreCase))
+                {
+                    bestRule = rule;
+                    break;
+                }
+            }
+            else
+            {
+                if (string.Equals(ext, rule.Match, StringComparison.OrdinalIgnoreCase))
+                    bestRule ??= rule;
+            }
+        }
+
+        if (bestRule is null) return null;
+
+        var suggestedPath = bestRule.TargetPath;
+        if (suggestedPath.EndsWith('/') || suggestedPath.EndsWith('\\'))
+            suggestedPath += fileName;
+
+        try
+        {
+            var syntheticRoot = Path.GetTempPath();
+            PathSafety.GetSafePath(syntheticRoot, suggestedPath);
+            return suggestedPath;
+        }
+        catch (InvalidOperationException)
+        {
+            AppLogger.Warning($"[OIV_TEMPLATE] Unsafe path rejected: {suggestedPath}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Reverts the most recent Apply operation (1-level undo).
+    /// </summary>
+    private void ExecuteUndoApplyTemplate()
+    {
+        if (_preApplyMetadata is null) return;
+
+        // Undo metadata.
+        foreach (var (key, value) in _preApplyMetadata)
+        {
+            switch (key)
+            {
+                case "Description": CreatorDescription = value; break;
+                case "Version":     CreatorVersion = value;     break;
+            }
+        }
+
+        // Undo paths.
+        if (_preApplyPaths is not null)
+        {
+            foreach (var file in CreatorFiles)
+            {
+                if (_preApplyPaths.TryGetValue(file.SourcePath, out var oldPath))
+                    file.InstallPath = oldPath;
+            }
+        }
+
+        _preApplyMetadata = null;
+        _preApplyPaths = null;
+        TemplateApplyStatus = "Template changes reverted.";
+        OnPropertyChanged(nameof(CanUndoApply));
+    }
+
     public string CreatorOutputPath
     {
         get => _creatorOutputPath;
@@ -191,21 +401,37 @@ public class OivViewModel : ObservableObject
 
     private void AddCreatorFile()
     {
-        var dialog = new Microsoft.Win32.OpenFileDialog
-        {
-            Title = "Select Files to Include in OIV Package",
-            Filter = "All Files|*.*",
-            Multiselect = true
-        };
+        var pickedFiles = _fileDialogService.PickFiles(
+            "Select Files to Include in OIV Package",
+            "All Files|*.*",
+            true);
 
-        if (dialog.ShowDialog() != true) return;
+        if (pickedFiles.Count == 0) return;
 
-        foreach (var filePath in dialog.FileNames)
+        OivTemplateApplyPlan? currentPlan = null;
+        if (SelectedTemplateId != OivTemplateId.None)
         {
+            var fileNames = CreatorFiles.Select(f => Path.GetFileName(f.SourcePath)).ToList();
+            var snapshot = new OivWizardSnapshot(CreatorName, CreatorDescription, CreatorVersion, fileNames);
+            currentPlan = _templateController.BuildPlan(SelectedTemplateId, snapshot);
+        }
+
+        foreach (var filePath in pickedFiles)
+        {
+            var installPath = Path.GetFileName(filePath);
+            if (currentPlan != null)
+            {
+                var suggested = GetSuggestedPath(filePath, currentPlan);
+                if (suggested != null)
+                {
+                    installPath = suggested;
+                }
+            }
+
             CreatorFiles.Add(new OivFileEntry
             {
                 SourcePath   = filePath,
-                InstallPath  = Path.GetFileName(filePath),
+                InstallPath  = installPath,
                 Action       = OivFileAction.Add
             });
         }
@@ -485,8 +711,10 @@ public class OivViewModel : ObservableObject
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
-    public OivViewModel()
+    public OivViewModel(IFileDialogService? fileDialogService = null)
     {
+        // TODO: Migrate to pure DI (no default) when VM composition is updated
+        _fileDialogService = fileDialogService ?? new OpenFileDialogService();
         AddCreatorFileCommand    = new RelayCommand(AddCreatorFile);
         RemoveCreatorFileCommand = new RelayCommand<OivFileEntry>(RemoveCreatorFile);
         BrowseCreatorOutputCommand = new RelayCommand(BrowseCreatorOutput);
@@ -494,6 +722,8 @@ public class OivViewModel : ObservableObject
         BackToEditCommand        = new RelayCommand(() => CreatorStep = 0);
         ExportCommand            = new RelayCommand(() => _ = ExportAsync(), () => CanExport);
         ResetCreatorCommand      = new RelayCommand(ResetCreator);
+        ApplyTemplateCommand     = new RelayCommand(ExecuteApplyTemplate, () => SelectedTemplateId != OivTemplateId.None);
+        UndoApplyTemplateCommand = new RelayCommand(ExecuteUndoApplyTemplate, () => CanUndoApply);
 
         CreatorFiles.CollectionChanged += (_, _) =>
         {

@@ -1,5 +1,17 @@
 namespace LSPDFRManager.Domain;
 
+public enum InstallFailureCategory
+{
+    None = 0,
+    Validation = 1,
+    MissingPath = 2,
+    MissingFile = 3,
+    PermissionDenied = 4,
+    InvalidArchive = 5,
+    Cancelled = 6,
+    Unexpected = 7,
+}
+
 /// <summary>
 /// Result of an install operation, used to communicate success/failure/partial state to callers.
 /// </summary>
@@ -8,6 +20,8 @@ public class InstallResult
     public bool Success { get; init; }
     public bool IsPartial { get; init; }
     public string? Error { get; init; }
+    public string? UserMessage { get; init; }
+    public InstallFailureCategory FailureCategory { get; init; } = InstallFailureCategory.None;
     public int FilesWritten { get; init; }
     public string? FailedEntry { get; init; }
     public List<string> WrittenFiles { get; init; } = [];

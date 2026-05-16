@@ -138,6 +138,39 @@
                     <!-- ── STEP 0: Edit ──────────────────────────────────── -->
                     <StackPanel Visibility="{Binding IsCreatorStep0, Converter={StaticResource BoolToVis}}">
 
+                        <!-- Template selector (#37) -->
+                        <TextBlock Text="TEMPLATE (OPTIONAL)" Style="{StaticResource SectionLabel}"/>
+                        <Border Style="{StaticResource CardPanel}" Margin="0,0,0,16" Padding="20">
+                            <StackPanel>
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right"
+                                            Style="{StaticResource GhostButton}"
+                                            Content="↩ Undo"
+                                            Command="{Binding UndoApplyTemplateCommand}"
+                                            Padding="12,8" Margin="8,0,0,0"
+                                            Visibility="{Binding CanUndoApply, Converter={StaticResource BoolToVis}}"
+                                            AutomationProperties.Name="Undo template apply"/>
+                                    <Button DockPanel.Dock="Right"
+                                            Style="{StaticResource GhostButton}"
+                                            Content="Apply Template"
+                                            Command="{Binding ApplyTemplateCommand}"
+                                            Padding="14,8" Margin="8,0,0,0"
+                                            AutomationProperties.Name="Apply selected template to wizard"/>
+                                    <ComboBox x:Name="TemplateCombo"
+                                              ItemsSource="{Binding AvailableTemplates}"
+                                              SelectedItem="{Binding SelectedTemplate, Mode=TwoWay}"
+                                              DisplayMemberPath="DisplayName"
+                                              VerticalAlignment="Center"
+                                              AutomationProperties.Name="Select OIV template"/>
+                                </DockPanel>
+                                <TextBlock Text="{Binding TemplateApplyStatus}"
+                                           Foreground="{StaticResource TextMuted}"
+                                           FontSize="12" Margin="0,8,0,0"
+                                           Visibility="{Binding TemplateApplyStatus, Converter={StaticResource NullToCollapsed}, FallbackValue=Collapsed}"
+                                           TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+
                         <TextBlock Text="PACKAGE METADATA" Style="{StaticResource SectionLabel}"/>
                         <Border Style="{StaticResource CardPanel}" Margin="0,0,0,16" Padding="20">
                             <Grid>

@@ -94,6 +94,23 @@ public class FileInstallerArchiveTests : IDisposable
         Assert.False(File.Exists(Path.Combine(_tempDir, "safe.dll")));
     }
 
+    [Fact]
+    public async Task Install_GenericIOException_IsClassifiedAsInvalidArchive()
+    {
+        var archive = new FakeArchive(new IArchiveEntry[]
+        {
+            new FakeArchiveEntry("fail.dll", () => throw new IOException("forced"))
+        });
+
+        var result = await FileInstaller.InstallAsync(archive, _tempDir);
+
+        Assert.False(result.Success);
+        Assert.Equal(InstallFailureCategory.InvalidArchive, result.FailureCategory);
+        Assert.Equal(
+            "An I/O error occurred during installation. Check disk space, permissions, and try again.",
+            result.UserMessage);
+    }
+
     // ── Deep Path Handling ─────────────────────────────────────────────────
 
     [Fact]

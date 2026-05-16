@@ -4,6 +4,8 @@ using System.Windows;
 using System.Windows.Input;
 using LSPDFRManager.Core;
 using LSPDFRManager.Domain;
+using LSPDFRManager.Features.Library;
+using LSPDFRManager.Features.Library.Models;
 using LSPDFRManager.Services;
 
 namespace LSPDFRManager.ViewModels;
@@ -13,17 +15,19 @@ public class LibraryViewModel : ObservableObject
     private const int FileSampleSize = 10;
 
     private readonly ModLibraryService _library = ModLibraryService.Instance;
+    private readonly ILibraryController _libraryController;
 
     private string _searchQuery = "";
     private string _selectedFilter = "All";
     private string _selectedSort = "Installed: Newest first";
     private string _riskFilter = "All";
     private ModItemViewModel? _selectedMod;
-    private List<(Guid Id, bool WasEnabled)>? _lastBulkToggle;
+    private IReadOnlyList<BulkToggleState>? _lastBulkToggle;
     private string _rollbackStatus = "";
 
-    public LibraryViewModel()
+    public LibraryViewModel(ILibraryController? libraryController = null)
     {
+        _libraryController = libraryController ?? new LibraryWorkflowController(_library);
         ToggleEnabledCommand = new RelayCommand(static _ => { });
         UninstallCommand = new RelayCommand(static _ => { });
 
@@ -218,10 +222,9 @@ public class LibraryViewModel : ObservableObject
 
     private void SetVisibleModsEnabled(bool enabled)
     {
-        var targets = FilteredMods.Where(mod => mod.IsEnabled != enabled).ToList();
-        _lastBulkToggle = targets.Select(mod => (mod.Id, mod.IsEnabled)).ToList();
-        var ids = targets.Select(mod => mod.Id);
-        _library.SetEnabledBatch(ids, enabled);
+        _lastBulkToggle = _libraryController.SetVisibleModsEnabled(
+            FilteredMods.Select(mod => mod.Model),
+            enabled);
         Refresh();
         CommandManager.InvalidateRequerySuggested();
     }
@@ -231,8 +234,7 @@ public class LibraryViewModel : ObservableObject
         if (_lastBulkToggle is null || _lastBulkToggle.Count == 0)
             return;
 
-        foreach (var (id, wasEnabled) in _lastBulkToggle)
-            _library.SetEnabled(id, wasEnabled);
+        _libraryController.UndoBulkToggle(_lastBulkToggle);
 
         _lastBulkToggle = null;
         Refresh();

@@ -72,10 +72,25 @@ The installer must **never** leave the filesystem in a partially-installed state
 
 External archive libraries (SharpCompress) must stay behind the `IArchive`/`IArchiveEntry` adapter boundary — no SharpCompress types outside the adapter layer. Use `FakeArchive`/`FakeArchiveEntry`/`ThrowingStream` for unit tests; real archives are Phase B only.
 
+## Verification (Hard Constraint)
+
+**Never claim a fix or release is complete based on unit tests alone.** Always build and launch the executable to confirm it starts and the UI renders without crashing:
+
+```bash
+dotnet build LSPDFRManager.sln
+dotnet run --project LSPDFRManager.csproj
+```
+
+For UI-affecting changes, run the [UI smoke checklist](docs/ui-smoke-pr-check.md) before marking done.
+
+## Release Packaging
+
+When assembling a release ZIP, include only runtime artifacts — strip `build/`, `obj/`, `publish/`, WebView2 cache directories, and source files. Verify ZIP contents and size before publishing. Use the framework-dependent build above; confirm the unpacked folder launches cleanly before tagging.
+
 ## Repository
 
 - Repository: https://github.com/rolling-codes/LSPDFRManager
-- Current release notes: [RELEASE_v3.7.9.md](RELEASE_v3.7.9.md)
+- Current release notes: [RELEASE_v3.7.10.md](RELEASE_v3.7.10.md)
 
 ## Focus Files
 

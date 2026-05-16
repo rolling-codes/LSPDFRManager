@@ -75,4 +75,46 @@ public class LibraryViewModelTests : IDisposable
         Assert.False(plugin.IsEnabled);
         Assert.True(vehicle.IsEnabled);
     }
+
+    [Fact]
+    public void EnableVisibleCommand_EnablesOnlyFilteredMods()
+    {
+        var plugin = new InstalledMod { Name = "A", TypeLabel = "LSPDFR Plugin", IsEnabled = false };
+        var vehicle = new InstalledMod { Name = "B", TypeLabel = "Vehicle Add-On DLC", IsEnabled = false };
+        _library.Mods.Add(plugin);
+        _library.Mods.Add(vehicle);
+
+        var vm = new LibraryViewModel
+        {
+            SelectedFilter = "Vehicle Add-On DLC",
+        };
+
+        vm.EnableVisibleCommand.Execute(null);
+
+        Assert.False(plugin.IsEnabled);
+        Assert.True(vehicle.IsEnabled);
+    }
+
+    [Fact]
+    public void UndoBulkToggleCommand_RestoresPreviousVisibleStates()
+    {
+        var plugin = new InstalledMod { Name = "A", TypeLabel = "LSPDFR Plugin", IsEnabled = true };
+        var callout = new InstalledMod { Name = "B", TypeLabel = "LSPDFR Plugin", IsEnabled = true };
+        var vehicle = new InstalledMod { Name = "C", TypeLabel = "Vehicle Add-On DLC", IsEnabled = false };
+        _library.Mods.Add(plugin);
+        _library.Mods.Add(callout);
+        _library.Mods.Add(vehicle);
+
+        var vm = new LibraryViewModel
+        {
+            SelectedFilter = "LSPDFR Plugin",
+        };
+
+        vm.DisableVisibleCommand.Execute(null);
+        vm.UndoBulkToggleCommand.Execute(null);
+
+        Assert.True(plugin.IsEnabled);
+        Assert.True(callout.IsEnabled);
+        Assert.False(vehicle.IsEnabled);
+    }
 }

@@ -18,6 +18,7 @@ public class OivFileEntry
     public string SourcePath { get; set; } = "";    // Relative path inside OIV content/
     public string InstallPath { get; set; } = "";   // Absolute or relative target path
     public OivFileAction Action { get; set; }       // Add, Replace, Skip
+    public bool IsUserEdited { get; set; }           // True when user manually edited InstallPath
 }
 
 public enum OivFileAction { Add, Replace, Skip }

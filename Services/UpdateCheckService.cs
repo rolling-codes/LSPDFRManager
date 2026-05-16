@@ -17,7 +17,7 @@ public class UpdateCheckService
         _http.Timeout = TimeSpan.FromSeconds(10);
     }
 
-    public async Task<UpdateCheckResult> CheckAsync()
+    public virtual async Task<UpdateCheckResult> CheckAsync()
     {
         try
         {

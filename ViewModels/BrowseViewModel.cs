@@ -1,11 +1,17 @@
 using System.Windows.Input;
+using LSPDFRManager.Domain;
 using LSPDFRManager.Services;
 using LSPDFRManager.Views;
 
 namespace LSPDFRManager.ViewModels;
 
-public class BrowseViewModel : ObservableObject
+public class BrowseViewModel : ObservableObject, IDisposable
 {
+    private readonly Action<string> _bridgeDetectingHandler;
+    private readonly Action<ModInfo> _bridgeStagedHandler;
+    private readonly Action<string, string> _bridgeFailedHandler;
+    private bool _disposed;
+
     private string _currentUrl = "";
     private string _statusMessage = "Ready";
     private bool _isLoading;
@@ -19,9 +25,13 @@ public class BrowseViewModel : ObservableObject
         NavigateCommand = new RelayCommand(() => View?.NavigateTo(CurrentUrl));
 
         var bridge = ModDownloadBridge.Instance;
-        bridge.Detecting += name => StatusMessage = $"Detecting mod type for {name}…";
-        bridge.Queued   += mod  => { StatusMessage = $"Queued: {mod.Name} — check the Install tab."; IsLoading = false; };
-        bridge.Failed   += (name, err) => { StatusMessage = $"Failed to queue {name}: {err}"; IsLoading = false; };
+        _bridgeDetectingHandler = name => StatusMessage = $"Detecting mod type for {name}…";
+        _bridgeStagedHandler = mod  => { StatusMessage = $"Staged: {mod.Name} — review it in the Install tab."; IsLoading = false; };
+        _bridgeFailedHandler = (name, err) => { StatusMessage = $"Failed to stage {name}: {err}"; IsLoading = false; };
+
+        bridge.Detecting += _bridgeDetectingHandler;
+        bridge.Staged   += _bridgeStagedHandler;
+        bridge.Failed   += _bridgeFailedHandler;
     }
 
     public string CurrentUrl
@@ -61,4 +71,17 @@ public class BrowseViewModel : ObservableObject
     public bool CanTriggerInstall => IsBrowserReady;
 
     public ICommand NavigateCommand { get; }
+
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+
+        var bridge = ModDownloadBridge.Instance;
+        bridge.Detecting -= _bridgeDetectingHandler;
+        bridge.Staged -= _bridgeStagedHandler;
+        bridge.Failed -= _bridgeFailedHandler;
+
+        _disposed = true;
+    }
 }

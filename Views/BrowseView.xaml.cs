@@ -41,7 +41,7 @@ public partial class BrowseView : UserControl
             if (Vm is not null)
             {
                 Vm.IsBrowserReady = false;
-                Vm.StatusMessage = $"WebView2 init failed: {ex.Message}";
+                Vm.StatusMessage = $"Browser unavailable. Install or repair Microsoft WebView2 Runtime, then restart the app. Details: {ex.Message}";
             }
         }
     }
@@ -147,7 +147,7 @@ public partial class BrowseView : UserControl
         if (WebView.CoreWebView2 is null)
         {
             if (Vm is not null)
-                Vm.StatusMessage = "Browser engine is not initialized yet.";
+                Vm.StatusMessage = "Browser is not ready. Install/repair Microsoft WebView2 Runtime and try again.";
             return;
         }
 

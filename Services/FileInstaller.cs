@@ -13,6 +13,41 @@ namespace LSPDFRManager.Services;
 /// </summary>
 public static class FileInstaller
 {
+    private static InstallResult ValidationFailure(
+        InstallFailureCategory category,
+        string error,
+        string userMessage)
+    {
+        return new InstallResult
+        {
+            Success = false,
+            Error = error,
+            UserMessage = userMessage,
+            FailureCategory = category,
+        };
+    }
+
+    private static InstallResult ValidateInputs(ModInfo mod, string targetRoot)
+    {
+        if (mod is null)
+            return ValidationFailure(InstallFailureCategory.Validation, "Mod is required.", "No mod is selected for install.");
+
+        if (string.IsNullOrWhiteSpace(targetRoot))
+            return ValidationFailure(InstallFailureCategory.MissingPath, "GTA V path is not configured.", "Set your GTA V folder in Settings before installing.");
+
+        if (!Directory.Exists(targetRoot))
+            return ValidationFailure(InstallFailureCategory.MissingPath, $"Target path does not exist: {targetRoot}", "Your configured GTA V folder was not found. Re-select it in Settings.");
+
+        if (string.IsNullOrWhiteSpace(mod.SourcePath))
+            return ValidationFailure(InstallFailureCategory.MissingFile, "Mod source path is empty.", "The selected mod archive path is missing.");
+
+        var sourceExists = Directory.Exists(mod.SourcePath) || File.Exists(mod.SourcePath);
+        if (!sourceExists)
+            return ValidationFailure(InstallFailureCategory.MissingFile, $"Mod source not found: {mod.SourcePath}", "The selected mod file/folder no longer exists. Re-select it and try again.");
+
+        return new InstallResult { Success = true };
+    }
+
     private sealed class RollbackFile
     {
         public required string DestinationPath { get; init; }
@@ -53,6 +88,10 @@ public static class FileInstaller
     public static async Task<InstallResult> InstallAsync(ModInfo mod, string targetRoot, InstallPlan? plan = null,
         string? persistentBackupFolder = null, CancellationToken cancellationToken = default)
     {
+        var validation = ValidateInputs(mod, targetRoot);
+        if (!validation.Success)
+            return validation;
+
         try
         {
             if (Directory.Exists(mod.SourcePath))
@@ -75,10 +114,13 @@ public static class FileInstaller
         }
         catch (Exception ex)
         {
+            var (category, userMessage) = ClassifyFailure(ex);
             return new InstallResult
             {
                 Success = false,
-                Error = ex.Message
+                Error = ex.Message,
+                UserMessage = userMessage,
+                FailureCategory = category,
             };
         }
     }
@@ -249,6 +291,7 @@ public static class FileInstaller
             var fileRollbackErrors = await RollbackAsync(rollbackFiles);
             var dirRollbackErrors  = RollbackDirectories(createdDirectories, targetRoot);
             DeleteBackupRoot(backupRoot); // always clean up on failure
+            var (category, userMessage) = ClassifyFailure(ex);
 
             return new InstallResult
             {
@@ -256,10 +299,33 @@ public static class FileInstaller
                 IsPartial = rollbackFiles.Any(f => f.WasCommitted) || createdDirectories.Count > 0,
                 FilesWritten = writtenFiles.Count,
                 Error = ex.Message,
+                UserMessage = userMessage,
+                FailureCategory = category,
                 RollbackErrors = [.. fileRollbackErrors, .. dirRollbackErrors],
                 WrittenFiles = []
             };
         }
+    }
+
+    private static (InstallFailureCategory Category, string UserMessage) ClassifyFailure(Exception ex)
+    {
+        if (ex is OperationCanceledException)
+            return (InstallFailureCategory.Cancelled, "Install was cancelled.");
+
+        if (ex is UnauthorizedAccessException)
+            return (InstallFailureCategory.PermissionDenied, "Permission was denied while writing files. Run as administrator or choose a writable GTA V folder.");
+
+        if (ex is InvalidDataException or PathTooLongException or NotSupportedException)
+            return (InstallFailureCategory.InvalidArchive, "The archive looks invalid or unsupported. Re-download the mod and try again.");
+
+        if (ex is FileNotFoundException or DirectoryNotFoundException)
+            return (InstallFailureCategory.MissingFile, "A required file is missing. Re-select the archive and try again.");
+
+        // Keep this after FileNotFoundException/DirectoryNotFoundException because they inherit IOException.
+        if (ex is IOException)
+            return (InstallFailureCategory.InvalidArchive, "An I/O error occurred during installation. Check disk space, permissions, and try again.");
+
+        return (InstallFailureCategory.Unexpected, "Install failed due to an unexpected error. Check logs for details and try again.");
     }
 
     private static Dictionary<string, InstallPlanEntry> BuildPlanEntryMap(InstallPlan? plan)

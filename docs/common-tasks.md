@@ -33,6 +33,17 @@
 - Update `SmartInstallPlanner` if ordering or plan-level logic changes
 - Add corresponding test in `SmartInstallPlannerTests` or `FileInstallerSafetyPolicyTests`
 
+**Add a new feature slice**
+- Start from [feature-slice-template.md](feature-slice-template.md)
+- Create `Features/<FeatureName>/` with module, controller, models, commands, and tests
+- Prefer `.\tools\New-FeatureSlice.ps1 -Name <FeatureName>` to create the starting files
+- Wire module registration at the current composition point
+- Keep ViewModel orchestration as delegation to the controller
+- Put side effects behind explicit commands; do not start writes/downloads/installs from passive events
+- Add or extend one architecture guard only when the boundary could regress
+- Add two tests: controller happy path and one regression tripwire
+- Optional scaffold: `.\tools\New-FeatureSlice.ps1 -Name <FeatureName>`
+
 ## Gotchas
 
 **Archive Extraction**

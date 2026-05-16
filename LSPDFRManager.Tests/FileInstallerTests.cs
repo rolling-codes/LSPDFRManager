@@ -164,6 +164,24 @@ public class FileInstallerTests : IDisposable
 
         Assert.False(result.Success);
         Assert.NotNull(result.Error);
+        Assert.Equal(InstallFailureCategory.MissingFile, result.FailureCategory);
+        Assert.Contains("no longer exists", result.UserMessage ?? "", StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task InstallAsync_MissingTargetPath_ReturnsValidationFailure()
+    {
+        var source = Path.Combine(_tempSource, "clean_mod_2");
+        Directory.CreateDirectory(source);
+        File.WriteAllText(Path.Combine(source, "plugin.dll"), "content");
+        var missingTarget = Path.Combine(_tempRoot, "missing_gta_folder");
+
+        var mod = new ModInfo { Name = "Test Mod", SourcePath = source };
+        var result = await FileInstaller.InstallAsync(mod, missingTarget);
+
+        Assert.False(result.Success);
+        Assert.Equal(InstallFailureCategory.MissingPath, result.FailureCategory);
+        Assert.Contains("GTA V folder", result.UserMessage ?? "", StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
