@@ -1,4 +1,4 @@
-# Manual UI Smoke Test — v3.7.4
+# Manual UI Smoke Test — v3.7.11
 
 Run this checklist before each release. Automated UI automation is not yet implemented; this checklist is the required substitute.
 
