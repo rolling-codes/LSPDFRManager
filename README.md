@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-8.0-blue.svg)](https://dotnet.microsoft.com/download/dotnet/8.0)
-[![Release](https://img.shields.io/badge/release-v3.7.6-blue.svg)](https://github.com/rolling-codes/LSPDFRManager/releases/latest)
+[![Release](https://img.shields.io/badge/release-v3.7.11-blue.svg)](https://github.com/rolling-codes/LSPDFRManager/releases/latest)
 
 A complete GTA V and LSPDFR command center — install and manage mods, run diagnostics, switch profiles, analyze crashes, and launch safely. Built with .NET 8 WPF.
 
@@ -16,16 +16,16 @@ A complete GTA V and LSPDFR command center — install and manage mods, run diag
 |-----|-------------|
 | **Home** | Dashboard with mod count, status indicators, and quick-action buttons |
 | **Library** | Browse, search, filter, enable/disable, and uninstall all installed mods |
-| **Install** | Drag-and-drop or browse for mod archives — auto-detects type and confidence |
+| **Install** | Drag-and-drop or browse for mod archives — smart plan with conflict detection and rollback |
 | **Browse** | Embedded lcpdfr.com browser with one-click install queuing |
 | **Diagnostics** | Plugin health scanner, dependency checker, crash log analyzer |
 | **Profiles** | Launch profiles — switch full mod loadouts with a single click |
 | **Backups** | Scheduled and on-demand backups of library and config state |
 | **History** | Full change log of every install, uninstall, enable, and disable action |
 | **Logs** | Real-time LSPDFR/GTA V log viewer |
-| **OIV Tools** | Build and install OpenIV packages without leaving the app |
-| **Settings** | GTA V path, backup location, behavior toggles |
-| **Mod Config** | Per-plugin config file editor |
+| **OIV Tools** | Build OIV packages with a creator wizard, or install existing `.oiv` files |
+| **Mod Config** | Per-plugin config file editor with raw and parsed views |
+| **Settings** | GTA V path, backup location, behavior toggles, update checker |
 
 ### Detection Engine
 
@@ -44,12 +44,22 @@ Automatically identifies mod type from archive contents:
 
 Each detection produces a confidence score (Low / Medium / High). Low-confidence results warn before installing.
 
+### Smart Install Planner
+
+Before any file is written, the planner builds a full install plan:
+
+- Detects conflicts against enabled mods, disabled mods, and `.disabled` files on disk
+- Surfaces overwrite risks and blocking issues in the review UI
+- Orders files by dependency priority (RPH, ELS, shared DLLs)
+- The reviewed plan is what actually executes — no double-build at install time
+
 ### Safety
 
 - **Atomic installs** — any failure triggers a full rollback; no partial installs reach disk
-- **Path traversal protection** — archive entries are validated through `PathSafety` before extraction
+- **Path traversal protection** — archive entries validated through `PathSafety` before extraction
 - **Enable/Disable** — renames files with `.disabled` suffix; GTA V ignores them without deletion
 - **Conflict detection** — warns when incoming mod files overlap with installed mods (including disabled ones)
+- **OIV path validation** — install paths in OIV packages are checked for traversal and rooted-path injection before packaging or install
 
 ---
 
@@ -64,7 +74,7 @@ Each detection produces a confidence score (Low / Medium / High). Low-confidence
 
 ## Install
 
-**Recommended:** Download `LSPDFRManager-v3.7.6-win-x64.zip` from [Releases](https://github.com/rolling-codes/LSPDFRManager/releases/latest), extract anywhere, and run `LSPDFRManager.exe`. No installer needed.
+Download `LSPDFRManager-v3.7.11-win-x64.zip` from [Releases](https://github.com/rolling-codes/LSPDFRManager/releases/latest), extract anywhere, and run `LSPDFRManager.exe`. No installer needed.
 
 The first run will prompt you to set your GTA V path if it is not auto-detected.
 
@@ -77,7 +87,7 @@ git clone https://github.com/rolling-codes/LSPDFRManager.git
 cd LSPDFRManager
 dotnet restore LSPDFRManager.sln
 dotnet build LSPDFRManager.sln
-dotnet test
+dotnet test LSPDFRManager.Tests/LSPDFRManager.Tests.csproj
 ```
 
 **Self-contained release build:**
@@ -91,16 +101,18 @@ dotnet publish LSPDFRManager.csproj -c Release -r win-x64 --self-contained true 
 
 ```
 LSPDFRManager/
-├── Domain/          # Data models (InstalledMod, ModInfo, AppConfig, ModType…)
-├── Services/        # Business logic (ModDetector, FileInstaller, BackupService,
-│                    #   ModLibraryService, OivService, DiagnosticsOrchestrator…)
+├── Domain/          # Data models (InstalledMod, ModInfo, AppConfig, InstallPlan…)
+├── Services/        # Business logic (ModDetector, FileInstaller, SmartInstallPlanner,
+│                    #   BackupService, OivService, DiagnosticsOrchestrator…)
 ├── ViewModels/      # MVVM view models; MainViewModel orchestrates tab navigation
 ├── Views/           # WPF UserControls, one per tab
 │   └── Components/  # Shared sub-controls (ModCard…)
 ├── Converters/      # WPF value converters
 ├── Core/            # AppLogger, InstallQueue, UiDispatcher, PathSafety
+│   └── Commands/    # IAppCommand, AsyncAppCommand
+├── Features/        # Feature slices (Install, Library, OivCreatorTemplates, Updates…)
 ├── Resources/       # Colors.xaml (design tokens), Styles.xaml (component styles)
-└── LSPDFRManager.Tests/  # xUnit test suite (255 tests)
+└── LSPDFRManager.Tests/  # xUnit test suite (734 tests)
 ```
 
 Key singletons: `ModLibraryService`, `AppConfig`, `InstallQueue`, `LspdfrStatusService`
