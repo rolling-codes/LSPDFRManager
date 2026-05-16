@@ -162,19 +162,36 @@ public static class OivService
         }
     }
 
+    // Maximum assembly.xml size accepted before parsing (1 MB).
+    private const long MaxAssemblyXmlBytes = 1 * 1024 * 1024;
+
     /// <summary>
     /// Parses an already-opened assembly.xml stream into an OivPackage.
     /// Used by SmartInstallPlanner, which has the stream buffered from the archive.
     /// Returns a package with IsValid=false and ValidationError set on failure.
+    /// Caller must dispose the stream.
     /// </summary>
     public static OivPackage ParseFromStream(Stream assemblyXmlStream, string? sourcePath = null)
     {
         try
         {
+            if (assemblyXmlStream.CanSeek && assemblyXmlStream.Length > MaxAssemblyXmlBytes)
+                return InvalidPackage($"assembly.xml exceeds maximum allowed size ({MaxAssemblyXmlBytes / 1024} KB).", sourcePath);
+
             XDocument doc;
             try
             {
-                doc = XDocument.Load(assemblyXmlStream);
+                // Use XmlReader with safe limits to prevent DTD-based DoS and unbounded
+                // memory/CPU usage from attacker-controlled XML content.
+                var settings = new System.Xml.XmlReaderSettings
+                {
+                    DtdProcessing         = System.Xml.DtdProcessing.Prohibit,
+                    MaxCharactersInDocument = 500_000,
+                    MaxCharactersFromEntities = 1_024,
+                    XmlResolver           = null,
+                };
+                using var reader = System.Xml.XmlReader.Create(assemblyXmlStream, settings);
+                doc = XDocument.Load(reader);
             }
             catch (Exception ex)
             {
@@ -194,8 +211,11 @@ public static class OivService
             var name = meta.Element("name")?.Value ?? "";
             var author = meta.Element("author")?.Value ?? "";
             var description = meta.Element("description")?.Value ?? "";
+            // Support targetGame both inside <metadata> and at <package> root level.
             var targetGame = meta.Element("targetGame")?.Value
                 ?? meta.Element("target")?.Value
+                ?? root.Element("targetGame")?.Value
+                ?? root.Element("target")?.Value
                 ?? "";
 
             var verElem = meta.Element("version");
@@ -240,7 +260,7 @@ public static class OivService
         }
         catch (Exception ex)
         {
-            AppLogger.Error($"[OIV_ERROR] ParseFromStream failed", ex);
+            AppLogger.Error($"[OIV_ERROR] ParseFromStream failed: {sourcePath ?? "unknown"}", ex);
             return InvalidPackage($"Parse error: {ex.Message}", sourcePath);
         }
     }

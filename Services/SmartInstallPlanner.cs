@@ -1,3 +1,4 @@
+using LSPDFRManager.Core;
 using LSPDFRManager.Domain;
 using SharpCompress.Archives;
 
@@ -41,8 +42,21 @@ public class SmartInstallPlanner
                  e.RelativePath.Count(c => c == '/') == 1));
             if (asmEntry is not null)
             {
-                try { oivMetadata = OivService.ParseFromStream(asmEntry.OpenStream(), archivePath); }
-                catch { /* parse failure is non-fatal; metadata stays null */ }
+                try
+                {
+                    using var asmStream = asmEntry.OpenStream();
+                    oivMetadata = OivService.ParseFromStream(asmStream, archivePath);
+                    if (!oivMetadata.IsValid)
+                    {
+                        warnings.Add($"Could not parse OIV manifest: {oivMetadata.ValidationError}");
+                        oivMetadata = null;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.Warning($"[PLANNER] Failed to open OIV manifest stream: {ex.Message}");
+                    warnings.Add($"Could not read OIV manifest: {ex.Message}");
+                }
             }
         }
         else if (modTypeResult.SecondaryTypes.Any(t => t.Type == ModType.OivPackage))
