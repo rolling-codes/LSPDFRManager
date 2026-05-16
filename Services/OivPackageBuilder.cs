@@ -59,7 +59,8 @@ public sealed class OivPackageBuilder : IOivPackageBuilder
 
         foreach (var file in plan.Files)
         {
-            var entryPath = $"content/{file.InstallPath.TrimStart('/')}";
+            var safePath = ValidateEntryPath(file.InstallPath);
+            var entryPath = $"content/{safePath}";
             var entry = zip.CreateEntry(entryPath, CompressionLevel.Optimal);
             using var src = File.OpenRead(file.SourcePath);
             using var dst = entry.Open();
@@ -67,5 +68,17 @@ public sealed class OivPackageBuilder : IOivPackageBuilder
         }
 
         return plan.Files.Count;
+    }
+
+    private static string ValidateEntryPath(string installPath)
+    {
+        var normalized = installPath.Replace('\\', '/').TrimStart('/');
+        foreach (var segment in normalized.Split('/'))
+        {
+            var s = segment.Trim();
+            if (s == ".." || s == ".")
+                throw new InvalidOperationException($"Unsafe install path rejected: '{installPath}'");
+        }
+        return normalized;
     }
 }

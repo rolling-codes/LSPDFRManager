@@ -1,5 +1,5 @@
-using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using LSPDFRManager.Features.OivCreatorTemplates.Models;
 
 namespace LSPDFRManager.Features.OivCreatorTemplates;
@@ -43,9 +43,14 @@ public sealed class OivTemplateController : IOivTemplateController
         return new OivTemplateApplyPlan(metadata, paths);
     }
 
+    private static readonly Regex _unsafeChars = new(@"[^a-z0-9_\-]", RegexOptions.Compiled);
+    private static readonly Regex _repeatedUnderscores = new(@"_+", RegexOptions.Compiled);
+
     private static string Sanitize(string name)
     {
         if (string.IsNullOrWhiteSpace(name)) return "my_mod";
-        return name.Replace(" ", "_").ToLowerInvariant();
+        var safe = _unsafeChars.Replace(name.ToLowerInvariant(), "_");
+        safe = _repeatedUnderscores.Replace(safe, "_").Trim('_');
+        return string.IsNullOrEmpty(safe) ? "my_mod" : safe;
     }
 }

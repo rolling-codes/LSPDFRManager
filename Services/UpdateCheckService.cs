@@ -17,11 +17,11 @@ public class UpdateCheckService
         _http.Timeout = TimeSpan.FromSeconds(10);
     }
 
-    public virtual async Task<UpdateCheckResult> CheckAsync()
+    public virtual async Task<UpdateCheckResult> CheckAsync(CancellationToken ct = default)
     {
         try
         {
-            var json = await _http.GetStringAsync(ReleasesApiUrl).ConfigureAwait(false);
+            var json = await _http.GetStringAsync(ReleasesApiUrl, ct).ConfigureAwait(false);
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
 

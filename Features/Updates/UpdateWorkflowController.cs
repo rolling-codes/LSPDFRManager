@@ -25,7 +25,6 @@ public sealed class UpdateWorkflowController : IUpdateController, IFeatureContro
 
     public Task<UpdateCheckResult> CheckForUpdatesAsync(CancellationToken ct)
     {
-        // Adapt to existing service
-        return _updateService.CheckAsync();
+        return _updateService.CheckAsync(ct);
     }
 }

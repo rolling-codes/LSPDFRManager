@@ -22,7 +22,7 @@ public sealed class OivPackageValidator : IOivPackageValidator
         {
             var ip = f.InstallPath.Replace('\\', '/');
 
-            if (ip.Contains(".."))
+            if (ip.Split('/').Any(seg => seg.Trim() is ".." or "."))
                 errors.Add($"Suspicious install path (path traversal): {f.InstallPath}");
             else if (ip.StartsWith('/'))
                 errors.Add($"Install path must be relative (starts with '/'): {f.InstallPath}");

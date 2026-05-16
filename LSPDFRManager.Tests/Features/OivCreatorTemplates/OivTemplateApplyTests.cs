@@ -274,13 +274,13 @@ public class OivTemplateApplyTests
     }
 
     [Fact]
-    public void AddCreatorFile_UnsafeSuggestedPath_IsSkipped()
+    public void AddCreatorFile_PreviouslyUnsafeName_IsSanitizedAndApplied()
     {
         var fakeDialog = new FakeFileDialogService();
         fakeDialog.FilesToReturn.Add(@"C:\mods\dlc.rpf");
 
         var vm = new OivViewModel(fakeDialog);
-        // We use a CreatorName that will cause DlcPack to generate an unsafe path.
+        // "../../Windows" sanitizes to "windows" — no traversal reaches PathSafety.
         // DlcPack rule: dlcpacks/{Sanitize(PackageName)}/dlc.rpf
         vm.CreatorName = "../../Windows";
         vm.SelectedTemplateId = OivTemplateId.DlcPack;
@@ -288,9 +288,7 @@ public class OivTemplateApplyTests
         vm.AddCreatorFileCommand.Execute(null);
 
         var entry = vm.CreatorFiles.First();
-        // Because the suggested path was 'dlcpacks/../../windows/dlc.rpf', PathSafety rejects it.
-        // It should fallback to the default filename instead of using the unsafe path.
-        Assert.Equal("dlc.rpf", entry.InstallPath);
-        Assert.DoesNotContain("windows", entry.InstallPath.ToLower());
+        // Sanitize now strips traversal chars; the result is a safe, applied path.
+        Assert.Equal("dlcpacks/windows/dlc.rpf", entry.InstallPath);
     }
 }

@@ -15,7 +15,7 @@ public class UpdateWorkflowControllerTests
         public UpdateCheckResult ResultToReturn { get; set; } = new();
         public bool ShouldThrow { get; set; }
 
-        public override Task<UpdateCheckResult> CheckAsync()
+        public override Task<UpdateCheckResult> CheckAsync(CancellationToken ct = default)
         {
             if (ShouldThrow) throw new Exception("Network error");
             return Task.FromResult(ResultToReturn);

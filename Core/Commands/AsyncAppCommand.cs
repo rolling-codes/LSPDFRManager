@@ -1,3 +1,5 @@
+using LSPDFRManager.Core;
+
 namespace LSPDFRManager.Core.Commands;
 
 public sealed class AsyncAppCommand : IAppCommand
@@ -25,7 +27,7 @@ public sealed class AsyncAppCommand : IAppCommand
                 return;
 
             _isRunning = value;
-            CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+            UiDispatcher.Invoke(() => CanExecuteChanged?.Invoke(this, EventArgs.Empty));
         }
     }
 

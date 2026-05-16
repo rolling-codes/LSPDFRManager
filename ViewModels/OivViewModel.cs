@@ -59,6 +59,8 @@ public class OivViewModel : ObservableObject
     private OivPackageKind _creatorKind        = OivPackageKind.Basic;
     private string         _creatorOutputPath  = "";
     private OivPackagePlan? _creatorPlan;
+    private RelayCommand   _buildPlanCommand   = null!;
+    private RelayCommand   _exportCommand      = null!;
     private string         _exportStatus       = "";
 
     // ── Wizard step ───────────────────────────────────────────────────────────
@@ -219,13 +221,9 @@ public class OivViewModel : ObservableObject
                 continue;
             }
 
-            var suggestedPath = GetSuggestedPath(file.SourcePath, plan);
-            if (suggestedPath is null)
-            {
-                // We don't increment anything if no rule matched, but if it was unsafe, it logged.
-                // Wait, GetSuggestedPath logs but we want to count unsafe. Let's just track applied.
-                continue;
-            }
+            var suggestedPath = GetSuggestedPath(file.SourcePath, plan, out bool wasUnsafe);
+            if (wasUnsafe) pathsSkippedUnsafe++;
+            if (suggestedPath is null) continue;
 
             // Store pre-apply path for undo.
             _preApplyPaths[file.SourcePath] = file.InstallPath;
@@ -251,8 +249,9 @@ public class OivViewModel : ObservableObject
         OnPropertyChanged(nameof(CanUndoApply));
     }
 
-    private string? GetSuggestedPath(string sourcePath, OivTemplateApplyPlan plan)
+    private string? GetSuggestedPath(string sourcePath, OivTemplateApplyPlan plan, out bool wasUnsafe)
     {
+        wasUnsafe = false;
         var fileName = Path.GetFileName(sourcePath);
         var ext = Path.GetExtension(sourcePath);
 
@@ -288,6 +287,7 @@ public class OivViewModel : ObservableObject
         }
         catch (InvalidOperationException)
         {
+            wasUnsafe = true;
             AppLogger.Warning($"[OIV_TEMPLATE] Unsafe path rejected: {suggestedPath}");
             return null;
         }
@@ -421,7 +421,7 @@ public class OivViewModel : ObservableObject
             var installPath = Path.GetFileName(filePath);
             if (currentPlan != null)
             {
-                var suggested = GetSuggestedPath(filePath, currentPlan);
+                var suggested = GetSuggestedPath(filePath, currentPlan, out _);
                 if (suggested != null)
                 {
                     installPath = suggested;
@@ -703,10 +703,8 @@ public class OivViewModel : ObservableObject
 
     private void RefreshCreatorCommands()
     {
-        // CommandManager.InvalidateRequerySuggested re-queries all RelayCommand.CanExecute
-        // bindings on the next UI tick — covers BuildPlanCommand and ExportCommand.
-        ((RelayCommand)BuildPlanCommand).RaiseCanExecuteChanged();
-        ((RelayCommand)ExportCommand).RaiseCanExecuteChanged();
+        _buildPlanCommand.RaiseCanExecuteChanged();
+        _exportCommand.RaiseCanExecuteChanged();
     }
 
     // ── Constructor ───────────────────────────────────────────────────────────
@@ -718,9 +716,11 @@ public class OivViewModel : ObservableObject
         AddCreatorFileCommand    = new RelayCommand(AddCreatorFile);
         RemoveCreatorFileCommand = new RelayCommand<OivFileEntry>(RemoveCreatorFile);
         BrowseCreatorOutputCommand = new RelayCommand(BrowseCreatorOutput);
-        BuildPlanCommand         = new RelayCommand(BuildPlan, () => CanBuildPlan);
+        _buildPlanCommand        = new RelayCommand(BuildPlan, () => CanBuildPlan);
+        BuildPlanCommand         = _buildPlanCommand;
         BackToEditCommand        = new RelayCommand(() => CreatorStep = 0);
-        ExportCommand            = new RelayCommand(() => _ = ExportAsync(), () => CanExport);
+        _exportCommand           = new RelayCommand(() => _ = ExportAsync(), () => CanExport);
+        ExportCommand            = _exportCommand;
         ResetCreatorCommand      = new RelayCommand(ResetCreator);
         ApplyTemplateCommand     = new RelayCommand(ExecuteApplyTemplate, () => SelectedTemplateId != OivTemplateId.None);
         UndoApplyTemplateCommand = new RelayCommand(ExecuteUndoApplyTemplate, () => CanUndoApply);
