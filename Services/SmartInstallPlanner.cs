@@ -5,7 +5,9 @@ namespace LSPDFRManager.Services;
 
 public class SmartInstallPlanner
 {
-    private readonly ModDetector _detector = new();
+    private readonly ModDetector                 _detector     = new();
+    private readonly IModTypeDetectionService    _typeDetector = new ModTypeDetectionService();
+    private readonly IDependencyDetectionService _depDetector  = new DependencyDetectionService();
 
     private sealed record SourceEntry(string RelativePath, Func<Stream> OpenStream, int SourceIndex);
 
@@ -20,6 +22,12 @@ public class SmartInstallPlanner
         string? readmeContent = null;
 
         var sourceEntries = LoadSourceEntries(archivePath, warnings);
+
+        var entryPaths    = sourceEntries.Select(e => e.RelativePath).ToList();
+        var modTypeResult = _typeDetector.Detect(entryPaths, Path.GetFileName(archivePath));
+        var depResult     = _depDetector.Detect(modTypeResult);
+        foreach (var dep in depResult.Warnings)
+            warnings.Add($"Dependency: {dep.Name} — {dep.Reason}");
 
         var hasStopThePedInBatch = sourceEntries.Any(e => InstallerSafetyPolicy.IsStopThePedFile(e.RelativePath));
         var hasUltimateBackupInBatch = sourceEntries.Any(e => InstallerSafetyPolicy.IsUltimateBackupFile(e.RelativePath));
