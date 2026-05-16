@@ -25,12 +25,12 @@ This release introduces the **LSPDFR Setup Stabilizer** feature set. Theme: _Ins
 
 ## Version Consistency
 
-- Updated project versioning to `3.7.4` in `LSPDFRManager.csproj`.
+- Updated project versioning to `3.7.5` in `LSPDFRManager.csproj`.
 
 ## Validation
 
 - `dotnet build LSPDFRManager.sln` — 0 errors
-- `dotnet test` — 302/302 passing
+- `dotnet test` — 353/353 passing
 
 ## Known Non-Blockers
 

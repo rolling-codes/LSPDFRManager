@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-8.0-blue.svg)](https://dotnet.microsoft.com/download/dotnet/8.0)
-[![Release](https://img.shields.io/badge/release-v3.7.4-blue.svg)](https://github.com/rolling-codes/LSPDFRManager/releases/latest)
+[![Release](https://img.shields.io/badge/release-v3.7.6-blue.svg)](https://github.com/rolling-codes/LSPDFRManager/releases/latest)
 
 A complete GTA V and LSPDFR command center — install and manage mods, run diagnostics, switch profiles, analyze crashes, and launch safely. Built with .NET 8 WPF.
 
@@ -64,7 +64,7 @@ Each detection produces a confidence score (Low / Medium / High). Low-confidence
 
 ## Install
 
-**Recommended:** Download `LSPDFRManager-v3.7.4-win-x64.zip` from [Releases](https://github.com/rolling-codes/LSPDFRManager/releases/latest), extract anywhere, and run `LSPDFRManager.exe`. No installer needed.
+**Recommended:** Download `LSPDFRManager-v3.7.6-win-x64.zip` from [Releases](https://github.com/rolling-codes/LSPDFRManager/releases/latest), extract anywhere, and run `LSPDFRManager.exe`. No installer needed.
 
 The first run will prompt you to set your GTA V path if it is not auto-detected.
 
