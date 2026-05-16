@@ -439,7 +439,7 @@
                                 </Border>
 
                                 <!-- Blocking issues (red — disables Confirm) -->
-                                <ItemsControl ItemsSource="{Binding ReviewPlan.BlockingIssues}"
+                                <ItemsControl ItemsSource="{Binding ReviewBlockingIssues}"
                                               Visibility="{Binding ReviewHasBlockingIssues, Converter={StaticResource BoolToVis}}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>

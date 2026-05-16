@@ -76,7 +76,9 @@ public sealed class InstallWorkflowController : IInstallController
                     mod.ArchiveRootPrefix = manifest.DetectedArchiveRoot;
             }
 
-            return new SmartInstallPlanner().BuildPlan(mod.SourcePath);
+            var plan = new SmartInstallPlanner().BuildPlan(mod.SourcePath);
+            mod.ReviewedPlan = plan;
+            return plan;
         }, cancellationToken);
     }
 

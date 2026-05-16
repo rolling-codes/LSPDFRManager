@@ -54,6 +54,12 @@ public class ModInfo
     /// </summary>
     public string ArchiveRootPrefix { get; set; } = "";
 
+    /// <summary>
+    /// Install plan built during the review step. When set, <see cref="LSPDFRManager.Core.InstallQueue"/>
+    /// uses this plan directly instead of rebuilding it, so the user's reviewed plan is what actually runs.
+    /// </summary>
+    public InstallPlan? ReviewedPlan { get; set; }
+
     /// <summary>Primary mod image URL, typically from lcpdfr page metadata.</summary>
     public string? ImageUrl { get; set; }
 

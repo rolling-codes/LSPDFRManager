@@ -216,6 +216,7 @@ public class InstallViewModel : ObservableObject, IDisposable
             OnPropertyChanged(nameof(ShowDetectionPanel));
             OnPropertyChanged(nameof(ReviewCanConfirm));
             OnPropertyChanged(nameof(ReviewHasBlockingIssues));
+            OnPropertyChanged(nameof(ReviewBlockingIssues));
             OnPropertyChanged(nameof(ReviewHasWarnings));
             OnPropertyChanged(nameof(ReviewWillInstall));
             OnPropertyChanged(nameof(ReviewWillOverwrite));
@@ -265,6 +266,7 @@ public class InstallViewModel : ObservableObject, IDisposable
     public bool IsReviewing => _reviewPlan is not null;
     public bool ReviewCanConfirm => _reviewPlan is not null && _reviewPlan.BlockingIssues.Count == 0;
     public bool ReviewHasBlockingIssues => (_reviewPlan?.BlockingIssues.Count ?? 0) > 0;
+    public IReadOnlyList<string> ReviewBlockingIssues => _reviewPlan?.BlockingIssues ?? [];
     public bool ReviewHasWarnings => (_reviewPlan?.Warnings.Count ?? 0) > 0;
 
     public IEnumerable<InstallPlanEntry> ReviewWillInstall =>
