@@ -20,16 +20,18 @@ The detection intelligence introduced in v3.7.7 (#25, #26) is now visible at the
 
 ## Installed dependency probe service (#29)
 
-- Probes the GTA V install folder at plan time to classify each detected dependency as Present, Missing, Unknown, or NotApplicable.
-- Script Hook V, SHVDN, ASI Loader, LSPDFR, RAGE Plugin Hook, and OpenIV all have dedicated probe rules.
-- Review panel groups probes by status: green for present, red for missing, amber for unknown.
-- OpenIV is always NotApplicable — it requires a separate installer regardless.
+- Probes the selected GTA V install folder during review-plan generation and classifies detected dependencies as Present, Missing, Unknown, or NotApplicable.
+- Adds dedicated probes for Script Hook V, ScriptHookVDotNet, ASI Loader, LSPDFR, RAGE Plugin Hook, and OpenIV-related package handling.
+- Groups dependency probe results in the review panel by status: green for present, red for missing, and amber for unknown.
+- Treats OpenIV as NotApplicable for local probing because OIV packages require package-aware installation rather than a normal in-folder dependency check.
 
 ## OIV package handling guardrail (#30)
 
-- Primary OIV packages are blocked from loose-file install — the Confirm Install button is disabled and the review panel shows a clear explanation.
-- Archives with OIV as a secondary/mixed type show a warning banner; the install is not blocked but the user is directed to OpenIV or a compatible package installer.
-- Non-OIV installs are unaffected.
+- Blocks primary OIV packages from being installed as loose files.
+- Warns when OIV content is detected as a secondary/mixed mod type.
+- Adds explicit review banners for OIV packages: primary OIV packages show "OIV PACKAGE — CANNOT INSTALL AS LOOSE FILES," while secondary OIV content shows "OIV CONTENT DETECTED."
+- Centralizes OIV safety copy in `InstallerSafetyPolicy` so the planner, ViewModel, and tests use consistent messages.
+- Keeps non-OIV install flows unchanged.
 
 ## Native OIV package inspection (#31)
 
