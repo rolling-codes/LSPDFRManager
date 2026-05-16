@@ -23,6 +23,14 @@ The detection intelligence introduced in v3.7.7 (#25, #26) is now visible at the
 - 617/617 tests passing.
 - Clean build.
 
+## OIV package handling guardrail (#30)
+
+- Primary OIV packages are blocked from loose-file install — the Confirm Install button is disabled and the review panel shows a clear explanation.
+- Archives with OIV as a secondary/mixed type show a warning banner; the install is not blocked but the user is directed to OpenIV or a compatible package installer.
+- Non-OIV installs are unaffected.
+
 ## Issues closed
 
 - #28 Review panel: mod type + dependency warning display
+- #29 Installed dependency probe service
+- #30 OIV package handling guardrail
