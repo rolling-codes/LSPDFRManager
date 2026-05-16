@@ -216,6 +216,18 @@ public class InstallViewModel : ObservableObject
             OnPropertyChanged(nameof(ReviewSuspiciousCount));
             OnPropertyChanged(nameof(ReviewBlockedCount));
             OnPropertyChanged(nameof(ReviewJunkCount));
+            OnPropertyChanged(nameof(ReviewModTypeLabel));
+            OnPropertyChanged(nameof(ReviewConfidenceLabel));
+            OnPropertyChanged(nameof(ReviewIsMixed));
+            OnPropertyChanged(nameof(ReviewIsUnknown));
+            OnPropertyChanged(nameof(ReviewSecondaryTypeLabels));
+            OnPropertyChanged(nameof(ReviewHasSecondaryTypes));
+            OnPropertyChanged(nameof(ReviewEvidence));
+            OnPropertyChanged(nameof(ReviewHasEvidence));
+            OnPropertyChanged(nameof(ReviewDependencyWarnings));
+            OnPropertyChanged(nameof(ReviewHasDependencyWarnings));
+            OnPropertyChanged(nameof(ReviewGeneralWarnings));
+            OnPropertyChanged(nameof(ReviewHasGeneralWarnings));
         }
     }
 
@@ -257,6 +269,69 @@ public class InstallViewModel : ObservableObject
     public bool ReviewHasSuspicious => ReviewSuspiciousCount > 0;
     public bool ReviewHasBlocked => ReviewBlockedCount > 0;
     public bool ReviewHasJunk => ReviewJunkCount > 0;
+
+    // ── Mod intelligence (type + dependency) ─────────────────────────────────
+
+    private static string ModTypeLabel(ModType type) => type switch
+    {
+        ModType.AsiMod       => "ASI Mod",
+        ModType.Script       => "Script",
+        ModType.LspdfrPlugin => "LSPDFR Plugin",
+        ModType.OivPackage   => "OIV Package",
+        ModType.Eup          => "EUP Clothing",
+        ModType.VehicleDlc   => "DLC / Vehicle",
+        ModType.Map          => "Map / MLO",
+        ModType.Sound        => "Sound Pack",
+        ModType.ConfigPreset => "Config",
+        _                           => "Unknown",
+    };
+
+    public string ReviewModTypeLabel =>
+        _reviewPlan?.ModTypeResult is { PrimaryType: var t } && t != ModType.Unknown
+            ? ModTypeLabel(t)
+            : "Unknown";
+
+    public string ReviewConfidenceLabel =>
+        _reviewPlan?.ModTypeResult?.ConfidenceLabel ?? "";
+
+    public bool ReviewIsMixed => _reviewPlan?.ModTypeResult?.IsMixed ?? false;
+
+    public bool ReviewIsUnknown =>
+        (_reviewPlan?.ModTypeResult?.PrimaryType ?? ModType.Unknown) == ModType.Unknown;
+
+    public IEnumerable<string> ReviewSecondaryTypeLabels =>
+        _reviewPlan?.ModTypeResult?.SecondaryTypes
+            .Select(s => ModTypeLabel(s.Type)) ?? [];
+
+    public bool ReviewHasSecondaryTypes =>
+        _reviewPlan?.ModTypeResult?.SecondaryTypes.Count > 0;
+
+    public IEnumerable<string> ReviewEvidence =>
+        _reviewPlan?.ModTypeResult?.Evidence ?? [];
+
+    public bool ReviewHasEvidence =>
+        _reviewPlan?.ModTypeResult?.Evidence.Count > 0;
+
+    /// <summary>
+    /// Dependency warnings from the plan — strips the "Dependency: " prefix added by SmartInstallPlanner.
+    /// </summary>
+    public IEnumerable<string> ReviewDependencyWarnings =>
+        _reviewPlan?.Warnings
+            .Where(w => w.StartsWith("Dependency:", StringComparison.Ordinal))
+            .Select(w => w["Dependency:".Length..].TrimStart(' ', '—', ' '))
+        ?? [];
+
+    public bool ReviewHasDependencyWarnings =>
+        _reviewPlan?.Warnings.Any(w => w.StartsWith("Dependency:", StringComparison.Ordinal)) ?? false;
+
+    /// <summary>Non-dependency warnings (path conflicts, overwrites, etc.).</summary>
+    public IEnumerable<string> ReviewGeneralWarnings =>
+        _reviewPlan?.Warnings
+            .Where(w => !w.StartsWith("Dependency:", StringComparison.Ordinal))
+        ?? [];
+
+    public bool ReviewHasGeneralWarnings =>
+        _reviewPlan?.Warnings.Any(w => !w.StartsWith("Dependency:", StringComparison.Ordinal)) ?? false;
 
     public string? LastErrorMessage
     {

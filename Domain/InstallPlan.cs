@@ -5,6 +5,9 @@ public class InstallPlan
     public string ArchiveSource { get; init; } = "";
     public ModType DetectedType { get; init; }
     public float Confidence { get; init; }
+
+    /// <summary>Full mod-type detection result — carries confidence, evidence, and secondary types.</summary>
+    public ModTypeDetectionResult? ModTypeResult { get; init; }
     public List<InstallPlanEntry> Entries { get; init; } = [];
     public List<string> Warnings { get; init; } = [];
     public List<string> BlockingIssues { get; init; } = [];

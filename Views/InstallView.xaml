@@ -270,6 +270,96 @@
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel>
 
+                                <!-- Mod intelligence card -->
+                                <Border Background="{StaticResource Surface2}"
+                                        BorderBrush="{StaticResource AccentBorder}"
+                                        BorderThickness="1" CornerRadius="8"
+                                        Padding="12,10" Margin="0,0,0,10">
+                                    <StackPanel>
+
+                                        <!-- Type + confidence row -->
+                                        <StackPanel Orientation="Horizontal">
+                                            <!-- Unknown: neutral message -->
+                                            <TextBlock Foreground="{StaticResource TextMuted}"
+                                                       FontSize="12" VerticalAlignment="Center"
+                                                       Visibility="{Binding ReviewIsUnknown, Converter={StaticResource BoolToVis}}">
+                                                Could not determine mod type — review files manually
+                                            </TextBlock>
+
+                                            <!-- Known type -->
+                                            <StackPanel Orientation="Horizontal"
+                                                        Visibility="{Binding ReviewIsUnknown, Converter={StaticResource InverseBoolToVis}}">
+                                                <Border Background="{StaticResource Accent}"
+                                                        CornerRadius="5" Padding="8,3" Margin="0,0,6,0">
+                                                    <TextBlock Text="{Binding ReviewModTypeLabel}"
+                                                               Foreground="White" FontSize="11"
+                                                               FontWeight="Bold"/>
+                                                </Border>
+                                                <Border Background="{StaticResource SurfaceLift}"
+                                                        CornerRadius="5" Padding="8,3" Margin="0,0,8,0"
+                                                        Visibility="{Binding ReviewIsMixed, Converter={StaticResource BoolToVis}}">
+                                                    <TextBlock Text="MIXED" Foreground="{StaticResource TextMuted}"
+                                                               FontSize="10" FontWeight="ExtraBold"/>
+                                                </Border>
+                                                <TextBlock Text="{Binding ReviewConfidenceLabel}"
+                                                           Foreground="{StaticResource TextMuted}"
+                                                           FontSize="11" VerticalAlignment="Center"
+                                                           Margin="0,0,8,0"/>
+                                                <TextBlock Text="confidence"
+                                                           Foreground="{StaticResource TextFaint}"
+                                                           FontSize="11" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                        <!-- Secondary types (mixed archives) -->
+                                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0"
+                                                    Visibility="{Binding ReviewHasSecondaryTypes, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock Text="Also contains:"
+                                                       Foreground="{StaticResource TextFaint}"
+                                                       FontSize="11" VerticalAlignment="Center"
+                                                       Margin="0,0,6,0"/>
+                                            <ItemsControl ItemsSource="{Binding ReviewSecondaryTypeLabels}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <StackPanel Orientation="Horizontal"/>
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Background="{StaticResource SurfaceLift}"
+                                                                CornerRadius="4" Padding="6,2" Margin="0,0,4,0">
+                                                            <TextBlock Text="{Binding}"
+                                                                       Foreground="{StaticResource TextMuted}"
+                                                                       FontSize="10"/>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+
+                                        <!-- Evidence (collapsed by default, Expander) -->
+                                        <Expander Margin="0,8,0,0"
+                                                  Visibility="{Binding ReviewHasEvidence, Converter={StaticResource BoolToVis}}">
+                                            <Expander.Header>
+                                                <TextBlock Text="Detection evidence"
+                                                           Foreground="{StaticResource TextFaint}"
+                                                           FontSize="11"/>
+                                            </Expander.Header>
+                                            <ItemsControl ItemsSource="{Binding ReviewEvidence}" Margin="4,4,0,0">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding}"
+                                                                   Style="{StaticResource ConsoleText}"
+                                                                   FontSize="10" Margin="0,1"
+                                                                   TextWrapping="Wrap"/>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </Expander>
+
+                                    </StackPanel>
+                                </Border>
+
                                 <!-- Blocking issues (red — disables Confirm) -->
                                 <ItemsControl ItemsSource="{Binding ReviewPlan.BlockingIssues}"
                                               Visibility="{Binding ReviewHasBlockingIssues, Converter={StaticResource BoolToVis}}">
@@ -284,9 +374,27 @@
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
 
-                                <!-- Warnings (amber) -->
-                                <ItemsControl ItemsSource="{Binding ReviewPlan.Warnings}"
-                                              Visibility="{Binding ReviewHasWarnings, Converter={StaticResource BoolToVis}}">
+                                <!-- Dependency warnings -->
+                                <StackPanel Visibility="{Binding ReviewHasDependencyWarnings, Converter={StaticResource BoolToVis}}"
+                                            Margin="0,0,0,4">
+                                    <TextBlock Style="{StaticResource DetailLabel}" Margin="0,0,0,4"
+                                               Text="REQUIRED DEPENDENCIES"/>
+                                    <ItemsControl ItemsSource="{Binding ReviewDependencyWarnings}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Style="{StaticResource InlineWarnPill}" Margin="0,0,0,4">
+                                                    <TextBlock Text="{Binding}"
+                                                               Foreground="{StaticResource WarningText}"
+                                                               FontSize="12" TextWrapping="Wrap"/>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+
+                                <!-- General warnings (path conflicts, overwrites, etc.) -->
+                                <ItemsControl ItemsSource="{Binding ReviewGeneralWarnings}"
+                                              Visibility="{Binding ReviewHasGeneralWarnings, Converter={StaticResource BoolToVis}}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <Border Style="{StaticResource InlineWarnPill}" Margin="0,0,0,4">

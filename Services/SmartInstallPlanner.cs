@@ -135,6 +135,7 @@ public class SmartInstallPlanner
             ArchiveSource = archivePath,
             DetectedType = modInfo.Type,
             Confidence = modInfo.Confidence,
+            ModTypeResult = modTypeResult,
             Entries = entries,
             Warnings = warnings.Distinct(StringComparer.Ordinal).ToList(),
             BlockingIssues = blockingIssues.Distinct(StringComparer.Ordinal).ToList(),
