@@ -112,7 +112,7 @@
                 <TextBlock Foreground="{StaticResource WarningText}" FontSize="12">
                     <Run FontFamily="Segoe MDL2 Assets" Text="&#xE7BA;"/>
                     <Run Text="  "/>
-                    <Run Text="{Binding KnownGoodDiffText}"/>
+                    <Run Text="{Binding KnownGoodDiffText, Mode=OneWay}"/>
                 </TextBlock>
             </Border>
         </StackPanel>
@@ -153,7 +153,7 @@
                                                         <TextBlock FontSize="11" TextWrapping="Wrap"
                                                                    Foreground="{StaticResource TextMuted}">
                                                             <Run Text="→ "/>
-                                                            <Run Text="{Binding Text}"/>
+                                                            <Run Text="{Binding Text, Mode=OneWay}"/>
                                                         </TextBlock>
                                                     </DataTemplate>
                                                 </ItemsControl.ItemTemplate>

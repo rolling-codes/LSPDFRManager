@@ -14,6 +14,7 @@
     <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVis"/>
     <converters:ZeroToVisibilityConverter       x:Key="ZeroToVisible"/>
     <converters:NonZeroToVisibilityConverter    x:Key="NonZeroToVisible"/>
+    <converters:AnyBoolToVisibilityConverter    x:Key="AnyBoolToVis"/>
     <BooleanToVisibilityConverter               x:Key="BoolToVis"/>
     <converters:IntEqualityConverter            x:Key="EqualToInt"/>
 
@@ -297,6 +298,8 @@
         <Setter Property="Margin" Value="0,0,0,8"/>
     </Style>
 
+    <Style x:Key="FieldLabel" TargetType="TextBlock" BasedOn="{StaticResource SectionLabel}"/>
+
     <Style x:Key="DetailLabel" TargetType="TextBlock">
         <Setter Property="Foreground" Value="{StaticResource TextFaint}"/>
         <Setter Property="FontSize" Value="11"/>
@@ -360,6 +363,8 @@
         <Setter Property="Padding" Value="20"/>
         <Setter Property="Margin" Value="0,0,0,16"/>
     </Style>
+
+    <Style x:Key="CardBorder" TargetType="Border" BasedOn="{StaticResource CardPanel}"/>
 
     <Style x:Key="ShellSidebar" TargetType="Border">
         <Setter Property="Background" Value="{StaticResource SidebarGradient}"/>

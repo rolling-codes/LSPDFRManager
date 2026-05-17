@@ -21,15 +21,15 @@ dotnet publish LSPDFRManager.csproj -c Release -r win-x64 --self-contained true 
 
 **Build release ZIP (framework-dependent)** — update version number as needed
 ```bash
-dotnet publish LSPDFRManager.csproj -c Release -r win-x64 --self-contained false -o publish/v3.7.12 -p:DebugType=None -p:DebugSymbols=false
-New-Item -ItemType Directory -Path release-package/LSPDFRManager-v3.7.12 -Force
-Copy-Item -Path publish/v3.7.12/* -Destination release-package/LSPDFRManager-v3.7.12 -Recurse
-Compress-Archive -Path release-package/LSPDFRManager-v3.7.12 -DestinationPath LSPDFRManager-v3.7.12-win-x64.zip
+dotnet publish LSPDFRManager.csproj -c Release -r win-x64 --self-contained false -o publish/v3.7.13 -p:DebugType=None -p:DebugSymbols=false
+New-Item -ItemType Directory -Path release-package/LSPDFRManager-v3.7.13 -Force
+Copy-Item -Path publish/v3.7.13/* -Destination release-package/LSPDFRManager-v3.7.13 -Recurse
+Compress-Archive -Path release-package/LSPDFRManager-v3.7.13 -DestinationPath LSPDFRManager-v3.7.13-win-x64.zip
 ```
 
 > **If `dotnet publish` fails with WPF temp-file copy errors** (race with the IDE holding `obj/`), use msbuild directly:
 > ```bash
-> dotnet msbuild LSPDFRManager.csproj -t:Publish -p:Configuration=Release -p:RuntimeIdentifier=win-x64 -p:SelfContained=false -p:PublishDir=publish/v3.7.12 -p:DebugType=None -p:DebugSymbols=false
+> dotnet msbuild LSPDFRManager.csproj -t:Publish -p:Configuration=Release -p:RuntimeIdentifier=win-x64 -p:SelfContained=false -p:PublishDir=publish/v3.7.13 -p:DebugType=None -p:DebugSymbols=false
 > ```
 
 ## Testing
@@ -92,7 +92,7 @@ When assembling a release ZIP, include only runtime artifacts — strip `build/`
 ## Repository
 
 - Repository: https://github.com/rolling-codes/LSPDFRManager
-- Current release notes: [RELEASE_v3.7.12.md](RELEASE_v3.7.12.md)
+- Current release notes: [RELEASE_v3.7.13.md](RELEASE_v3.7.13.md)
 
 ## New Feature Slices
 
@@ -106,7 +106,7 @@ Structure: `Features/<Name>/I<Name>Controller.cs`, `<Name>WorkflowController.cs`
 
 ## Smart-Feature Platform
 
-LSPDFR Manager v3.7.12 includes a smart-feature platform for rule-based, testable, diagnosable features. Before adding a new smart feature, check whether it belongs in the existing feature-flag, rule-engine, diagnostics, support-bundle, or controller orchestration patterns instead of creating a new standalone service.
+LSPDFR Manager v3.7.13 includes a smart-feature platform for rule-based, testable, diagnosable features. Before adding a new smart feature, check whether it belongs in the existing feature-flag, rule-engine, diagnostics, support-bundle, or controller orchestration patterns instead of creating a new standalone service.
 
 Key platform pieces:
 

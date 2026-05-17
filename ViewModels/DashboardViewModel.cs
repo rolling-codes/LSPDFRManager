@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Windows.Input;
+using LSPDFRManager.Core;
 using LSPDFRManager.Domain;
 using LSPDFRManager.Services;
 
@@ -92,30 +93,63 @@ public class DashboardViewModel : ObservableObject
         StatusMessage = "Safe Launch applied. Restart the game.";
     }
 
-    private static void OpenGtaFolder()
+    private void OpenGtaFolder()
     {
         var path = AppConfig.Instance.GtaPath;
-        if (Directory.Exists(path))
-            Process.Start("explorer.exe", path);
+        StartShellProcess("explorer.exe", path, "Could not open GTA V folder.");
     }
 
-    private static void OpenLogsFolder()
+    private void OpenLogsFolder()
     {
-        if (Directory.Exists(AppDataPaths.Root))
-            Process.Start("explorer.exe", AppDataPaths.Root);
+        StartShellProcess("explorer.exe", AppDataPaths.Root, "Could not open logs folder.");
     }
 
-    private static void LaunchGta()
+    private void LaunchGta()
     {
         var exe = Path.Combine(AppConfig.Instance.GtaPath, "GTA5.exe");
         if (File.Exists(exe))
-            Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true, WorkingDirectory = AppConfig.Instance.GtaPath });
+            StartShellProcess(exe, AppConfig.Instance.GtaPath, "Could not launch GTA V.");
+        else
+            StatusMessage = "GTA5.exe was not found.";
     }
 
-    private static void LaunchRph()
+    private void LaunchRph()
     {
         var exe = Path.Combine(AppConfig.Instance.GtaPath, "RAGEPluginHook.exe");
         if (File.Exists(exe))
-            Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true, WorkingDirectory = AppConfig.Instance.GtaPath });
+            StartShellProcess(exe, AppConfig.Instance.GtaPath, "Could not launch RAGE Plugin Hook.");
+        else
+            StatusMessage = "RAGEPluginHook.exe was not found.";
+    }
+
+    private void StartShellProcess(string fileName, string workingDirectoryOrArgument, string failureMessage)
+    {
+        try
+        {
+            if (string.Equals(fileName, "explorer.exe", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!Directory.Exists(workingDirectoryOrArgument))
+                {
+                    StatusMessage = "Folder was not found.";
+                    return;
+                }
+
+                Process.Start(fileName, workingDirectoryOrArgument);
+                StatusMessage = "Folder opened.";
+                return;
+            }
+
+            Process.Start(new ProcessStartInfo(fileName)
+            {
+                UseShellExecute = true,
+                WorkingDirectory = workingDirectoryOrArgument,
+            });
+            StatusMessage = "Launch requested.";
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Error($"[Dashboard] {failureMessage}", ex);
+            StatusMessage = $"{failureMessage} {ex.Message}";
+        }
     }
 }

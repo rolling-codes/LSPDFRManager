@@ -11,14 +11,24 @@ public static class UiDispatcher
 {
     private static Dispatcher? Current => Application.Current?.Dispatcher;
 
-    public static bool CheckAccess() => Current?.CheckAccess() ?? true;
+    public static bool CheckAccess()
+    {
+        var dispatcher = Current;
+        return dispatcher is null ||
+            dispatcher.HasShutdownStarted ||
+            dispatcher.HasShutdownFinished ||
+            dispatcher.CheckAccess();
+    }
 
     public static void Invoke(Action action)
     {
         ArgumentNullException.ThrowIfNull(action);
 
         var dispatcher = Current;
-        if (dispatcher is null || dispatcher.CheckAccess())
+        if (dispatcher is null ||
+            dispatcher.HasShutdownStarted ||
+            dispatcher.HasShutdownFinished ||
+            dispatcher.CheckAccess())
         {
             action();
             return;
@@ -32,7 +42,10 @@ public static class UiDispatcher
         ArgumentNullException.ThrowIfNull(action);
 
         var dispatcher = Current;
-        if (dispatcher is null || dispatcher.CheckAccess())
+        if (dispatcher is null ||
+            dispatcher.HasShutdownStarted ||
+            dispatcher.HasShutdownFinished ||
+            dispatcher.CheckAccess())
         {
             action();
             return;
