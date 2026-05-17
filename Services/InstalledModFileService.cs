@@ -24,33 +24,33 @@ public class InstalledModFileService
         mod.IsEnabled = enabled;
     }
 
-    public void Uninstall(InstalledMod mod) => Uninstall(mod, []);
+    public ModUninstallResult Uninstall(InstalledMod mod) => Uninstall(mod, []);
 
-    public void Uninstall(InstalledMod mod, IEnumerable<InstalledMod> installedMods)
+    public ModUninstallResult Uninstall(InstalledMod mod, IEnumerable<InstalledMod> installedMods)
     {
         ArgumentNullException.ThrowIfNull(mod);
         ArgumentNullException.ThrowIfNull(installedMods);
 
-        if (!mod.IsEnabled)
-            SetEnabled(mod, true);
+        var result = new ModUninstallResult();
 
         var sharedFiles = installedMods
             .Where(other => other.Id != mod.Id)
             .SelectMany(other => other.InstalledFiles)
+            .Select(NormalizeDisabledPath)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         var deletedFileDirs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var file in mod.InstalledFiles.Distinct(StringComparer.OrdinalIgnoreCase))
+        foreach (var file in mod.InstalledFiles.Select(NormalizeDisabledPath).Distinct(StringComparer.OrdinalIgnoreCase))
         {
             if (sharedFiles.Contains(file))
             {
+                result.SkippedSharedFiles.Add(file);
                 AppLogger.Warning($"Skipping shared file during uninstall: {file}");
                 continue;
             }
 
-            DeleteIfExists(file);
-            DeleteIfExists(GetDisabledPath(file));
+            DeleteRecordedFile(file, result);
 
             var dir = Path.GetDirectoryName(file);
             if (!string.IsNullOrEmpty(dir))
@@ -58,16 +58,27 @@ public class InstalledModFileService
         }
 
         if (!string.IsNullOrEmpty(mod.InstallPath))
-            PruneEmptyDirectories(deletedFileDirs, mod.InstallPath);
+            PruneEmptyDirectories(deletedFileDirs, mod.InstallPath, result);
 
         if (mod.Type == ModType.VehicleDlc && !string.IsNullOrWhiteSpace(mod.DlcPackName) &&
             !IsDlcPackUsedByOtherMod(mod, installedMods))
         {
-            DlcListService.RemoveEntry(mod.DlcPackName);
+            try
+            {
+                DlcListService.RemoveEntry(mod.DlcPackName);
+            }
+            catch (Exception ex)
+            {
+                var message = $"Remove DLC list entry '{mod.DlcPackName}' failed: {ex.Message}";
+                result.Errors.Add(message);
+                AppLogger.Warning(message);
+            }
         }
+
+        return result;
     }
 
-    private static void PruneEmptyDirectories(IEnumerable<string> candidates, string installRoot)
+    private static void PruneEmptyDirectories(IEnumerable<string> candidates, string installRoot, ModUninstallResult result)
     {
         var root = Path.GetFullPath(installRoot).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
@@ -95,7 +106,9 @@ public class InstalledModFileService
                 }
                 catch (Exception ex)
                 {
-                    AppLogger.Warning($"Prune directory '{current}' failed: {ex.Message}");
+                    var message = $"Prune directory '{current}' failed: {ex.Message}";
+                    result.Errors.Add(message);
+                    AppLogger.Warning(message);
                     break;
                 }
 
@@ -161,15 +174,36 @@ public class InstalledModFileService
             ? path[..^".disabled".Length]
             : path;
 
-    private static void DeleteIfExists(string path)
+    private static void DeleteRecordedFile(string file, ModUninstallResult result)
+    {
+        var paths = new[] { file, GetDisabledPath(file) }
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var foundAny = false;
+
+        foreach (var path in paths)
+        {
+            if (!File.Exists(path))
+                continue;
+
+            foundAny = true;
+            DeleteExisting(path, result);
+        }
+
+        if (!foundAny)
+            result.MissingFiles.Add(file);
+    }
+
+    private static void DeleteExisting(string path, ModUninstallResult result)
     {
         try
         {
-            if (File.Exists(path))
-                File.Delete(path);
+            File.Delete(path);
+            result.DeletedFiles.Add(path);
         }
         catch (Exception ex)
         {
+            result.AddDeleteFailure(path);
             AppLogger.Warning($"Delete '{path}' failed: {ex.Message}");
         }
     }

@@ -222,7 +222,11 @@ public class ModItemViewModel : ObservableObject
                 return;
         }
 
-        _library.Uninstall(_mod.Id);
+        ClearError();
+
+        var uninstallResult = _library.Uninstall(_mod.Id);
+        if (!uninstallResult.Success)
+            SetError(uninstallResult.StatusMessage);
     }
 
     private void QueueNotesSave()

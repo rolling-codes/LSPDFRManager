@@ -117,4 +117,41 @@ public class LibraryViewModelTests : IDisposable
         Assert.True(callout.IsEnabled);
         Assert.False(vehicle.IsEnabled);
     }
+
+    [Fact]
+    public void ModItem_UninstallCommand_WhenFileDeleteFails_ShowsErrorAndKeepsRecord()
+    {
+        var filePath = Path.Combine(_tempRoot, "GTA", "plugins", "locked.dll");
+        Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+        File.WriteAllText(filePath, "locked");
+
+        var originalConfirm = AppConfig.Instance.ConfirmBeforeUninstall;
+        AppConfig.Instance.ConfirmBeforeUninstall = false;
+
+        try
+        {
+            var mod = new InstalledMod
+            {
+                Name = "Locked Mod",
+                TypeLabel = "LSPDFR Plugin",
+                InstallPath = Path.Combine(_tempRoot, "GTA"),
+                InstalledFiles = [filePath]
+            };
+            _library.Mods.Add(mod);
+            var item = new ModItemViewModel(mod);
+
+            using var locked = File.Open(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+
+            item.UninstallCommand.Execute(null);
+
+            Assert.True(item.HasError);
+            Assert.Contains("could not be deleted", item.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains(mod, _library.Mods);
+            Assert.True(File.Exists(filePath));
+        }
+        finally
+        {
+            AppConfig.Instance.ConfirmBeforeUninstall = originalConfirm;
+        }
+    }
 }

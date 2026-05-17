@@ -60,6 +60,64 @@ public class PersistenceAndConflictTests : IDisposable
         Assert.Contains(conflicts, conflict => conflict.Contains("Disabled file conflict", StringComparison.OrdinalIgnoreCase));
     }
 
+    [Fact]
+    public void Uninstall_DeletesActiveAndDisabledDetectedFiles()
+    {
+        var pluginPath = Path.Combine(_tempRoot, "plugins", "Callouts.dll");
+        var disabledPath = pluginPath + ".disabled";
+        Directory.CreateDirectory(Path.GetDirectoryName(pluginPath)!);
+        File.WriteAllText(pluginPath, "active");
+        File.WriteAllText(disabledPath, "disabled");
+
+        var service = new InstalledModFileService();
+        var mod = new InstalledMod
+        {
+            Name = "Callouts",
+            IsEnabled = false,
+            InstallPath = _tempRoot,
+            InstalledFiles = [pluginPath]
+        };
+
+        var result = service.Uninstall(mod);
+
+        Assert.True(result.Success, result.StatusMessage);
+        Assert.False(File.Exists(pluginPath));
+        Assert.False(File.Exists(disabledPath));
+        Assert.Contains(pluginPath, result.DeletedFiles);
+        Assert.Contains(disabledPath, result.DeletedFiles);
+    }
+
+    [Fact]
+    public void Uninstall_SkipsSharedFilesAndReportsThemWithoutFailing()
+    {
+        var sharedPath = Path.Combine(_tempRoot, "plugins", "shared.dll");
+        Directory.CreateDirectory(Path.GetDirectoryName(sharedPath)!);
+        File.WriteAllText(sharedPath, "shared");
+
+        var target = new InstalledMod
+        {
+            Id = Guid.NewGuid(),
+            Name = "Target",
+            InstallPath = _tempRoot,
+            InstalledFiles = [sharedPath]
+        };
+        var other = new InstalledMod
+        {
+            Id = Guid.NewGuid(),
+            Name = "Other",
+            InstallPath = _tempRoot,
+            InstalledFiles = [sharedPath]
+        };
+
+        var service = new InstalledModFileService();
+        var result = service.Uninstall(target, [target, other]);
+
+        Assert.True(result.Success, result.StatusMessage);
+        Assert.True(File.Exists(sharedPath));
+        Assert.Contains(sharedPath, result.SkippedSharedFiles);
+        Assert.Empty(result.FailedFiles);
+    }
+
     private sealed class TestSettings
     {
         public string Name { get; set; } = "";

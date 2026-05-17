@@ -57,6 +57,36 @@ public class ModLibraryServiceTests
         lib.Remove(Guid.NewGuid()); // no-op, must not throw
     }
 
+    [Fact]
+    public void Uninstall_WhenFileDeleteFails_KeepsLibraryRecord()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"lspm_uninstall_{Guid.NewGuid():N}");
+        var filePath = Path.Combine(tempRoot, "plugins", "locked.dll");
+        Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+        File.WriteAllText(filePath, "locked");
+
+        try
+        {
+            var lib = Fresh();
+            var mod = Mod("Locked Mod", files: [filePath]);
+            mod.InstallPath = tempRoot;
+            lib.Mods.Add(mod);
+
+            using var locked = File.Open(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+
+            var result = lib.Uninstall(mod.Id);
+
+            Assert.False(result.Success);
+            Assert.Contains(filePath, result.FailedFiles);
+            Assert.Contains(mod, lib.Mods);
+            Assert.True(File.Exists(filePath));
+        }
+        finally
+        {
+            try { if (Directory.Exists(tempRoot)) Directory.Delete(tempRoot, recursive: true); } catch { }
+        }
+    }
+
     // ── Search ────────────────────────────────────────────────────────────
 
     [Fact]
