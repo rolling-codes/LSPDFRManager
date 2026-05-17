@@ -90,7 +90,7 @@ When assembling a release ZIP, include only runtime artifacts — strip `build/`
 ## Repository
 
 - Repository: https://github.com/rolling-codes/LSPDFRManager
-- Current release notes: [RELEASE_v3.7.11.md](RELEASE_v3.7.11.md)
+- Current release notes: [RELEASE_v3.8.0.md](RELEASE_v3.8.0.md)
 
 ## Focus Files
 
