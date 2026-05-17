@@ -10,11 +10,13 @@ public class AppConfig
     public static AppConfig Instance => _instance ??= Store.LoadOrDefault(static () => new AppConfig());
 
     public static event Action<string>? GtaPathChanged;
+    public static event Action<double>? UiScaleChanged;
 
     public string GtaPath { get; set; } =
         @"C:\Program Files\Rockstar Games\Grand Theft Auto V";
 
     internal static void NotifyGtaPathChanged(string newPath) => GtaPathChanged?.Invoke(newPath);
+    internal static void NotifyUiScaleChanged(double scale) => UiScaleChanged?.Invoke(scale);
 
     public string BackupPath { get; set; } = Path.Combine(AppDataPaths.Root, "Backups");
 
@@ -61,6 +63,10 @@ public class AppConfig
     // Update Checker
     public bool CheckForUpdatesOnStartup { get; set; }
     public DateTime? LastUpdateCheckUtc { get; set; }
+
+    // Display & Accessibility
+    /// <summary>App-wide UI scale factor. 0.85 = Small, 1.0 = Default, 1.25 = Large, 1.5 = Extra Large.</summary>
+    public double UiScale { get; set; } = 1.0;
 
     // Game Version
     public string? LastKnownGameVersion { get; set; }

@@ -15,6 +15,7 @@
     <converters:ZeroToVisibilityConverter       x:Key="ZeroToVisible"/>
     <converters:NonZeroToVisibilityConverter    x:Key="NonZeroToVisible"/>
     <BooleanToVisibilityConverter               x:Key="BoolToVis"/>
+    <converters:IntEqualityConverter            x:Key="EqualToInt"/>
 
     <Style TargetType="TextBox">
         <Setter Property="Background" Value="{StaticResource Surface}"/>
@@ -437,6 +438,45 @@
             <Trigger Property="IsEnabled" Value="False">
                 <Setter Property="Opacity" Value="0.55"/>
             </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="SegmentedRadio" TargetType="RadioButton">
+        <Setter Property="Background" Value="{StaticResource Surface}"/>
+        <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource Border}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="9">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          Margin="{TemplateBinding Padding}"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsChecked" Value="True">
+                <Setter Property="Background" Value="{StaticResource AccentPrimary}"/>
+                <Setter Property="Foreground" Value="White"/>
+                <Setter Property="BorderBrush" Value="{StaticResource AccentPrimary}"/>
+            </Trigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="IsMouseOver" Value="True"/>
+                    <Condition Property="IsChecked" Value="False"/>
+                </MultiTrigger.Conditions>
+                <Setter Property="Background" Value="{StaticResource CardGradient}"/>
+                <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource AccentPrimary}"/>
+            </MultiTrigger>
         </Style.Triggers>
     </Style>
 

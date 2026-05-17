@@ -1,0 +1,16 @@
+RAGE Plugin Hook version 1.87.1441.15835
+GTA V version 1.0.3258.0
+
+[11/09/2023 17:20:00.100] [INFO] [RAGE Plugin Hook] Loading plugin 'PluginA.dll'...
+[11/09/2023 17:20:00.500] [INFO] [RAGE Plugin Hook] Loaded plugin 'PluginA.dll'.
+[11/09/2023 17:20:05.000] [ERROR] [RAGE Plugin Hook] Exception in plugin 'PluginA.dll':
+System.Exception: Something went wrong in the plugin.
+ ---> System.IO.IOException: Disk read error.
+   at System.IO.File.ReadAllBytes(String path)
+   at PluginA.Config.Load(String path)
+   at PluginA.Core.Initialize()
+   at RAGE.Plugin.Host.PluginThread.DoInit()
+   --- End of inner exception stack trace ---
+   at PluginA.Core.Initialize()
+   at RAGE.Plugin.Host.PluginThread.DoInit()
+[11/09/2023 17:20:05.100] [INFO] [RAGE Plugin Hook] Continuing with remaining plugins.

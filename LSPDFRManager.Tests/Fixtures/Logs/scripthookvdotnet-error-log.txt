@@ -1,0 +1,6 @@
+[17:20:00] [DEBUG] Initializing ScriptHookVDotNet 3.6.0...
+[17:20:00] [DEBUG] Loading scripts from 'scripts' directory...
+[17:20:01] [ERROR] Failed to load script 'MyNetScript.net.dll':
+System.IO.FileNotFoundException: Could not load file or assembly 'NativeUI.dll'.
+   at MyNetScript.ScriptMain..ctor()
+[17:20:01] [WARNING] Skipping 'MyNetScript.net.dll' due to load failure.

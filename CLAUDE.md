@@ -99,3 +99,4 @@ When assembling a release ZIP, include only runtime artifacts — strip `build/`
 @docs/installer-safety.md
 @docs/common-tasks.md
 @docs/troubleshooting.md
+@docs/developer-experience.md

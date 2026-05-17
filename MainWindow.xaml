@@ -16,7 +16,10 @@
         </LinearGradientBrush>
     </Window.Resources>
 
-    <Grid>
+    <Grid x:Name="RootGrid">
+        <Grid.LayoutTransform>
+            <ScaleTransform x:Name="AppScaleTransform" ScaleX="1" ScaleY="1"/>
+        </Grid.LayoutTransform>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="248"/>
             <ColumnDefinition Width="*"/>
@@ -99,6 +102,10 @@
                     <Button Command="{Binding NavigateCommand}" CommandParameter="Oiv">
                         <Button.Content><StackPanel Orientation="Horizontal"><TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE7EE;" FontSize="14" Width="20" TextAlignment="Center"/><TextBlock Text="OIV Tools" FontSize="13" Margin="10,0,0,0"/></StackPanel></Button.Content>
                         <Button.Style><Style TargetType="Button" BasedOn="{StaticResource NavButton}"><Style.Triggers><DataTrigger Binding="{Binding IsOivActive}" Value="True"><Setter Property="Background" Value="{StaticResource AccentActiveBg}"/><Setter Property="BorderBrush" Value="{StaticResource AccentBorder}"/><Setter Property="Foreground" Value="{StaticResource TextStrong}"/><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers></Style></Button.Style>
+                    </Button>
+                    <Button Command="{Binding NavigateCommand}" CommandParameter="DevDiagnostics">
+                        <Button.Content><StackPanel Orientation="Horizontal"><TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE756;" FontSize="14" Width="20" TextAlignment="Center"/><TextBlock Text="Dev Diagnostics" FontSize="13" Margin="10,0,0,0"/></StackPanel></Button.Content>
+                        <Button.Style><Style TargetType="Button" BasedOn="{StaticResource NavButton}"><Style.Triggers><DataTrigger Binding="{Binding IsDevDiagnosticsActive}" Value="True"><Setter Property="Background" Value="{StaticResource AccentActiveBg}"/><Setter Property="BorderBrush" Value="{StaticResource AccentBorder}"/><Setter Property="Foreground" Value="{StaticResource TextStrong}"/><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers></Style></Button.Style>
                     </Button>
                 </StackPanel>
 

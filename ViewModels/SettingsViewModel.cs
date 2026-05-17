@@ -20,10 +20,20 @@ public class SettingsViewModel : ObservableObject
     private bool _deleteTempAfterInstall = AppConfig.Instance.DeleteTempAfterInstall;
     private string _statusMessage = "";
     private bool _isBusy;
+    private int _uiScaleIndex;
+
+    private static readonly double[] ScaleSteps = [0.85, 1.0, 1.25, 1.5];
+
+    private static int ScaleToIndex(double scale) =>
+        ScaleSteps
+            .Select((s, i) => (s, i))
+            .OrderBy(t => Math.Abs(t.s - scale))
+            .First().i;
 
     public SettingsViewModel(LSPDFRManager.Features.Updates.IUpdateController? updateController = null)
     {
         _updateController = updateController ?? new LSPDFRManager.Features.Updates.UpdateWorkflowController();
+        _uiScaleIndex = ScaleToIndex(AppConfig.Instance.UiScale);
 
         BrowseGtaPathCommand = new RelayCommand(BrowseForGtaPath);
         BrowseBackupPathCommand = new RelayCommand(BrowseForBackupPath);
@@ -129,6 +139,20 @@ public class SettingsViewModel : ObservableObject
 
             AppConfig.Instance.DeleteTempAfterInstall = value;
             AppConfig.Instance.Save();
+        }
+    }
+
+    /// <summary>0=Small(85%), 1=Default(100%), 2=Large(125%), 3=ExtraLarge(150%)</summary>
+    public int UiScaleIndex
+    {
+        get => _uiScaleIndex;
+        set
+        {
+            if (!SetProperty(ref _uiScaleIndex, value)) return;
+            var scale = ScaleSteps[Math.Clamp(value, 0, ScaleSteps.Length - 1)];
+            AppConfig.Instance.UiScale = scale;
+            AppConfig.Instance.Save();
+            AppConfig.NotifyUiScaleChanged(scale);
         }
     }
 

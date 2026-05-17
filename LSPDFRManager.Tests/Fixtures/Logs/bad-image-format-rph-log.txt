@@ -1,0 +1,8 @@
+RAGE Plugin Hook version 1.87.1441.15835
+GTA V version 1.0.3258.0
+
+[11/09/2023 17:20:00.100] [INFO] [RAGE Plugin Hook] Loading plugin 'OldMod.dll'...
+[11/09/2023 17:20:00.250] [ERROR] [RAGE Plugin Hook] BadImageFormatException loading 'OldMod.dll': An attempt was made to load a program with an incorrect format.
+System.BadImageFormatException: Could not load file or assembly 'OldMod.dll'. An attempt was made to load a program with an incorrect format.
+   at System.Reflection.RuntimeAssembly.nLoadImage(Byte[] rawAssembly, ...)
+[11/09/2023 17:20:00.300] [ERROR] [RAGE Plugin Hook] Plugin 'OldMod.dll' aborted!

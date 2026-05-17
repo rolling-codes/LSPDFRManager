@@ -1,0 +1,8 @@
+This file has no standard timestamps and contains garbage lines.
+=== partial session ===
+>>>RAGE Plugin Hook startup<<<
+[INVALID TIMESTAMP] [ERROR] something went wrong
+   continuation without a parent entry
+Could not load file or assembly 'Broken.dll'
+   at Broken.Loader.Init()
+<truncated>

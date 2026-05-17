@@ -144,6 +144,10 @@
                                         Command="{Binding ToggleRawEditorCommand}"/>
                             </StackPanel>
                             <StackPanel>
+                                <TextBlock Text="{Binding SelectedConfig.ModName}"
+                                           Foreground="{StaticResource TextMuted}"
+                                           FontSize="11" FontWeight="SemiBold"
+                                           TextTrimming="CharacterEllipsis"/>
                                 <TextBlock Text="{Binding SelectedConfig.ConfigFileName}"
                                            Foreground="{StaticResource TextPrimary}"
                                            FontSize="14" FontWeight="SemiBold"/>
@@ -329,6 +333,10 @@
                                         Padding="12,6"/>
                             </StackPanel>
                             <StackPanel>
+                                <TextBlock Text="{Binding SelectedConfig.ModName}"
+                                           Foreground="{StaticResource TextMuted}"
+                                           FontSize="11" FontWeight="SemiBold"
+                                           TextTrimming="CharacterEllipsis"/>
                                 <TextBlock Text="{Binding SelectedConfig.ConfigFileName}"
                                            Foreground="{StaticResource TextPrimary}"
                                            FontSize="14" FontWeight="SemiBold"/>

@@ -46,6 +46,9 @@
             <DataTemplate DataType="{x:Type vm:OivViewModel}">
                 <views:OivView/>
             </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:DevDiagnosticsViewModel}">
+                <views:DevDiagnosticsView/>
+            </DataTemplate>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

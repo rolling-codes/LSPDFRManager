@@ -1,0 +1,6 @@
+// ScriptHookV log
+// GTA V version: 1.0.3258.0
+// ScriptHookV version: 1.0.3258.0
+
+CORE: v1.0.3258.0, state: 3
+CORE: ERROR loading 'MyAsiMod.asi', incompatible game version

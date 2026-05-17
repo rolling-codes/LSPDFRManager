@@ -80,6 +80,53 @@ public class DiagnosticsOrchestrator
         var doctorFindings = await Task.Run(async () => await new SetupDoctorService().RunAsync(ct), ct);
         findings.AddRange(doctorFindings.Where(f => f.Severity != DiagnosticSeverity.Ok));
 
+        ct.ThrowIfCancellationRequested();
+        progress?.Report("Scanning RAGE/RPH logs…");
+        var rageSessions = await Task.Run(() => new RageLogScanner().ScanAll(), ct);
+        foreach (var session in rageSessions)
+        {
+            foreach (var rf in session.Findings)
+            {
+                findings.Add(new DiagnosticFinding
+                {
+                    Category = "Log Analysis",
+                    Title = rf.Title,
+                    Detail = rf.Explanation +
+                             (rf.AffectedPlugin is not null ? $" Plugin: {rf.AffectedPlugin}." : "") +
+                             (rf.MissingDependency is not null ? $" Missing: {rf.MissingDependency}." : ""),
+                    RecommendedFix = string.Join(" ", rf.SuggestedFixes),
+                    AffectedPath = session.SourceLog,
+                    Severity = rf.Severity switch
+                    {
+                        CrashLogSeverity.Fatal   => DiagnosticSeverity.Critical,
+                        CrashLogSeverity.Error   => DiagnosticSeverity.Error,
+                        CrashLogSeverity.Warning => DiagnosticSeverity.Warning,
+                        _                        => DiagnosticSeverity.Info,
+                    },
+                    Confidence = 1.0f,
+                });
+            }
+        }
+
+        // DLL duplicate scan
+        ct.ThrowIfCancellationRequested();
+        progress?.Report("Scanning for duplicate DLLs…");
+        var dllDups = await Task.Run(() => new DllDuplicateScanner().Scan(), ct);
+        foreach (var dup in dllDups)
+        {
+            var sev = dup.IsKnownSharedDep ? DiagnosticSeverity.Warning : DiagnosticSeverity.Info;
+            findings.Add(new DiagnosticFinding
+            {
+                Category = "Dependencies",
+                Title = $"Duplicate DLL: {dup.DllName} ({dup.Count} copies)",
+                Detail = $"Found in: {string.Join(", ", dup.Copies)}",
+                RecommendedFix = "Keep only one copy of this DLL. Plugin-bundled copies can cause version conflicts.",
+                AffectedPath = dup.Copies.Count > 0 ? dup.Copies[0] : null,
+                Severity = sev,
+                Confidence = 1.0f,
+            });
+        }
+
         AppConfig.Instance.LastDiagnosticsScanUtc = DateTime.UtcNow;
         AppConfig.Instance.Save();
 

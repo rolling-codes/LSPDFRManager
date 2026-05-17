@@ -5,9 +5,12 @@ using LSPDFRManager.Services;
 namespace LSPDFRManager.ViewModels;
 
 /// <summary>
-/// Manages plugin configuration files (.ini, .xml, .cfg, .meta) for installed mods.
+/// Manages plugin configuration files (.ini, .xml, .cfg, .meta, .json) for installed mods.
 /// Replaces the old "Keys" tab — LSPDFR has no software key system; this instead
 /// lets users view, edit, and snapshot the config files their mods use.
+/// HTML/HTM files are intentionally excluded: no GTA V plugin uses HTML config files,
+/// and the raw editor is a plain TextBox (no script execution risk), but admitting
+/// arbitrary HTML would be misleading — users should open those in a browser.
 /// </summary>
 public class ConfigViewModel : ObservableObject
 {
