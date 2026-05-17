@@ -21,15 +21,15 @@ dotnet publish LSPDFRManager.csproj -c Release -r win-x64 --self-contained true 
 
 **Build release ZIP (framework-dependent)** — update version number as needed
 ```bash
-dotnet publish LSPDFRManager.csproj -c Release -r win-x64 --self-contained false -o publish/v3.7.11 -p:DebugType=None -p:DebugSymbols=false
-New-Item -ItemType Directory -Path release-package/LSPDFRManager-v3.7.11 -Force
-Copy-Item -Path publish/v3.7.11/* -Destination release-package/LSPDFRManager-v3.7.11 -Recurse
-Compress-Archive -Path release-package/LSPDFRManager-v3.7.11 -DestinationPath LSPDFRManager-v3.7.11-win-x64.zip
+dotnet publish LSPDFRManager.csproj -c Release -r win-x64 --self-contained false -o publish/v3.7.12 -p:DebugType=None -p:DebugSymbols=false
+New-Item -ItemType Directory -Path release-package/LSPDFRManager-v3.7.12 -Force
+Copy-Item -Path publish/v3.7.12/* -Destination release-package/LSPDFRManager-v3.7.12 -Recurse
+Compress-Archive -Path release-package/LSPDFRManager-v3.7.12 -DestinationPath LSPDFRManager-v3.7.12-win-x64.zip
 ```
 
 > **If `dotnet publish` fails with WPF temp-file copy errors** (race with the IDE holding `obj/`), use msbuild directly:
 > ```bash
-> dotnet msbuild LSPDFRManager.csproj -t:Publish -p:Configuration=Release -p:RuntimeIdentifier=win-x64 -p:SelfContained=false -p:PublishDir=publish/v3.7.11 -p:DebugType=None -p:DebugSymbols=false
+> dotnet msbuild LSPDFRManager.csproj -t:Publish -p:Configuration=Release -p:RuntimeIdentifier=win-x64 -p:SelfContained=false -p:PublishDir=publish/v3.7.12 -p:DebugType=None -p:DebugSymbols=false
 > ```
 
 ## Testing
@@ -61,6 +61,8 @@ dotnet test -v detailed
 - Nullable reference types enabled: `string?` for nullable, `string` for non-null
 - Singletons (`AppConfig`, `ModLibraryService`, `TransactionService`) must be reset in tests — call `Instance = null` / `AppDataPaths.OverrideRoot()` before and after each test class
 - No mocking of file I/O or singletons in tests — use real temp directories and JSON serialization
+- Tests that touch `AppConfig` or `AppDataPaths` must use `CommandCenterTestBase` (in `TestBase.cs`) or the `[Collection("CommandCenter")]` attribute — singleton tests are serialized to prevent races
+- Architecture boundaries are enforced by `ArchitectureGuardTests`: ViewModels may not call `.Enqueue(`, `.EnqueueAsync(`, or `FileInstaller.` directly
 
 ## Installer Safety (Hard Constraint)
 
@@ -90,7 +92,49 @@ When assembling a release ZIP, include only runtime artifacts — strip `build/`
 ## Repository
 
 - Repository: https://github.com/rolling-codes/LSPDFRManager
-- Current release notes: [RELEASE_v3.8.0.md](RELEASE_v3.8.0.md)
+- Current release notes: [RELEASE_v3.7.12.md](RELEASE_v3.7.12.md)
+
+## New Feature Slices
+
+Scaffold a new feature slice with:
+```powershell
+.\tools\New-FeatureSlice.ps1 -Name <FeatureName>
+.\tools\New-FeatureSlice.ps1 -Name <FeatureName> -WithArchitectureTest
+```
+
+Structure: `Features/<Name>/I<Name>Controller.cs`, `<Name>WorkflowController.cs`, `<Name>FeatureModule.cs`. See [docs/feature-slice-template.md](docs/feature-slice-template.md) for the full skeleton.
+
+## Smart-Feature Platform
+
+LSPDFR Manager v3.7.12 includes a smart-feature platform for rule-based, testable, diagnosable features. Before adding a new smart feature, check whether it belongs in the existing feature-flag, rule-engine, diagnostics, support-bundle, or controller orchestration patterns instead of creating a new standalone service.
+
+Key platform pieces:
+
+- `FeatureFlagService` — controls non-trivial and experimental features.
+- Rule engine — implements deterministic smart checks through testable rules.
+- `IniLinterService` — validates `.ini`, `.cfg`, `.xml`, `.json`, and `.meta` configuration files.
+- `DllDuplicateScanner` — detects duplicate/shared dependency DLLs across install locations.
+- `ModHealthScoringService` — produces per-mod health verdicts.
+- `SupportBundleService` — exports sanitized diagnostic bundles for triage.
+- `PatrolReadinessController` — orchestrates readiness scoring and issue aggregation.
+- `SafeModeController` — orchestrates safe-launch planning and execution.
+
+Do not bypass these systems when adding related functionality. New smart features should be feature-flagged, rule-based where appropriate, emit diagnostics, be represented in support bundles when useful, and keep orchestration in controllers rather than ViewModels.
+
+## Release EXE Gate
+
+Every milestone ends with a release EXE validation pass. The release is not done until the built EXE launches cleanly, core dashboards work, support bundle export works, and the artifact is attached to the GitHub release.
+
+Full checklist: [docs/release-gate.md](docs/release-gate.md)
+
+**Quick sequence:**
+1. Freeze feature work
+2. `dotnet test` — all pass, including `ArchitectureGuardTests`
+3. Build Release and package artifact
+4. Launch the packaged EXE on a clean machine — verify startup, navigation, Patrol Readiness, Diagnostics, Support Bundle export
+5. Tag, upload artifact to GitHub release, confirm milestone issues are closed
+
+**If there is a problem — do not keep stacking changes.** Fix only the release blocker, rebuild the EXE, retest the artifact, update release notes, then ship.
 
 ## Focus Files
 
@@ -100,3 +144,4 @@ When assembling a release ZIP, include only runtime artifacts — strip `build/`
 @docs/common-tasks.md
 @docs/troubleshooting.md
 @docs/developer-experience.md
+@docs/release-gate.md

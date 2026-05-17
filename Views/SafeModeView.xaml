@@ -1,0 +1,141 @@
+<UserControl x:Class="LSPDFRManager.Views.SafeModeView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:LSPDFRManager.ViewModels">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="Safe Mode Builder" Style="{StaticResource SectionHeader}" FontSize="22"/>
+            <TextBlock Text="Disable selected plugins before launching to isolate crashes."
+                       Foreground="{StaticResource TextMuted}" FontSize="13" Margin="0,4,0,0"/>
+        </StackPanel>
+
+        <!-- Body -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+
+                <!-- Mode selector (Idle or Confirming) -->
+                <Border Style="{StaticResource CardBorder}" Margin="0,0,0,12"
+                        Visibility="{Binding IsIdle, Converter={StaticResource BoolToVis}}">
+                    <StackPanel>
+                        <TextBlock Text="SELECT MODE" Style="{StaticResource FieldLabel}" Margin="0,0,0,8"/>
+                        <ListBox ItemsSource="{x:Static vm:SafeModeViewModel.Modes}"
+                                 SelectedItem="{Binding SelectedMode}"
+                                 BorderThickness="0" Background="Transparent">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Margin="4,6">
+                                        <TextBlock Text="{Binding Label}" FontWeight="Bold"
+                                                   Foreground="{StaticResource TextStrong}" FontSize="13"/>
+                                        <TextBlock Text="{Binding Description}" TextWrapping="Wrap"
+                                                   Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <Button Content="Preview Changes" Style="{StaticResource PrimaryButton}"
+                                Command="{Binding PreviewCommand}" Margin="0,12,0,0"
+                                HorizontalAlignment="Left"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Confirming phase: preview panel + apply row -->
+                <Border Style="{StaticResource CardBorder}" Margin="0,0,0,12"
+                        Visibility="{Binding IsConfirming, Converter={StaticResource BoolToVis}}">
+                    <StackPanel>
+                        <!-- Files to be disabled -->
+                        <StackPanel Visibility="{Binding HasPlanChanges, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="FILES TO BE DISABLED" Style="{StaticResource FieldLabel}" Margin="0,0,0,8"/>
+                            <ItemsControl ItemsSource="{Binding PlanChanges}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding}" Foreground="{StaticResource TextPrimary}"
+                                                   FontSize="12" Margin="0,2"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="{Binding PlanSummaryText}" Foreground="{StaticResource TextMuted}"
+                                       FontSize="12" Margin="0,8,0,0"/>
+                        </StackPanel>
+
+                        <!-- Empty notice -->
+                        <TextBlock Text="No files matched — nothing to disable."
+                                   Foreground="{StaticResource WarningText}" FontSize="13"
+                                   Visibility="{Binding HasPlanChanges, Converter={StaticResource InverseBoolToVis}}"/>
+
+                        <!-- Apply / Back row -->
+                        <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                            <Button Content="Apply Safe Mode" Style="{StaticResource PrimaryButton}"
+                                    Command="{Binding ConfirmApplyCommand}" Margin="0,0,8,0"/>
+                            <Button Content="Back" Style="{StaticResource GhostButton}"
+                                    Command="{Binding ResetCommand}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Progress log (Applying or Done) -->
+                <Border Style="{StaticResource CardBorder}" Margin="0,0,0,12">
+                    <Border.Visibility>
+                        <MultiBinding Converter="{StaticResource AnyBoolToVis}">
+                            <Binding Path="IsApplying"/>
+                            <Binding Path="IsDone"/>
+                        </MultiBinding>
+                    </Border.Visibility>
+                    <StackPanel>
+                        <TextBlock Text="PROGRESS" Style="{StaticResource FieldLabel}" Margin="0,0,0,8"/>
+                        <ItemsControl ItemsSource="{Binding ProgressLog}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" FontFamily="Consolas" FontSize="12"
+                                               Foreground="{StaticResource TextPrimary}" Margin="0,1"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- Result banner (Done) -->
+                <Border Margin="0,0,0,12" CornerRadius="8" Padding="14,12" BorderThickness="1"
+                        Visibility="{Binding IsDone, Converter={StaticResource BoolToVis}}">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Background" Value="{StaticResource WarningBackground}"/>
+                            <Setter Property="BorderBrush" Value="{StaticResource DangerRed}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ResultIsSuccess}" Value="True">
+                                    <Setter Property="Background" Value="#112211"/>
+                                    <Setter Property="BorderBrush" Value="{StaticResource SuccessGreen}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <StackPanel>
+                        <TextBlock Text="{Binding ResultMessage}" FontSize="13" FontWeight="SemiBold"
+                                   TextWrapping="Wrap" Foreground="{StaticResource TextStrong}"/>
+                        <TextBlock Text="{Binding RestorePointHint}" Foreground="{StaticResource TextMuted}"
+                                   FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                        <Button Content="Reset / New Safe Mode" Style="{StaticResource GhostButton}"
+                                Command="{Binding ResetCommand}" Margin="0,10,0,0" HorizontalAlignment="Left"/>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Status bar -->
+        <Border Grid.Row="2" Padding="0,8,0,0">
+            <StackPanel>
+                <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource TextMuted}" FontSize="12"/>
+                <ProgressBar IsIndeterminate="True" Height="3" Margin="0,4,0,0"
+                             Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

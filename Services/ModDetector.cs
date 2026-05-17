@@ -43,7 +43,7 @@ public class ModDetector
         new(ModType.AsiMod,         "ASI Mod",             "#8B5CF6",
             [],
             [".asi"],
-            ["asi", "hook", "trainer"]),
+            ["asi", "trainer"]),
         new(ModType.Script,         "Script (CS/VB)",      "#10B981",
             ["scripts"],
             [".cs", ".vb", ".lua"],

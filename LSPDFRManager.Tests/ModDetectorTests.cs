@@ -119,7 +119,7 @@ public class ModDetectorTests : IDisposable
     [Fact]
     public void Detect_ZipWithAsi_ReturnsAsiMod()
     {
-        var zip = MakeZip("scripthook", "ScriptHookV.asi", "ScriptHookV.dll");
+        var zip = MakeZip("trainer", "SimpleTrainer.asi");
         var info = _detector.Detect(zip);
         Assert.Equal(ModType.AsiMod, info.Type);
     }
