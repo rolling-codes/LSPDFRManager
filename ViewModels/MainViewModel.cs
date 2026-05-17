@@ -71,6 +71,7 @@ public class MainViewModel : ObservableObject
     public SettingsViewModel SettingsVM { get; } = new();
     public OivViewModel OivVM { get; } = new();
     public DevDiagnosticsViewModel DevDiagnosticsVM { get; } = new();
+    public PatrolReadinessDashboardViewModel PatrolReadinessVM { get; } = new();
 
     public LspdfrStatusService Status { get; } = LspdfrStatusService.Instance;
 
@@ -119,7 +120,8 @@ public class MainViewModel : ObservableObject
     public bool IsSettingsActive    => _activePage == "Settings";
     public bool IsModConfigActive   => _activePage == "ModConfig";
     public bool IsOivActive         => _activePage == "Oiv";
-    public bool IsDevDiagnosticsActive => _activePage == "DevDiagnostics";
+    public bool IsDevDiagnosticsActive    => _activePage == "DevDiagnostics";
+    public bool IsPatrolReadinessActive   => _activePage == "PatrolReadiness";
 
     public ICommand NavigateCommand { get; }
     public ICommand LaunchLspdfrCommand { get; }
@@ -142,8 +144,9 @@ public class MainViewModel : ObservableObject
             "Logs"        => LogViewerVM,
             "Settings"    => SettingsVM,
             "Oiv"            => OivVM,
-            "DevDiagnostics" => DevDiagnosticsVM,
-            _                => DashboardVM,
+            "DevDiagnostics"  => DevDiagnosticsVM,
+            "PatrolReadiness" => PatrolReadinessVM,
+            _                 => DashboardVM,
         };
 
         OnPropertyChanged(nameof(IsHomeActive));
@@ -159,6 +162,7 @@ public class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(IsModConfigActive));
         OnPropertyChanged(nameof(IsOivActive));
         OnPropertyChanged(nameof(IsDevDiagnosticsActive));
+        OnPropertyChanged(nameof(IsPatrolReadinessActive));
     }
 
     private void LaunchLspdfr()

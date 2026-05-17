@@ -1,0 +1,272 @@
+<UserControl x:Class="LSPDFRManager.Views.PatrolReadinessDashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:domain="clr-namespace:LSPDFRManager.Domain"
+             Background="{StaticResource Bg}"
+             FontFamily="Segoe UI">
+
+    <UserControl.Resources>
+        <!-- Status badge colour triggers keyed off PatrolReadinessState -->
+        <Style x:Key="StatusBadge" TargetType="Border">
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="20,10"/>
+            <Setter Property="Background" Value="{StaticResource BgCard}"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>   <!-- header + badge -->
+            <RowDefinition Height="*"/>      <!-- issue lists -->
+            <RowDefinition Height="Auto"/>   <!-- status bar -->
+        </Grid.RowDefinitions>
+
+        <!-- ── Header ──────────────────────────────────────────────────────── -->
+        <StackPanel Grid.Row="0" Margin="28,24,28,0">
+            <TextBlock Text="Patrol Readiness" Style="{StaticResource SectionHeader}" Margin="0,0,0,2"/>
+            <TextBlock Text="Pre-flight check before launching LSPDFR."
+                       Foreground="{StaticResource TextMuted}" FontSize="13" Margin="0,0,0,20"/>
+
+            <!-- Status badge + actions row -->
+            <Grid Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Badge -->
+                <Border Grid.Column="0" CornerRadius="12" Padding="20,14" HorizontalAlignment="Left">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Background" Value="{StaticResource BgCard}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsReady}" Value="True">
+                                    <Setter Property="Background" Value="#0D2B1A"/>
+                                    <Setter Property="BorderBrush" Value="{StaticResource SuccessGreen}"/>
+                                    <Setter Property="BorderThickness" Value="1"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsWarning}" Value="True">
+                                    <Setter Property="Background" Value="{StaticResource WarningBackground}"/>
+                                    <Setter Property="BorderBrush" Value="{StaticResource WarningBorder}"/>
+                                    <Setter Property="BorderThickness" Value="1"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsNotReady}" Value="True">
+                                    <Setter Property="Background" Value="#2B0D0D"/>
+                                    <Setter Property="BorderBrush" Value="{StaticResource DangerRed}"/>
+                                    <Setter Property="BorderThickness" Value="1"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding StatusEmoji}" FontSize="22" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <StackPanel>
+                            <TextBlock Text="{Binding StatusLabel}" FontSize="16" FontWeight="SemiBold">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsReady}" Value="True">
+                                                <Setter Property="Foreground" Value="{StaticResource SuccessGreen}"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsWarning}" Value="True">
+                                                <Setter Property="Foreground" Value="{StaticResource WarningText}"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsNotReady}" Value="True">
+                                                <Setter Property="Foreground" Value="{StaticResource DangerRed}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TextBlock Text="{Binding ScannedAtText}" Foreground="{StaticResource TextMuted}"
+                                       FontSize="11" Margin="0,2,0,0"/>
+                        </StackPanel>
+                        <Border Width="1" Background="{StaticResource Border}" Margin="16,0" VerticalAlignment="Stretch"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding ScoreText}" FontSize="22" FontWeight="Bold"
+                                       Foreground="{StaticResource TextPrimary}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Score" Foreground="{StaticResource TextMuted}"
+                                       FontSize="10" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Action buttons -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Style="{StaticResource PrimaryButton}" Content="Scan Now"
+                            Command="{Binding ScanCommand}" Margin="0,0,8,0" Padding="20,10"/>
+                    <Button Style="{StaticResource GhostButton}" Content="Mark Known-Good"
+                            Command="{Binding MarkKnownGoodCommand}" Margin="0,0,8,0" Padding="16,10"/>
+                    <Button Style="{StaticResource GhostButton}" Content="Export Bundle"
+                            Command="{Binding ExportBundleCommand}" Padding="16,10"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Known-good diff banner -->
+            <Border Visibility="{Binding HasKnownGoodDiff, Converter={StaticResource BoolToVis}}"
+                    Background="{StaticResource WarningBackground}"
+                    BorderBrush="{StaticResource WarningBorder}" BorderThickness="1"
+                    CornerRadius="6" Padding="12,8" Margin="0,0,0,12">
+                <TextBlock Foreground="{StaticResource WarningText}" FontSize="12">
+                    <Run FontFamily="Segoe MDL2 Assets" Text="&#xE7BA;"/>
+                    <Run Text="  "/>
+                    <Run Text="{Binding KnownGoodDiffText}"/>
+                </TextBlock>
+            </Border>
+        </StackPanel>
+
+        <!-- ── Issue lists ──────────────────────────────────────────────────── -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="28,0,28,0">
+            <StackPanel>
+
+                <!-- Blocking Issues -->
+                <StackPanel Visibility="{Binding HasBlockingIssues, Converter={StaticResource BoolToVis}}"
+                            Margin="0,0,0,16">
+                    <TextBlock Foreground="{StaticResource DangerRed}" FontSize="12" FontWeight="SemiBold"
+                               Margin="0,0,0,6">
+                        <Run Text="BLOCKING ISSUES ("/>
+                        <Run Text="{Binding BlockingIssues.Count, Mode=OneWay}"/>
+                        <Run Text=")"/>
+                    </TextBlock>
+                    <ItemsControl ItemsSource="{Binding BlockingIssues}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type domain:InstallIssue}">
+                                <Border Background="{StaticResource BgCard}" BorderBrush="{StaticResource DangerRed}"
+                                        BorderThickness="0,0,0,1" Padding="12,10" Margin="0,0,0,2">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="✖" Foreground="{StaticResource DangerRed}"
+                                                   FontSize="13" Margin="0,0,10,0" VerticalAlignment="Top"/>
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock Text="{Binding Title}" Foreground="{StaticResource TextStrong}"
+                                                       FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding Detail}" Foreground="{StaticResource TextMuted}"
+                                                       FontSize="11" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                            <ItemsControl ItemsSource="{Binding Fixes}" Margin="0,4,0,0">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock FontSize="11" TextWrapping="Wrap"
+                                                                   Foreground="{StaticResource TextMuted}">
+                                                            <Run Text="→ "/>
+                                                            <Run Text="{Binding Text}"/>
+                                                        </TextBlock>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <!-- Warnings -->
+                <StackPanel Visibility="{Binding HasWarnings, Converter={StaticResource BoolToVis}}"
+                            Margin="0,0,0,16">
+                    <TextBlock Foreground="{StaticResource WarningText}" FontSize="12" FontWeight="SemiBold"
+                               Margin="0,0,0,6">
+                        <Run Text="WARNINGS ("/>
+                        <Run Text="{Binding Warnings.Count, Mode=OneWay}"/>
+                        <Run Text=")"/>
+                    </TextBlock>
+                    <ItemsControl ItemsSource="{Binding Warnings}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type domain:InstallIssue}">
+                                <Border Background="{StaticResource BgCard}"
+                                        BorderBrush="{StaticResource WarningBorder}" BorderThickness="0,0,0,1"
+                                        Padding="12,10" Margin="0,0,0,2">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="⚠" Foreground="{StaticResource WarningText}"
+                                                   FontSize="13" Margin="0,0,10,0" VerticalAlignment="Top"/>
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock Text="{Binding Title}" Foreground="{StaticResource TextStrong}"
+                                                       FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding Detail}" Foreground="{StaticResource TextMuted}"
+                                                       FontSize="11" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <!-- Info / passing -->
+                <StackPanel Visibility="{Binding HasInfo, Converter={StaticResource BoolToVis}}"
+                            Margin="0,0,0,16">
+                    <TextBlock Foreground="{StaticResource TextMuted}" FontSize="12" FontWeight="SemiBold"
+                               Margin="0,0,0,6">
+                        <Run Text="INFO ("/>
+                        <Run Text="{Binding Info.Count, Mode=OneWay}"/>
+                        <Run Text=")"/>
+                    </TextBlock>
+                    <ItemsControl ItemsSource="{Binding Info}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type domain:InstallIssue}">
+                                <Border Background="{StaticResource BgCard}"
+                                        BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1"
+                                        Padding="12,10" Margin="0,0,0,2">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="ℹ" Foreground="{StaticResource TextMuted}"
+                                                   FontSize="13" Margin="0,0,10,0" VerticalAlignment="Top"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Title}"
+                                                   Foreground="{StaticResource TextMuted}" FontSize="12"
+                                                   TextWrapping="Wrap"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <!-- Empty state: not yet scanned -->
+                <StackPanel HorizontalAlignment="Center" Margin="0,60,0,0">
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasScanned}" Value="False">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    <TextBlock Text="No scan results yet." Foreground="{StaticResource TextMuted}"
+                               FontSize="14" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Press Scan Now to check your setup."
+                               Foreground="{StaticResource TextMuted}" FontSize="12"
+                               HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ── Status bar ───────────────────────────────────────────────────── -->
+        <Border Grid.Row="2" Background="{StaticResource BgCard}" BorderBrush="{StaticResource Border}"
+                BorderThickness="0,1,0,0" Padding="28,8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="{Binding StatusMessage}"
+                           Foreground="{StaticResource TextMuted}" FontSize="12" VerticalAlignment="Center"/>
+                <ProgressBar Grid.Column="1" IsIndeterminate="True" Width="120" Height="4"
+                             Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"/>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

@@ -49,6 +49,9 @@
             <DataTemplate DataType="{x:Type vm:DevDiagnosticsViewModel}">
                 <views:DevDiagnosticsView/>
             </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:PatrolReadinessDashboardViewModel}">
+                <views:PatrolReadinessDashboardView/>
+            </DataTemplate>
         </ResourceDictionary>
     </Application.Resources>
 </Application>
