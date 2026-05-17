@@ -12,10 +12,11 @@ public class RecipeValidatorService
         {
             Name = "LSPDFR Core",
             Type = ModType.LspdfrPlugin,
-            ExpectedFiles = ["plugins/LSPDFR.dll"],
-            ExpectedFolders = ["plugins/lspdfr"],
+            ExpectedFiles = ["plugins/LSPD First Response.dll"],
+            ExpectedFolders = ["lspdfr"],
             Dependencies = ["RAGEPluginHook.exe", "ScriptHookV.dll", "dinput8.dll"],
-            HelpText = "LSPDFR.dll must be in the plugins/ folder, not plugins/lspdfr/.",
+            CommonWrongPaths = ["plugins/LSPDFR.dll", "plugins/lspdfr/LSPDFR.dll"],
+            HelpText = "LSPDFR core is normally plugins/LSPD First Response.dll with the lspdfr/ support folder in the GTA V root.",
         },
         new ModTypeRecipe
         {
@@ -137,6 +138,9 @@ public class RecipeValidatorService
     {
         var isErrorRecipe = ErrorOnMissingRecipes.Contains(recipe.Name);
 
+        if (recipe.Name == "LSPDFR Core" && LspdfrInstallLocator.FindLspdfrCore(_gtaPath) is not null)
+            return;
+
         foreach (var relPath in recipe.ExpectedFiles)
         {
             bool exists;
@@ -162,6 +166,9 @@ public class RecipeValidatorService
     // B. Missing expected folders
     private void CheckMissingFolders(ModTypeRecipe recipe, List<DiagnosticFinding> findings)
     {
+        if (recipe.Name == "LSPDFR Core" && LspdfrInstallLocator.FindLspdfrFolder(_gtaPath) is not null)
+            return;
+
         foreach (var relFolder in recipe.ExpectedFolders)
         {
             bool exists;

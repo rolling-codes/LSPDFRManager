@@ -50,7 +50,7 @@ public class DashboardViewModel : ObservableObject
         OpenLogsFolderCommand = new RelayCommand(OpenLogsFolder);
         LaunchGtaCommand = new RelayCommand(LaunchGta);
         LaunchRphCommand = new RelayCommand(LaunchRph);
-        RefreshCommand = new RelayCommand(() => Status.Refresh());
+        RefreshCommand = new RelayCommand(() => _ = RefreshDashboardAsync());
 
         Compatibility.PropertyChanged += (_, _) => OnPropertyChanged(nameof(CompatibilityRows));
 
@@ -99,6 +99,15 @@ public class DashboardViewModel : ObservableObject
         StartShellProcess("explorer.exe", path, "Could not open GTA V folder.");
     }
 
+    private async Task RefreshDashboardAsync()
+    {
+        Status.Refresh();
+        await Compatibility.RefreshAsync();
+        await Readiness.CheckAsync();
+        OnPropertyChanged(nameof(CompatibilityRows));
+        StatusMessage = "Status refreshed.";
+    }
+
     private void OpenLogsFolder()
     {
         StartShellProcess("explorer.exe", AppDataPaths.Root, "Could not open logs folder.");
@@ -106,17 +115,17 @@ public class DashboardViewModel : ObservableObject
 
     private void LaunchGta()
     {
-        var exe = Path.Combine(AppConfig.Instance.GtaPath, "GTA5.exe");
-        if (File.Exists(exe))
+        var exe = LspdfrInstallLocator.FindGtaExe(AppConfig.Instance.GtaPath);
+        if (exe is not null)
             StartShellProcess(exe, AppConfig.Instance.GtaPath, "Could not launch GTA V.");
         else
-            StatusMessage = "GTA5.exe was not found.";
+            StatusMessage = "GTA executable was not found.";
     }
 
     private void LaunchRph()
     {
-        var exe = Path.Combine(AppConfig.Instance.GtaPath, "RAGEPluginHook.exe");
-        if (File.Exists(exe))
+        var exe = LspdfrInstallLocator.FindRagePluginHook(AppConfig.Instance.GtaPath);
+        if (exe is not null)
             StartShellProcess(exe, AppConfig.Instance.GtaPath, "Could not launch RAGE Plugin Hook.");
         else
             StatusMessage = "RAGEPluginHook.exe was not found.";

@@ -18,9 +18,9 @@ public class VersionDetectorService
 
     private static VersionBundle Detect(string gtaPath)
     {
-        var gta5      = Path.Combine(gtaPath, "GTA5.exe");
-        var lspdfr    = Path.Combine(gtaPath, "plugins", "LSPDFR.dll");
-        var rph       = Path.Combine(gtaPath, "RAGEPluginHook.exe");
+        var gta5      = LspdfrInstallLocator.FindGtaExe(gtaPath) ?? Path.Combine(gtaPath, "GTA5.exe");
+        var lspdfr    = LspdfrInstallLocator.FindLspdfrCore(gtaPath);
+        var rph       = LspdfrInstallLocator.FindRagePluginHook(gtaPath);
         var shv       = Path.Combine(gtaPath, "ScriptHookV.dll");
         var shvdnPath = ResolveShvdn(gtaPath);
 
@@ -29,22 +29,22 @@ public class VersionDetectorService
         return new VersionBundle
         {
             GtaPresent             = gta5Info is not null,
-            LspdfrPresent          = File.Exists(lspdfr),
-            RagePluginHookPresent  = File.Exists(rph),
+            LspdfrPresent          = lspdfr is not null || LspdfrInstallLocator.IsLspdfrInstalled(gtaPath),
+            RagePluginHookPresent  = rph is not null,
 
             GtaExeFileSizeBytes    = gta5Info?.Length,
             GtaExeLastWriteTimeUtc = gta5Info?.LastWriteTimeUtc,
 
             GtaVersion             = ReadVersion(gta5),
-            LspdfrVersion          = ReadVersion(lspdfr),
-            RagePluginHookVersion  = ReadVersion(rph),
+            LspdfrVersion          = lspdfr is not null ? ReadVersion(lspdfr) : null,
+            RagePluginHookVersion  = rph is not null ? ReadVersion(rph) : null,
             ScriptHookVVersion     = ReadVersion(shv),
             ScriptHookVDotNetVersion = shvdnPath is not null ? ReadVersion(shvdnPath) : null,
 
             // GTA5.exe is ~100 MB — skip hash (TryComputeHash returns null for files >50 MB)
             GtaHash                = null,
-            LspdfrHash             = TryComputeHash(lspdfr),
-            RagePluginHookHash     = TryComputeHash(rph),
+            LspdfrHash             = lspdfr is not null ? TryComputeHash(lspdfr) : null,
+            RagePluginHookHash     = rph is not null ? TryComputeHash(rph) : null,
             ScriptHookVHash        = TryComputeHash(shv),
             ScriptHookVDotNetHash  = shvdnPath is not null ? TryComputeHash(shvdnPath) : null,
         };

@@ -314,10 +314,10 @@ public class CommandCenterTests : IDisposable
     [Fact]
     public void SetupWizard_FolderExistsButNoExe_ReturnsError()
     {
-        // _gtaDir exists but has no GTA5.exe
+        // _gtaDir exists but has no GTA V executable (GTA5.exe / GTA5_BE.exe / PlayGTAV.exe)
         var error = new SetupWizardService().ValidatePath(_gtaDir);
 
-        Assert.Contains("GTA5.exe", error);
+        Assert.Contains("not found", error, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

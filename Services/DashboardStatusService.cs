@@ -15,15 +15,15 @@ public sealed class DashboardStatusService : INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
     public bool IsGtaPathValid =>
-        File.Exists(Path.Combine(AppConfig.Instance.GtaPath, "GTA5.exe"));
+        LspdfrInstallLocator.IsGtaInstalled(AppConfig.Instance.GtaPath);
 
     public bool IsLspdfrInstalled =>
         IsGtaPathValid &&
-        File.Exists(Path.Combine(AppConfig.Instance.GtaPath, "RAGEPluginHook.exe"));
+        LspdfrInstallLocator.IsLspdfrInstalled(AppConfig.Instance.GtaPath);
 
     public bool IsRagePluginHookInstalled =>
         IsGtaPathValid &&
-        File.Exists(Path.Combine(AppConfig.Instance.GtaPath, "RAGEPluginHook.exe"));
+        LspdfrInstallLocator.IsRagePluginHookInstalled(AppConfig.Instance.GtaPath);
 
     public int EnabledModCount =>
         ModLibraryService.Instance.Mods.Count(m => m.IsEnabled);

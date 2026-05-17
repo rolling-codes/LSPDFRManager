@@ -13,8 +13,8 @@ public class SettingsValidationService
             results.Add(new SettingsValidationResult { SettingName = "GTA V Path", Issue = "Not configured.", SuggestedFix = "Set the GTA V folder in Settings.", IsBlocking = true });
         else if (!Directory.Exists(cfg.GtaPath))
             results.Add(new SettingsValidationResult { SettingName = "GTA V Path", Issue = "Folder does not exist.", SuggestedFix = "Check that the GTA V installation folder is accessible.", IsBlocking = true });
-        else if (!File.Exists(Path.Combine(cfg.GtaPath, "GTA5.exe")))
-            results.Add(new SettingsValidationResult { SettingName = "GTA V Path", Issue = "GTA5.exe not found.", SuggestedFix = "Verify the path points to the GTA V installation folder.", IsBlocking = true });
+        else if (LspdfrInstallLocator.FindGtaExe(cfg.GtaPath) is null)
+            results.Add(new SettingsValidationResult { SettingName = "GTA V Path", Issue = "GTA V executable not found.", SuggestedFix = "Verify the path points to the GTA V installation folder.", IsBlocking = true });
 
         if (string.IsNullOrWhiteSpace(cfg.BackupPath))
             results.Add(new SettingsValidationResult { SettingName = "Backup Path", Issue = "Not configured.", SuggestedFix = "Set a backup folder in Settings.", IsBlocking = false });

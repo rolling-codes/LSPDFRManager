@@ -48,6 +48,24 @@ public class RecipeValidatorTests : IDisposable
     }
 
     [Fact]
+    public void LspdfrOfficialLayout_DoesNotReportCoreMissing()
+    {
+        CreateFile("plugins/LSPD First Response.dll");
+        CreateDir("lspdfr");
+
+        var findings = new RecipeValidatorService(_tempDir).Validate();
+
+        Assert.DoesNotContain(findings, f =>
+            f.Category == "Dependencies" &&
+            f.Title.Contains("LSPDFR Core") &&
+            f.Title.Contains("missing", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(findings, f =>
+            f.Category == "Install" &&
+            f.Title.Contains("LSPDFR Core") &&
+            f.Title.Contains("folder missing", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public void ElsMissingAsi_ReturnsErrorFinding()
     {
         // Only ini and folder, no .asi

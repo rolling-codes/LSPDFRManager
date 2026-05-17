@@ -220,7 +220,7 @@ public class InstallQueue : IDisposable
         if (!AppConfig.Instance.DeleteTempAfterInstall) return;
 
         var tempDownloadDir = Path.Combine(Path.GetTempPath(), "LSPDFRManager_downloads");
-        if (!sourcePath.StartsWith(tempDownloadDir, StringComparison.OrdinalIgnoreCase)) return;
+        if (!IsUnderDirectory(sourcePath, tempDownloadDir)) return;
 
         try
         {
@@ -233,6 +233,23 @@ public class InstallQueue : IDisposable
         catch (Exception ex)
         {
             AppLogger.Error($"[CLEANUP] Could not delete temp source: {sourcePath}", ex);
+        }
+    }
+
+    private static bool IsUnderDirectory(string path, string directory)
+    {
+        try
+        {
+            var fullPath = Path.GetFullPath(path);
+            var fullDirectory = Path.GetFullPath(directory)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) +
+                Path.DirectorySeparatorChar;
+
+            return fullPath.StartsWith(fullDirectory, StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
         }
     }
 

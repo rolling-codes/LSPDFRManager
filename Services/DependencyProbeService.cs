@@ -76,12 +76,13 @@ public sealed class DependencyProbeService : IDependencyProbeService
         if (name.Contains("LSPDFR", StringComparison.OrdinalIgnoreCase) &&
             !name.Contains("RAGE", StringComparison.OrdinalIgnoreCase))
         {
-            // Present if plugins/LSPDFR.dll OR directory plugins/lspdfr exists
-            var dllPath = Path.Combine(gtaPath, "plugins", "LSPDFR.dll");
-            var dirPath = Path.Combine(gtaPath, "plugins", "lspdfr");
             var evidence = new List<string>();
-            if (File.Exists(dllPath)) evidence.Add("plugins/LSPDFR.dll");
-            if (Directory.Exists(dirPath)) evidence.Add("plugins/lspdfr/");
+            var core = LspdfrInstallLocator.FindLspdfrCore(gtaPath);
+            var folder = LspdfrInstallLocator.FindLspdfrFolder(gtaPath);
+            var tool = LspdfrInstallLocator.FindLspdfrTool(gtaPath);
+            if (core is not null) evidence.Add(LspdfrInstallLocator.ToRelativePath(gtaPath, core));
+            if (folder is not null) evidence.Add(LspdfrInstallLocator.ToRelativePath(gtaPath, folder) + "/");
+            if (tool is not null) evidence.Add(LspdfrInstallLocator.ToRelativePath(gtaPath, tool));
 
             if (evidence.Count > 0)
             {
@@ -98,16 +99,18 @@ public sealed class DependencyProbeService : IDependencyProbeService
             {
                 Name = name,
                 Status = DependencyProbeStatus.Missing,
-                Evidence = ["plugins/LSPDFR.dll", "plugins/lspdfr/"],
-                Message = "Not found — plugins/LSPDFR.dll and plugins/lspdfr/ are absent.",
+                Evidence = LspdfrInstallLocator.LspdfrCoreCandidates
+                    .Concat(LspdfrInstallLocator.LspdfrFolderCandidates)
+                    .Concat(LspdfrInstallLocator.LspdfrToolCandidates)
+                    .Select(path => path.Replace('\\', '/'))
+                    .ToList(),
+                Message = "Not found — checked known LSPDFR core DLL, folder, and tool paths.",
             };
         }
 
         if (name.Contains("RAGE Plugin Hook", StringComparison.OrdinalIgnoreCase))
         {
-            return ProbeFiles(name, gtaPath,
-                ["RAGEPluginHook.exe"],
-                anyRequired: true);
+            return ProbeFiles(name, gtaPath, LspdfrInstallLocator.RagePluginHookCandidates, anyRequired: true);
         }
 
         // Unknown dependency type

@@ -89,14 +89,14 @@ public sealed class SetupDoctorService
             }
         }
 
-        var rphExe = Path.Combine(gtaRoot, "RAGEPluginHook.exe");
-        if (!File.Exists(rphExe))
+        var rphExe = LspdfrInstallLocator.FindRagePluginHook(gtaRoot);
+        if (rphExe is null)
             findings.Add(new DiagnosticFinding
             {
                 Category = "RAGE Plugin Hook",
-                Title = "RAGEPluginHook.exe not found in GTA V root.",
+                Title = "RAGEPluginHook.exe not found.",
                 Severity = DiagnosticSeverity.Warning,
-                AffectedPath = rphExe,
+                AffectedPath = Path.Combine(gtaRoot, "RAGEPluginHook.exe"),
                 Confidence = 1.0f,
             });
 
@@ -112,25 +112,25 @@ public sealed class SetupDoctorService
                 Confidence = 1.0f,
             });
 
-        var lspdfrFolder = Path.Combine(gtaRoot, "plugins", "lspdfr");
-        if (!Directory.Exists(lspdfrFolder))
+        var lspdfrFolder = LspdfrInstallLocator.FindLspdfrFolder(gtaRoot);
+        if (lspdfrFolder is null)
             findings.Add(new DiagnosticFinding
             {
                 Category = "LSPDFR",
-                Title = "plugins/lspdfr folder not found.",
+                Title = "LSPDFR folder not found.",
                 Severity = DiagnosticSeverity.Error,
-                AffectedPath = lspdfrFolder,
+                AffectedPath = Path.Combine(gtaRoot, "lspdfr"),
                 Confidence = 1.0f,
             });
 
-        var lspdfrDll = Path.Combine(gtaRoot, "plugins", "LSPDFR.dll");
-        if (!File.Exists(lspdfrDll))
+        var lspdfrDll = LspdfrInstallLocator.FindLspdfrCore(gtaRoot);
+        if (lspdfrDll is null)
             findings.Add(new DiagnosticFinding
             {
                 Category = "LSPDFR",
-                Title = "plugins/LSPDFR.dll not found.",
+                Title = "LSPDFR core DLL not found.",
                 Severity = DiagnosticSeverity.Error,
-                AffectedPath = lspdfrDll,
+                AffectedPath = Path.Combine(gtaRoot, "plugins", "LSPD First Response.dll"),
                 Confidence = 1.0f,
             });
 

@@ -13,7 +13,7 @@ public class StorageUsageAnalyzer
         var folders = new (string Label, string Path)[]
         {
             ("Plugins", Path.Combine(gtaPath, "plugins")),
-            ("LSPDFR", Path.Combine(gtaPath, "plugins", "lspdfr")),
+            ("LSPDFR", LspdfrInstallLocator.FindLspdfrFolder(gtaPath) ?? Path.Combine(gtaPath, "lspdfr")),
             ("Scripts", Path.Combine(gtaPath, "scripts")),
             ("Mods", Path.Combine(gtaPath, "mods")),
             ("ELS", Path.Combine(gtaPath, "ELS")),

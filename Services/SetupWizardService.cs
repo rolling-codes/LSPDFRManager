@@ -54,7 +54,7 @@ public class SetupWizardService
     {
         if (string.IsNullOrWhiteSpace(path)) return "Path is empty.";
         if (!Directory.Exists(path)) return "Folder does not exist.";
-        if (!File.Exists(Path.Combine(path, "GTA5.exe"))) return "GTA5.exe not found in folder.";
+        if (LspdfrInstallLocator.FindGtaExe(path) is null) return "GTA V executable not found in folder.";
         if (path.Contains("OneDrive", StringComparison.OrdinalIgnoreCase)) return "Warning: path is inside OneDrive — may cause issues.";
         if (path.StartsWith(@"C:\Program Files", StringComparison.OrdinalIgnoreCase)) return "Warning: path is inside Program Files — may require admin access.";
         return "";
@@ -67,8 +67,8 @@ public class SetupWizardService
 
         if (!Directory.Exists(path))
             error = "Folder not found.";
-        else if (!File.Exists(Path.Combine(path, "GTA5.exe")))
-            error = "GTA5.exe not found.";
+        else if (LspdfrInstallLocator.FindGtaExe(path) is null)
+            error = "GTA V executable not found.";
         else
             isValid = true;
 

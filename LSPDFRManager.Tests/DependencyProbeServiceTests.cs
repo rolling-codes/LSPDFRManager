@@ -92,9 +92,21 @@ public class DependencyProbeServiceTests : IDisposable
     }
 
     [Fact]
+    public void Lspdfr_Present_WhenOfficialCoreDllExists()
+    {
+        var pluginsDir = Path.Combine(_gtaPath, "plugins");
+        Directory.CreateDirectory(pluginsDir);
+        File.WriteAllText(Path.Combine(pluginsDir, "LSPD First Response.dll"), "");
+        var result = _sut.Probe(_gtaPath, BuildDeps("LSPDFR"));
+        var probe = Assert.Single(result.Probes);
+        Assert.Equal(DependencyProbeStatus.Present, probe.Status);
+        Assert.Contains("plugins/LSPD First Response.dll", probe.Evidence);
+    }
+
+    [Fact]
     public void Lspdfr_Present_WhenDirExists()
     {
-        Directory.CreateDirectory(Path.Combine(_gtaPath, "plugins", "lspdfr"));
+        Directory.CreateDirectory(Path.Combine(_gtaPath, "lspdfr"));
         var result = _sut.Probe(_gtaPath, BuildDeps("LSPDFR"));
         var probe = Assert.Single(result.Probes);
         Assert.Equal(DependencyProbeStatus.Present, probe.Status);

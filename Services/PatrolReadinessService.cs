@@ -52,9 +52,9 @@ public class PatrolReadinessService
             passing.Add("RAGEPluginHook.exe found.");
 
         if (bundle is null || !bundle.LspdfrPresent)
-            blocking.Add("LSPDFR.dll is missing from the plugins folder.");
+            blocking.Add("LSPDFR core files were not found.");
         else
-            passing.Add("LSPDFR.dll found.");
+            passing.Add("LSPDFR core files found.");
 
         // --- Warnings: optional files ---
         if (bundle is not null)

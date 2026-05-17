@@ -28,7 +28,27 @@ public class SetupWizardTests : CommandCenterTestBase
     {
         var error = new SetupWizardService().ValidatePath(GtaDir);
 
-        Assert.Contains("GTA5.exe", error);
+        Assert.Contains("not found", error, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void ValidPath_WithOnlyPlayGTAV_ReturnsEmptyError()
+    {
+        File.WriteAllText(Path.Combine(GtaDir, "PlayGTAV.exe"), "");
+
+        var error = new SetupWizardService().ValidatePath(GtaDir);
+
+        Assert.Equal("", error);
+    }
+
+    [Fact]
+    public void ValidPath_WithOnlyGTA5BE_ReturnsEmptyError()
+    {
+        File.WriteAllText(Path.Combine(GtaDir, "GTA5_BE.exe"), "");
+
+        var error = new SetupWizardService().ValidatePath(GtaDir);
+
+        Assert.Equal("", error);
     }
 
     [Fact]

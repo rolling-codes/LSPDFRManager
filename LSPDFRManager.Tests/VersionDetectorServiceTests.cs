@@ -45,6 +45,29 @@ public class VersionDetectorServiceTests : CommandCenterTestBase
         Assert.True(bundle.LspdfrPresent);
     }
 
+    [Fact]
+    public async Task Detect_SetsLspdfrPresent_WhenOfficialCoreDllExists()
+    {
+        var pluginsDir = Path.Combine(GtaDir, "plugins");
+        Directory.CreateDirectory(pluginsDir);
+        File.WriteAllText(Path.Combine(pluginsDir, "LSPD First Response.dll"), "fake");
+
+        var bundle = await _sut.DetectAsync(GtaDir);
+
+        Assert.True(bundle.LspdfrPresent);
+        Assert.NotNull(bundle.LspdfrHash);
+    }
+
+    [Fact]
+    public async Task Detect_SetsLspdfrPresent_WhenRootLspdfrFolderExists()
+    {
+        Directory.CreateDirectory(Path.Combine(GtaDir, "lspdfr"));
+
+        var bundle = await _sut.DetectAsync(GtaDir);
+
+        Assert.True(bundle.LspdfrPresent);
+    }
+
     // ── Hash stability ─────────────────────────────────────────────────────
 
     [Fact]

@@ -22,7 +22,12 @@ public class MainViewModel : ObservableObject
 
         InstallVM.LogAdded += message => UiDispatcher.Invoke(() => StatusMessage = message);
 
-        AppConfig.GtaPathChanged += _ => UiDispatcher.Invoke(() => OnPropertyChanged(nameof(GtaStatusText)));
+        AppConfig.GtaPathChanged += _ => UiDispatcher.Invoke(() =>
+        {
+            Status.Refresh();
+            OnPropertyChanged(nameof(GtaStatusText));
+            CommandManager.InvalidateRequerySuggested();
+        });
 
         InstallQueue.Instance.InstallFailedWithResult += (mod, result) =>
         {
@@ -167,8 +172,8 @@ public class MainViewModel : ObservableObject
 
     private void LaunchLspdfr()
     {
-        var hook = Path.Combine(AppConfig.Instance.GtaPath, "RAGEPluginHook.exe");
-        if (!File.Exists(hook))
+        var hook = LspdfrInstallLocator.FindRagePluginHook(AppConfig.Instance.GtaPath);
+        if (hook is null)
             return;
 
         Process.Start(new ProcessStartInfo(hook)
