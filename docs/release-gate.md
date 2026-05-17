@@ -72,6 +72,21 @@ Run against the packaged EXE, not `dotnet run`.
 - [ ] Existing pages still open correctly
 - [ ] Active nav state updates correctly
 
+### Button press / command wiring
+
+For every new or changed button, verify the actual click path in the packaged EXE. Do not mark this complete just because the button is visible or the ViewModel command exists.
+
+- [ ] Click each new or changed button once with valid inputs
+- [ ] Click each new or changed button once with missing/invalid inputs when applicable
+- [ ] Confirm the bound command runs exactly once per click
+- [ ] Confirm disabled buttons cannot be invoked by mouse or keyboard
+- [ ] Confirm button state changes after the action when expected: enabled, disabled, busy, success, or error
+- [ ] Confirm the user-visible result appears: navigation, dialog, toast/status text, file, support bundle, scan result, or log entry
+- [ ] Confirm no duplicate dialogs, duplicate queue entries, duplicate logs, or duplicate file operations occur
+- [ ] Confirm Enter/Space keyboard activation works for focused primary buttons where expected
+- [ ] Confirm buttons still work after navigating away and back
+- [ ] Confirm exceptions from button actions are surfaced as friendly UI errors and logged
+
 ### Patrol Readiness
 
 Test with at least: a valid install, a broken install, and a partial/dirty install.
@@ -85,6 +100,9 @@ Test with at least: a valid install, a broken install, and a partial/dirty insta
 - [ ] Known-good diff banner appears when relevant
 - [ ] No raw exceptions appear in UI
 - [ ] Scan can be repeated
+- [ ] Scan Now button executes the scan and updates score/issues
+- [ ] Mark as Known-Good button writes the baseline and updates the dashboard
+- [ ] Export Support Bundle button creates a ZIP and reports success/failure
 
 ### Diagnostics
 
@@ -93,6 +111,8 @@ Test with at least: a valid install, a broken install, and a partial/dirty insta
 - [ ] Log tail loads
 - [ ] Support bundle export button works
 - [ ] Diagnostics page does not crash without logs
+- [ ] Toggle buttons change persisted feature flag state exactly once per click
+- [ ] Reset buttons restore default feature flag state exactly once per click
 
 ### Support Bundle
 
@@ -130,6 +150,7 @@ After packaging, test the generated EXE or ZIP:
 - [ ] Patrol Ready page opens
 - [ ] Diagnostics page opens
 - [ ] Support Bundle export works
+- [ ] Button press / command wiring checklist passes for changed UI
 - [ ] `%APPDATA%\LSPDFRManager\feature-flags.json` is created or read correctly
 - [ ] No silent file operations occur
 
@@ -163,6 +184,6 @@ After uploading:
 
 ## Release rule
 
-The release is ready only when the Release EXE launches cleanly, Patrol Readiness works, Diagnostics works, Support Bundle export works, all tests pass, and the GitHub release contains the verified artifact.
+The release is ready only when the Release EXE launches cleanly, changed buttons are clicked and verified, Patrol Readiness works, Diagnostics works, Support Bundle export works, all tests pass, and the GitHub release contains the verified artifact.
 
 If there is a problem — do not stack changes. Fix only the release blocker, rebuild, retest, and ship.

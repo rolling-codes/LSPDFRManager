@@ -23,6 +23,11 @@ Checklist:
 - [ ] Open Install tab; detected mod is staged once.
 - [ ] Build/review install plan from Install button.
 - [ ] Confirm install; verify exactly one queued/install log sequence.
+- [ ] Click every new or changed button and verify the command runs exactly once.
+- [ ] Verify each clicked button produces its expected visible result: navigation, dialog, status text, log entry, file, scan result, or error message.
+- [ ] Verify disabled buttons cannot be triggered by mouse, Enter, or Space.
+- [ ] Navigate away and back; click the changed buttons again and verify they still work.
+- [ ] Verify no duplicate dialogs, duplicate queue entries, duplicate logs, or duplicate file operations occur after repeated clicks.
 - [ ] Navigate Browse -> Install -> Dashboard -> Browse -> Install.
 - [ ] Repeat one staging action; verify no duplicate stage/log/prompt behavior.
 - [ ] Close app; no crash on shutdown.
