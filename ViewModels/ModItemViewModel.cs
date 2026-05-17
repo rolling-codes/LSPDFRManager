@@ -212,6 +212,7 @@ public class ModItemViewModel : ObservableObject
         if (AppConfig.Instance.ConfirmBeforeUninstall)
         {
             var result = System.Windows.MessageBox.Show(
+                System.Windows.Application.Current.MainWindow,
                 $"Are you sure you want to uninstall '{Name}'?",
                 "Confirm Uninstall",
                 System.Windows.MessageBoxButton.YesNo,
