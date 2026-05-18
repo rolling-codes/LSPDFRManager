@@ -346,7 +346,7 @@ public class CommandCenterTests : IDisposable
         var result = await new UpdateCheckService().CheckAsync();
 
         Assert.NotNull(result);
-        Assert.Equal("3.7.16", result.CurrentVersion);
+        Assert.Equal("3.7.17", result.CurrentVersion);
     }
 
     // ── Storage Usage Analyzer ────────────────────────────────────────
