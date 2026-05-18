@@ -20,6 +20,9 @@ public static class AppLogger
                 ? message
                 : $"{message}: {ex.Message}{Environment.NewLine}{ex.StackTrace}");
 
+    private static readonly string LocalLogsDir =
+        Path.Combine(AppContext.BaseDirectory, "logs");
+
     private static void Log(LogLevel level, string message)
     {
         var entry = new LogEntry(level, message, DateTime.Now);
@@ -31,15 +34,27 @@ public static class AppLogger
 
         EntryAdded?.Invoke(entry);
 
+        var line = $"[{entry.Timestamp:yyyy-MM-dd HH:mm:ss}] [v{Version}] [{SessionId}] [{level,7}] {message}{Environment.NewLine}";
+
         try
         {
             AppDataPaths.EnsureRootExists();
-            File.AppendAllText(
-                AppDataPaths.LogFile,
-                $"[{entry.Timestamp:yyyy-MM-dd HH:mm:ss}] [v{Version}] [{SessionId}] [{level,7}] {message}{Environment.NewLine}");
+            File.AppendAllText(AppDataPaths.LogFile, line);
         }
         catch
         {
+        }
+
+        if (level == LogLevel.Error)
+        {
+            try
+            {
+                Directory.CreateDirectory(LocalLogsDir);
+                File.AppendAllText(Path.Combine(LocalLogsDir, "errors.log"), line);
+            }
+            catch
+            {
+            }
         }
     }
 }
