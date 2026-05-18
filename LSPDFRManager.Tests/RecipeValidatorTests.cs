@@ -66,6 +66,40 @@ public class RecipeValidatorTests : IDisposable
     }
 
     [Fact]
+    public void ValidRphLspdfrInstall_WithoutScriptHookV_NoScriptHookVError()
+    {
+        // A correct RagePluginHook + LSPDFR install with NO ASI mods. ScriptHookV /
+        // dinput8 are absent — RPH/LSPDFR do not require them, so this must not be a
+        // blocking Error (Warning is acceptable).
+        CreateFile("RAGEPluginHook.exe");
+        CreateFile("RagePluginHook.dll");
+        CreateFile("plugins/LSPD First Response.dll");
+        CreateDir("lspdfr");
+
+        var findings = new RecipeValidatorService(_tempDir).Validate();
+
+        Assert.DoesNotContain(findings, f =>
+            f.Severity == DiagnosticSeverity.Error &&
+            f.Title.Contains("ScriptHookV", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void RphMissingDll_ReturnsErrorFinding()
+    {
+        // RAGEPluginHook.exe is present but RagePluginHook.dll is missing
+        CreateFile("RAGEPluginHook.exe");
+        CreateFile("plugins/LSPD First Response.dll");
+        CreateDir("lspdfr");
+
+        var findings = new RecipeValidatorService(_tempDir).Validate();
+
+        Assert.Contains(findings, f =>
+            f.Severity == DiagnosticSeverity.Error &&
+            f.Title.Contains("RAGE Plugin Hook file missing", StringComparison.OrdinalIgnoreCase) &&
+            f.Detail.Contains("RagePluginHook.dll", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public void ElsMissingAsi_ReturnsErrorFinding()
     {
         // Only ini and folder, no .asi
@@ -131,6 +165,65 @@ public class RecipeValidatorTests : IDisposable
             f.Title.Contains("duplicate", StringComparison.OrdinalIgnoreCase));
     }
 
+
+    [Fact]
+    public void LspdfrCoreLegacyAliasOnly_NoWrongFolderError()
+    {
+        // S2: plugins/LSPDFR.dll is a TOLERATED legacy alias for the LSPDFR core,
+        // not a wrong-folder error, even when the canonical
+        // plugins/LSPD First Response.dll is absent.
+        CreateFile("plugins/LSPDFR.dll");
+        CreateDir("lspdfr");
+
+        var findings = new RecipeValidatorService(_tempDir).Validate();
+
+        Assert.DoesNotContain(findings, f =>
+            f.Severity == DiagnosticSeverity.Error &&
+            f.Title.Contains("LSPDFR Core", StringComparison.OrdinalIgnoreCase) &&
+            f.Title.Contains("wrong folder", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void RageNativeUiAtGtaRootOnly_NoErrorOrMissing()
+    {
+        // Canonical location per the RAGENativeUI author.
+        CreateFile("RageNativeUI.dll");
+
+        var findings = new RecipeValidatorService(_tempDir).Validate();
+
+        Assert.DoesNotContain(findings, f =>
+            f.Title.Contains("RageNativeUI", StringComparison.OrdinalIgnoreCase) &&
+            (f.Severity == DiagnosticSeverity.Error ||
+             f.Title.Contains("missing", StringComparison.OrdinalIgnoreCase)));
+    }
+
+    [Fact]
+    public void RageNativeUiInPluginsOnly_NoErrorOrMissing()
+    {
+        // Tolerated alternate location (back-compat with plugins/-shipped packages).
+        CreateFile("plugins/RageNativeUI.dll");
+
+        var findings = new RecipeValidatorService(_tempDir).Validate();
+
+        Assert.DoesNotContain(findings, f =>
+            f.Title.Contains("RageNativeUI", StringComparison.OrdinalIgnoreCase) &&
+            (f.Severity == DiagnosticSeverity.Error ||
+             f.Title.Contains("missing", StringComparison.OrdinalIgnoreCase)));
+    }
+
+    [Fact]
+    public void RageNativeUiInPluginsLspdfrOnly_ReturnsWrongFolderError()
+    {
+        // Neither accepted location present — plugins/lspdfr/ is still wrong.
+        CreateFile("plugins/lspdfr/RageNativeUI.dll");
+
+        var findings = new RecipeValidatorService(_tempDir).Validate();
+
+        Assert.Contains(findings, f =>
+            f.Severity == DiagnosticSeverity.Error &&
+            f.Title.Contains("RageNativeUI", StringComparison.OrdinalIgnoreCase) &&
+            f.Title.Contains("wrong folder", StringComparison.OrdinalIgnoreCase));
+    }
 
     [Fact]
     public void UltimateBackupWithoutStopThePed_ReturnsDependencyWarning()

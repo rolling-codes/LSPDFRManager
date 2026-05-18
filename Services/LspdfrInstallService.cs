@@ -10,11 +10,23 @@ namespace LSPDFRManager.Services;
 /// </summary>
 public static class LspdfrInstallService
 {
-    // Required paths that must exist in GTA V root after a successful LSPDFR install
+    // LSPDFR core file candidates — single source of truth is LspdfrInstallLocator
+    // (Submission 1) so the install/validation layers can't drift apart. Index 0 is the
+    // canonical file the official LSPDFR archive ships ("Plugins/LSPD First Response.dll");
+    // the remaining entries (e.g. plugins/LSPDFR.dll) are tolerated legacy aliases.
+    private static readonly string[] LspdfrCorePaths =
+        LspdfrInstallLocator.LspdfrCoreCandidates.Select(c => c.Replace('\\', '/')).ToArray();
+
+    private static string CanonicalLspdfrCore => LspdfrCorePaths[0];
+
+    private static readonly HashSet<string> LspdfrCorePathsLower =
+        new(LspdfrCorePaths.Select(p => p.ToLowerInvariant()), StringComparer.OrdinalIgnoreCase);
+
+    // Required non-core paths that must exist in GTA V root after a successful LSPDFR install.
+    // The LSPDFR core is checked separately (any tolerated candidate counts).
     private static readonly string[] RequiredPaths =
     [
         "RAGEPluginHook.exe",
-        "plugins/LSPDFR.dll",
     ];
 
     // Directories that must exist (or have content) after install
@@ -25,13 +37,16 @@ public static class LspdfrInstallService
     ];
 
     // Known LSPDFR archive entry names (normalised, relative to archive root) that signal
-    // we've detected the correct top-level folder to strip.
+    // we've detected the correct top-level folder to strip. The LSPDFR core candidates
+    // (canonical + legacy aliases) are also treated as signatures via IsSignatureEntry.
     private static readonly HashSet<string> LspdfrSignatureFiles = new(StringComparer.OrdinalIgnoreCase)
     {
         "ragepluginhook.exe",
-        "plugins/lspdfr.dll",
         "ragepluginhook.dll",
     };
+
+    private static bool IsSignatureEntry(string lowerKey) =>
+        LspdfrSignatureFiles.Contains(lowerKey) || LspdfrCorePathsLower.Contains(lowerKey);
 
     // ── Public API ────────────────────────────────────────────────────────────
 
@@ -78,7 +93,7 @@ public static class LspdfrInstallService
             .ToList();
 
         var stripped = StripArchiveRoot(keys);
-        return stripped.Any(k => LspdfrSignatureFiles.Contains(k));
+        return stripped.Any(IsSignatureEntry);
     }
 
     /// <summary>
@@ -108,12 +123,20 @@ public static class LspdfrInstallService
             });
         }
 
+        static bool Usable(LspdfrArchiveEntry e) =>
+            e.Classification != LspdfrEntryClassification.Ignored &&
+            e.Classification != LspdfrEntryClassification.Unsafe;
+
         var missingRequired = RequiredPaths
             .Where(r => !entries.Any(e =>
-                e.Classification != LspdfrEntryClassification.Ignored &&
-                e.Classification != LspdfrEntryClassification.Unsafe &&
-                e.RelativePath.Equals(r, StringComparison.OrdinalIgnoreCase)))
+                Usable(e) && e.RelativePath.Equals(r, StringComparison.OrdinalIgnoreCase)))
             .ToList();
+
+        // LSPDFR core: any tolerated candidate satisfies it; report the canonical name when absent.
+        var hasCore = entries.Any(e =>
+            Usable(e) && LspdfrCorePathsLower.Contains(e.RelativePath.ToLowerInvariant()));
+        if (!hasCore)
+            missingRequired.Add(CanonicalLspdfrCore);
 
         return new LspdfrArchiveManifest
         {
@@ -137,10 +160,25 @@ public static class LspdfrInstallService
             if (!File.Exists(full))
                 missing.Add(rel);
 
-            // Detect double-nesting: e.g. GTA/LSPDFR/RAGEPluginHook.exe or GTA/plugins/lspdfr/LSPDFR.dll
+            // Detect double-nesting: e.g. GTA/LSPDFR/RAGEPluginHook.exe
             var doubleNestedPath = Path.Combine(gtaPath, "LSPDFR", rel.Replace('/', Path.DirectorySeparatorChar));
             if (File.Exists(doubleNestedPath))
                 doubleNested.Add($"{rel} found nested under LSPDFR/ — move to GTA V root");
+        }
+
+        // LSPDFR core: satisfied by any tolerated candidate; report canonical name if none present.
+        if (!LspdfrCorePaths.Any(c =>
+                File.Exists(Path.Combine(gtaPath, c.Replace('/', Path.DirectorySeparatorChar)))))
+            missing.Add(CanonicalLspdfrCore);
+
+        foreach (var c in LspdfrCorePaths)
+        {
+            var doubleNestedCore = Path.Combine(gtaPath, "LSPDFR", c.Replace('/', Path.DirectorySeparatorChar));
+            if (File.Exists(doubleNestedCore))
+            {
+                doubleNested.Add($"{c} found nested under LSPDFR/ — move to GTA V root");
+                break;
+            }
         }
 
         foreach (var rel in RequiredDirectories)
@@ -191,7 +229,7 @@ public static class LspdfrInstallService
         var stripped = keys.Select(k => StripPrefix(k, prefix)).ToList();
 
         // Verify the stripped paths contain LSPDFR signature files
-        if (stripped.Any(k => LspdfrSignatureFiles.Contains(k.ToLowerInvariant())))
+        if (stripped.Any(k => IsSignatureEntry(k.ToLowerInvariant())))
             return prefix;
 
         return "";
@@ -236,7 +274,8 @@ public static class LspdfrInstallService
     }
 
     private static bool IsRequired(string lc) =>
-        lc is "ragepluginhook.exe" or "ragepluginhook.dll" or "plugins/lspdfr.dll" ||
+        lc is "ragepluginhook.exe" or "ragepluginhook.dll" ||
+        LspdfrCorePathsLower.Contains(lc) ||
         lc.StartsWith("plugins/lspdfr/", StringComparison.Ordinal) ||
         lc.StartsWith("lspdfr/", StringComparison.Ordinal);
 

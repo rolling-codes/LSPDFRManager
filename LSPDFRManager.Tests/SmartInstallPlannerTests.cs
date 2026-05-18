@@ -98,6 +98,35 @@ public class SmartInstallPlannerTests : CommandCenterTestBase
     }
 
     [Fact]
+    public void Albo1125Common_IsRecognizedAsSharedDependency_CaseInsensitive()
+    {
+        // Albo1125.Common.dll is the shared helper for the entire Albo1125 plugin
+        // family and must be treated as a shared dependency (installs before plugins).
+        Assert.True(InstallerSafetyPolicy.IsSharedDependency("Albo1125.Common.dll"));
+        Assert.True(InstallerSafetyPolicy.IsSharedDependency("plugins/lspdfr/ALBO1125.COMMON.DLL"));
+        Assert.Equal(
+            10,
+            InstallerSafetyPolicy.GetInstallOrderPriority("Albo1125.Common.dll", hasStopThePed: false, hasUltimateBackup: false));
+    }
+
+    [Fact]
+    public void Albo1125Common_IsScheduledBeforeDependentPluginDll()
+    {
+        var archive = CreateArchive(
+            ("plugins/lspdfr/TrafficPolicer.dll", "tp"),
+            ("Albo1125.Common.dll", "common")
+        );
+
+        var plan = new SmartInstallPlanner().BuildPlan(archive);
+
+        var commonIndex = plan.Entries.FindIndex(e => e.ArchivePath.EndsWith("Albo1125.Common.dll", StringComparison.OrdinalIgnoreCase));
+        var pluginIndex = plan.Entries.FindIndex(e => e.ArchivePath.EndsWith("TrafficPolicer.dll", StringComparison.OrdinalIgnoreCase));
+
+        Assert.True(commonIndex >= 0 && pluginIndex >= 0);
+        Assert.True(commonIndex < pluginIndex);
+    }
+
+    [Fact]
     public void UnrelatedPluginOrderRemainsStable()
     {
         var archive = CreateArchive(

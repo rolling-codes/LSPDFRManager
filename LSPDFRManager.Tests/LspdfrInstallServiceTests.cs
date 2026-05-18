@@ -153,11 +153,12 @@ public class LspdfrInstallServiceTests
     [Fact]
     public void InspectArchive_ReportsMissingRequiredPathsWhenAbsent()
     {
-        // Archive has RAGEPluginHook.exe but not plugins/LSPDFR.dll
+        // Archive has RAGEPluginHook.exe but no LSPDFR core file
         var archive = FakeArchiveFactory.CreateCleanArchive("RAGEPluginHook.exe");
 
         var manifest = LspdfrInstallService.InspectArchive(archive);
-        Assert.Contains("plugins/LSPDFR.dll", manifest.MissingRequiredPaths);
+        // Missing core is reported under its canonical name, not the legacy alias.
+        Assert.Contains("plugins/LSPD First Response.dll", manifest.MissingRequiredPaths);
     }
 
     [Fact]
@@ -182,7 +183,8 @@ public class LspdfrInstallServiceTests
             var result = LspdfrInstallService.ValidatePostInstall(tempDir);
             Assert.False(result.IsValid);
             Assert.Contains("RAGEPluginHook.exe", result.MissingPaths);
-            Assert.Contains("plugins/LSPDFR.dll", result.MissingPaths);
+            // Missing core is reported under its canonical name, not the legacy alias.
+            Assert.Contains("plugins/LSPD First Response.dll", result.MissingPaths);
         }
         finally
         {
@@ -229,6 +231,79 @@ public class LspdfrInstallServiceTests
 
             var result = LspdfrInstallService.ValidatePostInstall(tempDir);
             Assert.NotEmpty(result.DoubleNestedPaths);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, recursive: true);
+        }
+    }
+
+    // ── Canonical LSPDFR core file (Submission 2) ────────────────────────────
+
+    [Fact]
+    public void IsLspdfrArchive_RecognizesCanonicalCoreFileWithoutRageExe()
+    {
+        // The official LSPDFR archive ships "Plugins/LSPD First Response.dll" — it must
+        // be recognized as an LSPDFR signature even when RAGEPluginHook.exe is absent.
+        var archive = FakeArchiveFactory.CreateCleanArchive("plugins/LSPD First Response.dll");
+        Assert.True(LspdfrInstallService.IsLspdfrArchive(archive));
+    }
+
+    [Fact]
+    public void DetectArchiveRoot_StripsNestedRootViaCanonicalCoreSignature()
+    {
+        var keys = new[]
+        {
+            "LSPDFR/plugins/LSPD First Response.dll",
+            "LSPDFR/lspdfr/data/backup.xml",
+        };
+
+        var root = LspdfrInstallService.DetectArchiveRoot(keys);
+        Assert.Equal("LSPDFR/", root);
+    }
+
+    [Fact]
+    public void InspectArchive_IsCompleteWithCanonicalCoreFile()
+    {
+        var archive = FakeArchiveFactory.CreateCleanArchive(
+            "RAGEPluginHook.exe",
+            "plugins/LSPD First Response.dll");
+
+        var manifest = LspdfrInstallService.InspectArchive(archive);
+        Assert.True(manifest.IsComplete);
+        Assert.DoesNotContain("plugins/LSPD First Response.dll", manifest.MissingRequiredPaths);
+    }
+
+    [Fact]
+    public void InspectArchive_StillToleratesLegacyLspdfrDllAlias()
+    {
+        // plugins/LSPDFR.dll is not a real shipped filename, but is kept as a tolerated
+        // legacy alias so older/repackaged archives still validate as complete.
+        var archive = FakeArchiveFactory.CreateCleanArchive(
+            "RAGEPluginHook.exe",
+            "plugins/LSPDFR.dll");
+
+        var manifest = LspdfrInstallService.InspectArchive(archive);
+        Assert.True(manifest.IsComplete);
+    }
+
+    [Fact]
+    public void ValidatePostInstall_IsValidWithCanonicalCoreFile()
+    {
+        var tempDir = Directory.CreateTempSubdirectory("lspdfr_test_").FullName;
+        try
+        {
+            File.WriteAllText(Path.Combine(tempDir, "RAGEPluginHook.exe"), "fake");
+            Directory.CreateDirectory(Path.Combine(tempDir, "plugins"));
+            File.WriteAllText(Path.Combine(tempDir, "plugins", "LSPD First Response.dll"), "fake");
+            Directory.CreateDirectory(Path.Combine(tempDir, "plugins", "lspdfr"));
+            File.WriteAllText(Path.Combine(tempDir, "plugins", "lspdfr", "placeholder.txt"), "fake");
+            Directory.CreateDirectory(Path.Combine(tempDir, "lspdfr"));
+            File.WriteAllText(Path.Combine(tempDir, "lspdfr", "placeholder.txt"), "fake");
+
+            var result = LspdfrInstallService.ValidatePostInstall(tempDir);
+            Assert.True(result.IsValid);
+            Assert.Empty(result.MissingPaths);
         }
         finally
         {

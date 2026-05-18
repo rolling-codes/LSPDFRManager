@@ -11,6 +11,7 @@ public class LspdfrInstallLocatorTests : CommandCenterTestBase
     {
         File.WriteAllText(Path.Combine(GtaDir, "GTA5.exe"), "fake");
         File.WriteAllText(Path.Combine(GtaDir, "RAGEPluginHook.exe"), "fake");
+        File.WriteAllText(Path.Combine(GtaDir, "RagePluginHook.dll"), "fake");
         Directory.CreateDirectory(Path.Combine(GtaDir, "plugins"));
         Directory.CreateDirectory(Path.Combine(GtaDir, "lspdfr"));
         File.WriteAllText(Path.Combine(GtaDir, "plugins", "LSPD First Response.dll"), "fake");
@@ -73,5 +74,64 @@ public class LspdfrInstallLocatorTests : CommandCenterTestBase
         var result = LspdfrInstallLocator.FindGtaExe(GtaDir);
 
         Assert.Equal(gta5, result);
+    }
+
+    [Fact]
+    public void IsRagePluginHookInstalled_ReturnsTrue_WhenExeAndDllAtGtaRoot()
+    {
+        File.WriteAllText(Path.Combine(GtaDir, "RAGEPluginHook.exe"), "fake");
+        File.WriteAllText(Path.Combine(GtaDir, "RagePluginHook.dll"), "fake");
+        Assert.True(LspdfrInstallLocator.IsRagePluginHookInstalled(GtaDir));
+    }
+
+    [Fact]
+    public void IsRagePluginHookInstalled_ReturnsFalse_WhenMissingDll()
+    {
+        File.WriteAllText(Path.Combine(GtaDir, "RAGEPluginHook.exe"), "fake");
+        Assert.False(LspdfrInstallLocator.IsRagePluginHookInstalled(GtaDir));
+    }
+
+    [Fact]
+    public void IsRagePluginHookInstalled_ReturnsFalse_WhenMissingExe()
+    {
+        File.WriteAllText(Path.Combine(GtaDir, "RagePluginHook.dll"), "fake");
+        Assert.False(LspdfrInstallLocator.IsRagePluginHookInstalled(GtaDir));
+    }
+
+    [Fact]
+    public void IsRagePluginHookInstalled_ReturnsFalse_WhenExeNestedButDllAtRoot()
+    {
+        File.WriteAllText(Path.Combine(GtaDir, "RagePluginHook.dll"), "fake");
+
+        var pluginsDir = Path.Combine(GtaDir, "plugins");
+        Directory.CreateDirectory(pluginsDir);
+        File.WriteAllText(Path.Combine(pluginsDir, "RAGEPluginHook.exe"), "fake");
+        
+        Assert.False(LspdfrInstallLocator.IsRagePluginHookInstalled(GtaDir));
+    }
+
+    [Fact]
+    public void IsRagePluginHookInstalled_ReturnsFalse_WhenNestedInRphFolder()
+    {
+        var rphDir = Path.Combine(GtaDir, "RAGE Plugin Hook");
+        Directory.CreateDirectory(rphDir);
+        File.WriteAllText(Path.Combine(rphDir, "RAGEPluginHook.exe"), "fake");
+        
+        Assert.False(LspdfrInstallLocator.IsRagePluginHookInstalled(GtaDir));
+    }
+
+    [Fact]
+    public void FindRagePluginHook_ReturnsRootPath_IgnoringNestedPaths()
+    {
+        var rootExe = Path.Combine(GtaDir, "RAGEPluginHook.exe");
+        File.WriteAllText(rootExe, "fake");
+        
+        var pluginsDir = Path.Combine(GtaDir, "plugins");
+        Directory.CreateDirectory(pluginsDir);
+        File.WriteAllText(Path.Combine(pluginsDir, "RAGEPluginHook.exe"), "fake");
+        
+        var result = LspdfrInstallLocator.FindRagePluginHook(GtaDir);
+        
+        Assert.Equal(rootExe, result);
     }
 }

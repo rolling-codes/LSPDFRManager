@@ -31,9 +31,6 @@ public static class LspdfrInstallLocator
     public static readonly string[] RagePluginHookCandidates =
     [
         "RAGEPluginHook.exe",
-        @"RAGE Plugin Hook\RAGEPluginHook.exe",
-        @"RagePluginHook\RAGEPluginHook.exe",
-        @"plugins\RAGEPluginHook.exe",
     ];
 
     public static string? FindGtaExe(string gtaPath) => FindExistingFile(gtaPath, GtaExeCandidates);
@@ -53,7 +50,9 @@ public static class LspdfrInstallLocator
         FindLspdfrFolder(gtaPath) is not null ||
         FindLspdfrTool(gtaPath) is not null;
 
-    public static bool IsRagePluginHookInstalled(string gtaPath) => FindRagePluginHook(gtaPath) is not null;
+    public static bool IsRagePluginHookInstalled(string gtaPath) =>
+        FindRagePluginHook(gtaPath) is not null &&
+        File.Exists(Path.Combine(gtaPath, "RagePluginHook.dll"));
 
     public static string ToRelativePath(string gtaPath, string fullPath)
     {

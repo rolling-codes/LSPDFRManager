@@ -22,17 +22,18 @@ public class RecipeValidatorService
         {
             Name = "RAGE Plugin Hook",
             Type = ModType.LspdfrPlugin,
-            ExpectedFiles = ["RAGEPluginHook.exe"],
+            ExpectedFiles = ["RAGEPluginHook.exe", "RagePluginHook.dll"],
             Dependencies = [],
-            HelpText = "RAGEPluginHook.exe must be in the GTA V root.",
+            HelpText = "RAGEPluginHook.exe and RagePluginHook.dll must be in the GTA V root.",
         },
         new ModTypeRecipe
         {
             Name = "RageNativeUI",
             Type = ModType.LspdfrPlugin,
             ExpectedFiles = ["plugins/RageNativeUI.dll"],
-            CommonWrongPaths = ["RageNativeUI.dll", "plugins/lspdfr/RageNativeUI.dll", "scripts/RageNativeUI.dll"],
-            HelpText = "RageNativeUI.dll belongs in the plugins/ folder, not plugins/lspdfr/ or GTA root.",
+            CommonWrongPaths = ["plugins/lspdfr/RageNativeUI.dll", "scripts/RageNativeUI.dll"],
+            HelpText = "RageNativeUI.dll belongs in the GTA V root (per the RAGENativeUI author); " +
+                       "the plugins/ folder is also accepted. Not plugins/lspdfr/ or scripts/.",
         },
         new ModTypeRecipe
         {
@@ -72,7 +73,8 @@ public class RecipeValidatorService
             Name = "ScriptHookV",
             Type = ModType.AsiMod,
             ExpectedFiles = ["ScriptHookV.dll", "dinput8.dll"],
-            HelpText = "ScriptHookV.dll and dinput8.dll must be in the GTA V root.",
+            HelpText = "ScriptHookV.dll and dinput8.dll go in the GTA V root. They are only " +
+                       "needed for ASI/script mods — RagePluginHook and LSPDFR do not require them.",
         },
         new ModTypeRecipe
         {
@@ -94,7 +96,11 @@ public class RecipeValidatorService
     // Recipes where missing files are Errors (not just Warnings)
     private static readonly HashSet<string> ErrorOnMissingRecipes =
     [
-        "LSPDFR Core", "RAGE Plugin Hook", "ScriptHookV", "ELS", "AdvancedHookV", "OpenIV.asi",
+        // NOTE: "ScriptHookV" is intentionally NOT an error recipe. ScriptHookV.dll /
+        // dinput8.dll are only needed for ASI/script mods; RagePluginHook and LSPDFR do
+        // not require them (ragepluginhook.net/Requirements). A missing ScriptHookV is a
+        // Warning, not a blocking Error, so a valid RPH/LSPDFR install isn't flagged.
+        "LSPDFR Core", "RAGE Plugin Hook", "ELS", "AdvancedHookV", "OpenIV.asi",
     ];
 
     public RecipeValidatorService(string gtaPath)
@@ -139,6 +145,9 @@ public class RecipeValidatorService
         var isErrorRecipe = ErrorOnMissingRecipes.Contains(recipe.Name);
 
         if (recipe.Name == "LSPDFR Core" && LspdfrInstallLocator.FindLspdfrCore(_gtaPath) is not null)
+            return;
+
+        if (recipe.Name == "RageNativeUI" && RageNativeUiSatisfied())
             return;
 
         foreach (var relPath in recipe.ExpectedFiles)
@@ -195,6 +204,18 @@ public class RecipeValidatorService
     private void CheckWrongPaths(ModTypeRecipe recipe, List<DiagnosticFinding> findings)
     {
         if (recipe.CommonWrongPaths.Length == 0) return;
+
+        // Mirror the CheckMissingFiles guard: plugins/LSPDFR.dll and plugins/lspdfr/LSPDFR.dll
+        // are tolerated legacy aliases for the LSPDFR core (LspdfrInstallLocator), not
+        // wrong-folder errors. If any accepted core is present, do not flag this recipe.
+        if (recipe.Name == "LSPDFR Core" && LspdfrInstallLocator.FindLspdfrCore(_gtaPath) is not null)
+            return;
+
+        // RageNativeUI.dll is canonical in the GTA V root (per the RAGENativeUI author)
+        // and also accepted under plugins/. If it is in either accepted location, do not
+        // flag any wrong-folder finding for this recipe.
+        if (recipe.Name == "RageNativeUI" && RageNativeUiSatisfied())
+            return;
 
         foreach (var wrongRel in recipe.CommonWrongPaths)
         {
@@ -380,4 +401,10 @@ public class RecipeValidatorService
 
     private static string NormalizeSep(string path) =>
         path.Replace('/', Path.DirectorySeparatorChar);
+
+    // RAGENativeUI's author documents the GTA V root as canonical; real-world plugin
+    // packages also ship it under plugins/. Treat the recipe as satisfied if the DLL
+    // is in either accepted location (not plugins/lspdfr/ or scripts/).
+    private bool RageNativeUiSatisfied() =>
+        FileOrDirExists("RageNativeUI.dll") || FileOrDirExists("plugins/RageNativeUI.dll");
 }
