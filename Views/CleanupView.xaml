@@ -170,7 +170,7 @@
                     <StackPanel Visibility="{Binding RequiresTypedConfirm, Converter={StaticResource BoolToVis}}">
                         <TextBlock Foreground="{StaticResource TextMuted}" FontSize="12" Margin="0,0,0,6">
                             <Run Text="Type "/>
-                            <Run Text="{Binding ConfirmPhrase}" FontWeight="Bold" Foreground="{StaticResource TextStrong}"/>
+                            <Run Text="{Binding ConfirmPhrase, Mode=OneWay}" FontWeight="Bold" Foreground="{StaticResource TextStrong}"/>
                             <Run Text=" to confirm:"/>
                         </TextBlock>
                         <TextBox Text="{Binding TypedConfirmation, UpdateSourceTrigger=PropertyChanged}"

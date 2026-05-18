@@ -217,6 +217,19 @@ public class NavigationSmokeTests : CommandCenterTestBase
         Assert.Null(ex);
     }
 
+    // ── XAML binding regression ───────────────────────────────────────────────
+
+    [Fact]
+    public void CleanupView_ConfirmPhraseBinding_HasModeOneWay()
+    {
+        // Run.Text defaults to TwoWay; ConfirmPhrase is getter-only — crash without Mode=OneWay.
+        var xaml = File.ReadAllText(
+            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..",
+                "Views", "CleanupView.xaml"));
+
+        Assert.Contains("ConfirmPhrase, Mode=OneWay", xaml);
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private MainViewModel CreateNormalVm()
