@@ -16,6 +16,7 @@ public class MainViewModel : ObservableObject
     public MainViewModel()
     {
         _currentView = DashboardVM;
+        DashboardVM.NavigateTo = page => Navigate(page);
 
         NavigateCommand = new RelayCommand(Navigate);
         LaunchLspdfrCommand = new RelayCommand(LaunchLspdfr, () => Status.IsLspdfrInstalled);
@@ -77,6 +78,7 @@ public class MainViewModel : ObservableObject
     public OivViewModel OivVM { get; } = new();
     public DevDiagnosticsViewModel DevDiagnosticsVM { get; } = new();
     public PatrolReadinessDashboardViewModel PatrolReadinessVM { get; } = new();
+    public SafeModeViewModel SafeModeVM { get; } = new();
 
     public LspdfrStatusService Status { get; } = LspdfrStatusService.Instance;
 
@@ -127,6 +129,7 @@ public class MainViewModel : ObservableObject
     public bool IsOivActive         => _activePage == "Oiv";
     public bool IsDevDiagnosticsActive    => _activePage == "DevDiagnostics";
     public bool IsPatrolReadinessActive   => _activePage == "PatrolReadiness";
+    public bool IsSafeModeActive          => _activePage == "SafeMode";
 
     public ICommand NavigateCommand { get; }
     public ICommand LaunchLspdfrCommand { get; }
@@ -151,6 +154,7 @@ public class MainViewModel : ObservableObject
             "Oiv"            => OivVM,
             "DevDiagnostics"  => DevDiagnosticsVM,
             "PatrolReadiness" => PatrolReadinessVM,
+            "SafeMode"        => SafeModeVM,
             _                 => DashboardVM,
         };
 
@@ -168,6 +172,7 @@ public class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(IsOivActive));
         OnPropertyChanged(nameof(IsDevDiagnosticsActive));
         OnPropertyChanged(nameof(IsPatrolReadinessActive));
+        OnPropertyChanged(nameof(IsSafeModeActive));
     }
 
     private void LaunchLspdfr()

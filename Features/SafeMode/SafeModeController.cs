@@ -43,7 +43,22 @@ public sealed class SafeModeController : ISafeModeController
                 WasEnabled   = c.WasEnabled,
             }).ToList(),
         };
-        await _restorePoints.SaveAsync(rp).ConfigureAwait(false);
+        try
+        {
+            await _restorePoints.SaveAsync(rp).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Error("[SafeMode] Backup failed — aborting apply", ex);
+            progress?.Report($"Backup failed: {ex.Message}");
+            return new SafeModeApplyResult(
+                Success:        false,
+                FilesDisabled:  0,
+                FilesFailed:    0,
+                RestorePointId: rp.Id,
+                FailedPaths:    [],
+                StatusMessage:  $"Backup failed — no files were modified. ({ex.Message})");
+        }
         AppLogger.Info($"[SafeMode] Restore point saved: {rp.Id}");
         progress?.Report("Restore point created.");
 
@@ -71,24 +86,34 @@ public sealed class SafeModeController : ISafeModeController
         }
 
         // Verify — confirm each expected file is now in its disabled state
-        var verified = plan.Changes
-            .Where(c => !failedPaths.Contains(c.FilePath) && !c.FilePath.EndsWith(".disabled"))
-            .Count(c => File.Exists(c.FilePath + ".disabled"));
+        var expectedDisabled = plan.Changes
+            .Where(c => !failedPaths.Contains(c.FilePath) && !c.FilePath.EndsWith(".disabled") && !c.WillBeEnabled)
+            .ToList();
+        var verified = expectedDisabled.Count(c => File.Exists(c.FilePath + ".disabled"));
+        var verifyMismatch = verified < expectedDisabled.Count;
+
+        if (verifyMismatch)
+            AppLogger.Warning($"[SafeMode] Verification mismatch: expected {expectedDisabled.Count} disabled, found {verified}");
 
         // Report
         var failed  = failedPaths.Count;
-        var message = failed == 0
-            ? $"Done: {disabledCount} file(s) disabled. Restore point saved (ID {rp.Id[..8]})."
-            : $"Applied with {failed} error(s): {disabledCount} disabled. Restore point saved (ID {rp.Id[..8]}).";
+        var success = failed == 0 && !verifyMismatch;
+        string message;
+        if (verifyMismatch)
+            message = $"Verification failed: {verified}/{expectedDisabled.Count} files confirmed disabled. Restore point saved (ID {rp.Id[..8]}).";
+        else if (failed == 0)
+            message = $"Done: {disabledCount} file(s) disabled. Restore point saved (ID {rp.Id[..8]}).";
+        else
+            message = $"Applied with {failed} error(s): {disabledCount} disabled. Restore point saved (ID {rp.Id[..8]}).";
 
-        AppLogger.Info($"[SafeMode] Result: disabled={disabledCount}, failed={failed}, verified={verified}");
+        AppLogger.Info($"[SafeMode] Result: disabled={disabledCount}, failed={failed}, verified={verified}/{expectedDisabled.Count}");
         ChangeHistoryService.Instance.Record(
             ChangeHistoryAction.SafeLaunchApplied,
             $"Safe Mode applied: {plan.Mode}",
             detail: rp.Id);
 
         return new SafeModeApplyResult(
-            Success:        failed == 0,
+            Success:        success,
             FilesDisabled:  disabledCount,
             FilesFailed:    failed,
             RestorePointId: rp.Id,

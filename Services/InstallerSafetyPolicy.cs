@@ -28,6 +28,12 @@ public static class InstallerSafetyPolicy
         "nativeui.dll",
         "scripthookvdotnet.asi",
         "scripthookv.dll",
+        // Shared helper assembly for the Albo1125 plugin family (Traffic Policer,
+        // LSPDFR+, Arrest Manager, PoliceSmartRadio, Ultimate Backup, Computer+).
+        // Documented install location varies by plugin (GTA V root vs Plugins/LSPDFR/);
+        // this allowlist is filename-based and only affects install ORDER — it must
+        // install before the plugins that depend on it, regardless of target folder.
+        "albo1125.common.dll",
     ];
 
     private static readonly HashSet<string> ConfigExtensions =

@@ -22,6 +22,7 @@ public class DashboardViewModel : ObservableObject
     public ICommand AnalyzeCrashLogsCommand { get; }
     public ICommand CreateBackupCommand { get; }
     public ICommand ApplySafeLaunchCommand { get; }
+    public Action<string>? NavigateTo { get; set; }
     public ICommand OpenGtaFolderCommand { get; }
     public ICommand OpenLogsFolderCommand { get; }
     public ICommand LaunchGtaCommand { get; }
@@ -84,13 +85,10 @@ public class DashboardViewModel : ObservableObject
         StatusMessage = "Backup created.";
     }
 
-    private async Task RunSafeLaunchAsync()
+    private Task RunSafeLaunchAsync()
     {
-        StatusMessage = "Applying Safe Launch (LSPDFR Only)…";
-        var plan = new SafeLaunchManager().BuildPlan("LspdfrOnly");
-        await new SafeLaunchManager().ApplyAsync(plan);
-        Status.Refresh();
-        StatusMessage = "Safe Launch applied. Restart the game.";
+        NavigateTo?.Invoke("SafeMode");
+        return Task.CompletedTask;
     }
 
     private void OpenGtaFolder()

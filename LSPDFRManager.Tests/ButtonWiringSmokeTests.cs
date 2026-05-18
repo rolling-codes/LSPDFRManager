@@ -58,6 +58,7 @@ public class ButtonWiringSmokeTests : CommandCenterTestBase
         AssertNavigation(main, "ModConfig", typeof(ConfigViewModel));
         AssertNavigation(main, "Oiv", typeof(OivViewModel));
         AssertNavigation(main, "DevDiagnostics", typeof(DevDiagnosticsViewModel));
+        AssertNavigation(main, "SafeMode", typeof(SafeModeViewModel));
 
         var dashboard = main.DashboardVM;
         dashboard.ScanPluginsCommand.Execute(null);

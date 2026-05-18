@@ -52,6 +52,9 @@
             <DataTemplate DataType="{x:Type vm:PatrolReadinessDashboardViewModel}">
                 <views:PatrolReadinessDashboardView/>
             </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:SafeModeViewModel}">
+                <views:SafeModeView/>
+            </DataTemplate>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

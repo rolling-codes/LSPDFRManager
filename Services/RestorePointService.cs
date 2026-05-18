@@ -22,7 +22,7 @@ public class RestorePointService
         catch { _points = []; }
     }
 
-    public async Task SaveAsync(RestorePoint point)
+    public virtual async Task SaveAsync(RestorePoint point)
     {
         _points.Insert(0, point);
         if (_points.Count > 50) _points = _points.Take(50).ToList();
