@@ -25,7 +25,6 @@ public sealed class SelectedThirdPartyPluginCleanupMode : ICleanupMode
             WarningText =
                 "Select the plugin groups you want to remove. LSPDFR core, RPH, and shared " +
                 "dependencies are not shown. Nothing is selected by default — you must choose.",
-            ConfirmPhrase = "DELETE SELECTED PLUGINS",
             RequireBackup = true,
         };
     }

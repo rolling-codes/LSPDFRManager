@@ -53,7 +53,6 @@ public class CleanupViewModel : ObservableObject
     private CleanupApplyResult? _applyResult;
     private bool _isBusy;
     private string _statusMessage = "";
-    private string _typedConfirmation = "";
 
     public CleanupViewModel()
         : this(new CleanupApplyService()) { }
@@ -101,8 +100,6 @@ public class CleanupViewModel : ObservableObject
         private set
         {
             SetProperty(ref _preset, value);
-            OnPropertyChanged(nameof(RequiresTypedConfirm));
-            OnPropertyChanged(nameof(ConfirmPhrase));
             OnPropertyChanged(nameof(WarningText));
             OnPropertyChanged(nameof(RiskLabel));
         }
@@ -126,16 +123,6 @@ public class CleanupViewModel : ObservableObject
         private set => SetProperty(ref _statusMessage, value);
     }
 
-    public string TypedConfirmation
-    {
-        get => _typedConfirmation;
-        set
-        {
-            SetProperty(ref _typedConfirmation, value);
-            CommandManager.InvalidateRequerySuggested();
-        }
-    }
-
     public ObservableCollection<SelectableGroup> Groups { get; } = [];
 
     public bool IsModeSelectStep => Step == CleanupStep.ModeSelect;
@@ -143,10 +130,8 @@ public class CleanupViewModel : ObservableObject
     public bool IsConfirmStep    => Step == CleanupStep.Confirm;
     public bool IsResultStep     => Step == CleanupStep.Result;
 
-    public bool RequiresTypedConfirm => Preset?.ConfirmPhrase is not null;
-    public string? ConfirmPhrase     => Preset?.ConfirmPhrase;
-    public string  WarningText       => Preset?.WarningText ?? "";
-    public string  RiskLabel         => Preset?.RiskLevel.ToString() ?? "";
+    public string WarningText => Preset?.WarningText ?? "";
+    public string RiskLabel   => Preset?.RiskLevel.ToString() ?? "";
 
     public ICommand NextCommand    { get; }
     public ICommand BackCommand    { get; }
@@ -192,17 +177,14 @@ public class CleanupViewModel : ObservableObject
 
     private void Back()
     {
-        if (Step == CleanupStep.Confirm)   { TypedConfirmation = ""; Step = CleanupStep.Preview; return; }
-        if (Step == CleanupStep.Preview)   { Groups.Clear(); Step = CleanupStep.ModeSelect; }
+        if (Step == CleanupStep.Confirm) { Step = CleanupStep.Preview; return; }
+        if (Step == CleanupStep.Preview) { Groups.Clear(); Step = CleanupStep.ModeSelect; }
     }
 
     private bool CanConfirm()
     {
         if (IsBusy || Step != CleanupStep.Confirm || Preset is null) return false;
-        if (SelectedCandidates().Count == 0) return false;
-        if (RequiresTypedConfirm)
-            return string.Equals(TypedConfirmation.Trim(), ConfirmPhrase, StringComparison.Ordinal);
-        return true;
+        return SelectedCandidates().Count > 0;
     }
 
     private async Task ApplyAsync()
@@ -251,7 +233,6 @@ public class CleanupViewModel : ObservableObject
     public void ProceedToConfirm()
     {
         if (Step != CleanupStep.Preview) return;
-        TypedConfirmation = "";
         Step = CleanupStep.Confirm;
     }
 }

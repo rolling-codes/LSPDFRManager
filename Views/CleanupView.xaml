@@ -166,19 +166,6 @@
                     <TextBlock Text="{Binding WarningText}" TextWrapping="Wrap"
                                Foreground="{StaticResource TextStrong}" FontSize="13" Margin="0,0,0,16"/>
 
-                    <!-- Typed confirmation (when required) -->
-                    <StackPanel Visibility="{Binding RequiresTypedConfirm, Converter={StaticResource BoolToVis}}">
-                        <TextBlock Foreground="{StaticResource TextMuted}" FontSize="12" Margin="0,0,0,6">
-                            <Run Text="Type "/>
-                            <Run Text="{Binding ConfirmPhrase, Mode=OneWay}" FontWeight="Bold" Foreground="{StaticResource TextStrong}"/>
-                            <Run Text=" to confirm:"/>
-                        </TextBlock>
-                        <TextBox Text="{Binding TypedConfirmation, UpdateSourceTrigger=PropertyChanged}"
-                                 FontSize="13" Padding="8,6" Margin="0,0,0,8"
-                                 Background="{StaticResource Surface}" Foreground="{StaticResource TextStrong}"
-                                 BorderBrush="{StaticResource AccentBorder}"/>
-                    </StackPanel>
-
                     <TextBlock Text="{Binding StatusMessage}" Foreground="#F59E0B" FontSize="12"
                                Visibility="{Binding StatusMessage, Converter={StaticResource StringToVis}}"/>
                 </StackPanel>

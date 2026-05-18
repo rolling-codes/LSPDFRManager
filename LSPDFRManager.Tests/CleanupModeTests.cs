@@ -50,6 +50,20 @@ public class CleanupModeTests : CommandCenterTestBase
         var preset = new SelectedThirdPartyPluginCleanupMode().Apply(scan);
 
         Assert.Empty(preset.DefaultSelectedIds);
-        Assert.Equal("DELETE SELECTED PLUGINS", preset.ConfirmPhrase);
+        Assert.Null(preset.ConfirmPhrase);
     }
+
+    // Test 10 — SafeCoreReset confirm needs no typed phrase
+    [Fact]
+    public void SafeCoreReset_ConfirmPhrase_IsNull()
+    {
+        Directory.CreateDirectory(Path.Combine(GtaDir, "plugins"));
+        File.WriteAllText(Path.Combine(GtaDir, "plugins", "LSPD First Response.dll"), "");
+
+        var scan = LspdfrCleanupScanner.Scan(GtaDir);
+        var preset = new SafeCoreResetMode().Apply(scan);
+
+        Assert.Null(preset.ConfirmPhrase);
+    }
+
 }
