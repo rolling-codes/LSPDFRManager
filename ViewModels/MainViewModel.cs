@@ -30,6 +30,7 @@ public class MainViewModel : ObservableObject
         }
 
         DashboardVM.NavigateTo = page => Navigate(page);
+        CleanupVM.OnCancelled  = () => Navigate("Home");
 
         NavigateCommand = new RelayCommand(Navigate);
         LaunchLspdfrCommand = new RelayCommand(LaunchLspdfr, () => Status.IsLspdfrInstalled);
@@ -93,6 +94,7 @@ public class MainViewModel : ObservableObject
     public DevDiagnosticsViewModel DevDiagnosticsVM { get; } = new();
     public PatrolReadinessDashboardViewModel PatrolReadinessVM { get; } = new();
     public SafeModeViewModel SafeModeVM { get; } = new();
+    public CleanupViewModel CleanupVM  { get; } = new();
 
     public LspdfrStatusService Status { get; } = LspdfrStatusService.Instance;
 
@@ -145,6 +147,7 @@ public class MainViewModel : ObservableObject
     public bool IsPatrolReadinessActive   => _activePage == "PatrolReadiness";
     public bool IsSafeModeActive          => _activePage == "SafeMode";
     public bool IsSetupWizardActive       => _activePage == "SetupWizard";
+    public bool IsCleanupActive           => _activePage == "Cleanup";
 
     public ICommand NavigateCommand { get; }
     public ICommand LaunchLspdfrCommand { get; }
@@ -171,6 +174,7 @@ public class MainViewModel : ObservableObject
             "PatrolReadiness" => PatrolReadinessVM,
             "SafeMode"        => SafeModeVM,
             "SetupWizard"     => SetupWizardVM,
+            "Cleanup"         => CleanupVM,
             _                 => DashboardVM,
         };
 
@@ -190,6 +194,7 @@ public class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(IsPatrolReadinessActive));
         OnPropertyChanged(nameof(IsSafeModeActive));
         OnPropertyChanged(nameof(IsSetupWizardActive));
+        OnPropertyChanged(nameof(IsCleanupActive));
     }
 
     private void LaunchLspdfr()

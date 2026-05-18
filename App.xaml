@@ -58,6 +58,9 @@
             <DataTemplate DataType="{x:Type vm:SetupWizardViewModel}">
                 <views:SetupWizardView/>
             </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:CleanupViewModel}">
+                <views:CleanupView/>
+            </DataTemplate>
         </ResourceDictionary>
     </Application.Resources>
 </Application>
