@@ -75,7 +75,7 @@ public class SetupWizardTests : CommandCenterTestBase
         var result = await new UpdateCheckService().CheckAsync();
 
         Assert.NotNull(result);
-        Assert.Equal("3.7.15", result.CurrentVersion);
+        Assert.Equal("3.7.16", result.CurrentVersion);
     }
 
     [Fact]
