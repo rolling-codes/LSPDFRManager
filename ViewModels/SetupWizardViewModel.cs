@@ -11,6 +11,9 @@ public class SetupWizardViewModel : ObservableObject
     private string _gtaPath = AppConfig.Instance.GtaPath;
     private string _validationMessage = "";
     private string _backupPath = AppConfig.Instance.BackupPath;
+    private GtaDirectoryScanResult? _scanResult;
+
+    public Action? OnFinished { get; set; }
 
     public ObservableCollection<GamePathCandidate> DetectedPaths { get; } = [];
 
@@ -42,6 +45,7 @@ public class SetupWizardViewModel : ObservableObject
         {
             if (!SetProperty(ref _gtaPath, value)) return;
             ValidationMessage = _service.ValidatePath(value);
+            OnPropertyChanged(nameof(CanFinish));
         }
     }
 
@@ -57,12 +61,25 @@ public class SetupWizardViewModel : ObservableObject
         set => SetProperty(ref _backupPath, value);
     }
 
+    public GtaDirectoryScanResult? ScanResult
+    {
+        get => _scanResult;
+        private set
+        {
+            if (SetProperty(ref _scanResult, value))
+                OnPropertyChanged(nameof(CanFinish));
+        }
+    }
+
+    public bool CanFinish => ScanResult?.IsValidGtaRoot == true || _service.ValidatePath(GtaPath) == "";
+
     public ICommand NextCommand { get; }
     public ICommand BackCommand { get; }
     public ICommand DetectPathsCommand { get; }
     public ICommand SelectCandidateCommand { get; }
     public ICommand BrowseGtaPathCommand { get; }
     public ICommand BrowseBackupPathCommand { get; }
+    public ICommand ScanCommand { get; }
     public ICommand FinishCommand { get; }
 
     public SetupWizardViewModel()
@@ -73,6 +90,7 @@ public class SetupWizardViewModel : ObservableObject
         SelectCandidateCommand = new RelayCommand<GamePathCandidate?>(SelectCandidate);
         BrowseGtaPathCommand = new RelayCommand(BrowseGtaPath);
         BrowseBackupPathCommand = new RelayCommand(BrowseBackupPath);
+        ScanCommand = new RelayCommand(Scan);
         FinishCommand = new RelayCommand(Finish);
     }
 
@@ -85,6 +103,8 @@ public class SetupWizardViewModel : ObservableObject
     {
         if (CurrentPage > 0) CurrentPage--;
     }
+
+    private void Scan() => ScanResult = _service.ScanDirectory(GtaPath);
 
     private void DetectPaths()
     {
@@ -117,5 +137,6 @@ public class SetupWizardViewModel : ObservableObject
         AppConfig.Instance.Save();
         LspdfrStatusService.Instance.Refresh();
         DashboardStatusService.Instance.Refresh();
+        OnFinished?.Invoke();
     }
 }

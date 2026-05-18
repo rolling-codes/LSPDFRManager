@@ -50,6 +50,28 @@ public class SetupWizardService
         return candidates;
     }
 
+    public GtaDirectoryScanResult ScanDirectory(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path))
+            return new GtaDirectoryScanResult(path, false, false, false, false, null, null, null);
+
+        var gtaExe = LspdfrInstallLocator.FindGtaExe(path);
+        var lspdfrCore = LspdfrInstallLocator.FindLspdfrCore(path);
+        var rph = LspdfrInstallLocator.FindRagePluginHook(path);
+        var rphDll = File.Exists(Path.Combine(path, "RagePluginHook.dll")) ? Path.Combine(path, "RagePluginHook.dll") : null;
+
+        return new GtaDirectoryScanResult(
+            Path: path,
+            IsValidGtaRoot: gtaExe is not null,
+            HasLspdfrCore: lspdfrCore is not null,
+            HasRagePluginHook: rph is not null,
+            HasRagePluginHookDll: rphDll is not null,
+            GtaExeFound: gtaExe,
+            LspdfrCoreFound: lspdfrCore,
+            RagePluginHookFound: rph
+        );
+    }
+
     public string ValidatePath(string path)
     {
         if (string.IsNullOrWhiteSpace(path)) return "Path is empty.";

@@ -56,26 +56,30 @@ public partial class App : Application
         }
 
         var gtaPath = AppConfig.Instance.GtaPath;
-        if (string.IsNullOrWhiteSpace(gtaPath) || !Directory.Exists(gtaPath))
-        {
-            issues.Add($"GTA V installation folder not found:\n  {gtaPath}\n  Open Settings to set the correct path.");
-        }
-        else
-        {
-            var exePath = Path.Combine(gtaPath, "GTA5.exe");
-            if (!File.Exists(exePath))
-                issues.Add($"GTA5.exe was not found in:\n  {gtaPath}\n  Verify Settings points at the GTA V installation folder.");
+        var wizardWillRun = AppConfig.Instance.ShowSetupWizardOnStartup
+            || string.IsNullOrWhiteSpace(gtaPath);
 
-            // Verify write access to the GTA folder so install failures are caught early.
-            var writeProbe = Path.Combine(gtaPath, ".lspdfrmanager_write_test");
-            try
+        if (!wizardWillRun)
+        {
+            if (!Directory.Exists(gtaPath))
             {
-                File.WriteAllText(writeProbe, "");
-                File.Delete(writeProbe);
+                issues.Add($"GTA V installation folder not found:\n  {gtaPath}\n  Open Settings to set the correct path.");
             }
-            catch
+            else
             {
-                issues.Add($"GTA V folder is not writable:\n  {gtaPath}\n  The app must run as Administrator to install mods into a protected directory.");
+                if (LspdfrInstallLocator.FindGtaExe(gtaPath) is null)
+                    issues.Add($"GTA V executable not found in:\n  {gtaPath}\n  Verify Settings points at the GTA V installation folder.");
+
+                var writeProbe = Path.Combine(gtaPath, ".lspdfrmanager_write_test");
+                try
+                {
+                    File.WriteAllText(writeProbe, "");
+                    File.Delete(writeProbe);
+                }
+                catch
+                {
+                    issues.Add($"GTA V folder is not writable:\n  {gtaPath}\n  The app must run as Administrator to install mods into a protected directory.");
+                }
             }
         }
 

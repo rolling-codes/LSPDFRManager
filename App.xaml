@@ -55,6 +55,9 @@
             <DataTemplate DataType="{x:Type vm:SafeModeViewModel}">
                 <views:SafeModeView/>
             </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:SetupWizardViewModel}">
+                <views:SetupWizardView/>
+            </DataTemplate>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

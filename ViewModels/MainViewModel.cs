@@ -15,7 +15,20 @@ public class MainViewModel : ObservableObject
 
     public MainViewModel()
     {
-        _currentView = DashboardVM;
+        var showWizard = AppConfig.Instance.ShowSetupWizardOnStartup
+            || string.IsNullOrWhiteSpace(AppConfig.Instance.GtaPath);
+
+        if (showWizard)
+        {
+            _activePage = "SetupWizard";
+            _currentView = SetupWizardVM;
+            SetupWizardVM.OnFinished = () => Navigate("Home");
+        }
+        else
+        {
+            _currentView = DashboardVM;
+        }
+
         DashboardVM.NavigateTo = page => Navigate(page);
 
         NavigateCommand = new RelayCommand(Navigate);
@@ -64,6 +77,7 @@ public class MainViewModel : ObservableObject
         };
     }
 
+    public SetupWizardViewModel SetupWizardVM { get; } = new();
     public DashboardViewModel DashboardVM { get; } = new();
     public LibraryViewModel LibraryVM { get; } = new();
     public InstallViewModel InstallVM { get; } = new();
@@ -130,6 +144,7 @@ public class MainViewModel : ObservableObject
     public bool IsDevDiagnosticsActive    => _activePage == "DevDiagnostics";
     public bool IsPatrolReadinessActive   => _activePage == "PatrolReadiness";
     public bool IsSafeModeActive          => _activePage == "SafeMode";
+    public bool IsSetupWizardActive       => _activePage == "SetupWizard";
 
     public ICommand NavigateCommand { get; }
     public ICommand LaunchLspdfrCommand { get; }
@@ -155,6 +170,7 @@ public class MainViewModel : ObservableObject
             "DevDiagnostics"  => DevDiagnosticsVM,
             "PatrolReadiness" => PatrolReadinessVM,
             "SafeMode"        => SafeModeVM,
+            "SetupWizard"     => SetupWizardVM,
             _                 => DashboardVM,
         };
 
@@ -173,6 +189,7 @@ public class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(IsDevDiagnosticsActive));
         OnPropertyChanged(nameof(IsPatrolReadinessActive));
         OnPropertyChanged(nameof(IsSafeModeActive));
+        OnPropertyChanged(nameof(IsSetupWizardActive));
     }
 
     private void LaunchLspdfr()

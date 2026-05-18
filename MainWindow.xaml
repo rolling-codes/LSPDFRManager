@@ -45,7 +45,8 @@
                 </Border>
 
                 <!-- Nav buttons -->
-                <StackPanel Grid.Row="1" Margin="10,0,10,0">
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="10,0,10,0">
                     <Button Command="{Binding NavigateCommand}" CommandParameter="Home">
                         <Button.Content><StackPanel Orientation="Horizontal"><TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE80F;" FontSize="14" Width="20" TextAlignment="Center"/><TextBlock Text="Home" FontSize="13" Margin="10,0,0,0"/></StackPanel></Button.Content>
                         <Button.Style><Style TargetType="Button" BasedOn="{StaticResource NavButton}"><Style.Triggers><DataTrigger Binding="{Binding IsHomeActive}" Value="True"><Setter Property="Background" Value="{StaticResource AccentActiveBg}"/><Setter Property="BorderBrush" Value="{StaticResource AccentBorder}"/><Setter Property="Foreground" Value="{StaticResource TextStrong}"/><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers></Style></Button.Style>
@@ -116,6 +117,7 @@
                         <Button.Style><Style TargetType="Button" BasedOn="{StaticResource NavButton}"><Style.Triggers><DataTrigger Binding="{Binding IsDevDiagnosticsActive}" Value="True"><Setter Property="Background" Value="{StaticResource AccentActiveBg}"/><Setter Property="BorderBrush" Value="{StaticResource AccentBorder}"/><Setter Property="Foreground" Value="{StaticResource TextStrong}"/><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers></Style></Button.Style>
                     </Button>
                 </StackPanel>
+                </ScrollViewer>
 
                 <!-- Bottom status footer -->
                 <Border Grid.Row="2" Margin="10,0,10,12" Padding="10,8" CornerRadius="8" Background="{StaticResource Surface}" BorderBrush="{StaticResource BorderSubtle}" BorderThickness="1">
