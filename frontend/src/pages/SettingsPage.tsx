@@ -1,5 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import type { ReactNode } from 'react'
 import { useState } from 'react'
+import { CheckCircle2, Save, ShieldCheck } from 'lucide-react'
+import { Page, Panel, StateMessage, StatusBadge } from '../components/ui/Page'
 import { fetchConfig, updateConfig, validateGtaPath } from '../lib/api/config'
 import type { AppConfigDto, BackupScheduleMode } from '../types/config'
 
@@ -37,13 +40,15 @@ export default function SettingsPage() {
     onError: () => setSaveStatus('error'),
   })
 
-  if (isLoading) return <div className="p-6 text-zinc-400">Loading settings…</div>
+  if (isLoading) return <StateMessage title="Loading settings" description="Reading persisted desktop configuration." />
 
   if (isError) {
     return (
-      <div className="p-6 text-red-400">
-        Failed to load settings: {error instanceof Error ? error.message : 'Unknown error'}
-      </div>
+      <StateMessage
+        tone="danger"
+        title="Failed to load settings"
+        description={error instanceof Error ? error.message : 'Unknown error'}
+      />
     )
   }
 
@@ -75,8 +80,22 @@ export default function SettingsPage() {
   const hasChanges = Object.keys(patch).length > 0
 
   return (
-    <div className="p-6 max-w-2xl space-y-8 overflow-y-auto h-full">
-      <h1 className="text-xl font-semibold text-zinc-100">Settings</h1>
+    <Page
+      kicker="Configuration"
+      title="Settings"
+      description="Tune install behavior, backup policy, Browse API access, and general startup preferences."
+      actions={
+        <>
+          {hasChanges && <StatusBadge tone="warning">Unsaved changes</StatusBadge>}
+          {saveStatus === 'saved' && (
+            <StatusBadge tone="success">
+              <CheckCircle2 size={13} />
+              Saved
+            </StatusBadge>
+          )}
+        </>
+      }
+    >
 
       <Section title="Game">
         <Field label="GTA V Installation Folder">
@@ -87,6 +106,7 @@ export default function SettingsPage() {
               onChange={(e) => set('gtaPath', e.target.value)}
             />
             <button className="btn-secondary" onClick={handleValidateGtaPath}>
+              <ShieldCheck size={15} />
               Validate
             </button>
           </div>
@@ -241,32 +261,31 @@ export default function SettingsPage() {
           onClick={handleSave}
           disabled={!hasChanges || saveStatus === 'saving'}
         >
-          {saveStatus === 'saving' ? 'Saving…' : 'Save Settings'}
+          <Save size={15} />
+          {saveStatus === 'saving' ? 'Saving' : 'Save Settings'}
         </button>
-        {saveStatus === 'saved' && <span className="text-green-400 text-sm">Settings saved.</span>}
         {saveStatus === 'error' && (
           <span className="text-red-400 text-sm">
             {mutation.error instanceof Error ? mutation.error.message : 'Save failed.'}
           </span>
         )}
       </div>
-    </div>
+    </Page>
   )
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="space-y-3">
-      <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wider">{title}</h2>
-      <div className="space-y-3">{children}</div>
-    </div>
+    <Panel title={title}>
+      <div className="space-y-4 p-5">{children}</div>
+    </Panel>
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex items-start gap-4">
-      <label className="w-52 shrink-0 text-sm text-zinc-300 pt-1">{label}</label>
+    <div className="flex items-start gap-4 max-[720px]:flex-col max-[720px]:gap-2">
+      <label className="w-56 shrink-0 text-sm text-zinc-300 pt-1 max-[720px]:w-auto">{label}</label>
       <div className="flex flex-col flex-1">{children}</div>
     </div>
   )
@@ -283,20 +302,16 @@ function Toggle({
 }) {
   return (
     <label className="flex items-center gap-3 cursor-pointer select-none">
-      <span
+      <button
+        type="button"
         role="switch"
         aria-checked={checked}
         onClick={() => onChange(!checked)}
-        className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors cursor-pointer ${
-          checked ? 'bg-blue-600' : 'bg-zinc-600'
-        }`}
+        className="toggle-track"
+        data-checked={checked}
       >
-        <span
-          className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
-            checked ? 'translate-x-4' : 'translate-x-1'
-          }`}
-        />
-      </span>
+        <span className="toggle-thumb" />
+      </button>
       <span className="text-sm text-zinc-300">{label}</span>
     </label>
   )

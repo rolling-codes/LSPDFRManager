@@ -1,3 +1,5 @@
+import { Panel, Page, StatusBadge } from './Page'
+
 interface StubPageProps {
   label: string
   path: string
@@ -6,36 +8,24 @@ interface StubPageProps {
 
 export function StubPage({ label, path, sourceView }: StubPageProps) {
   return (
-    <div>
-      <h1
-        style={{
-          fontSize: '22px',
-          fontWeight: 600,
-          color: 'var(--color-text)',
-          margin: '0 0 8px',
-        }}
-      >
-        {label}
-      </h1>
-      <p style={{ color: 'var(--color-text-muted)', margin: '0 0 4px' }}>
-        Route: <code style={{ color: 'var(--color-accent)' }}>{path}</code>
-      </p>
-      <p style={{ color: 'var(--color-text-muted)', margin: '0 0 20px' }}>
-        WPF source: <code style={{ color: 'var(--color-text-muted)' }}>{sourceView}</code>
-      </p>
-      <div
-        style={{
-          display: 'inline-block',
-          padding: '6px 12px',
-          backgroundColor: 'var(--color-surface-raised)',
-          border: '1px solid var(--color-border)',
-          borderRadius: '4px',
-          fontSize: '12px',
-          color: 'var(--color-text-muted)',
-        }}
-      >
-        Not migrated yet
-      </div>
-    </div>
+    <Page
+      kicker="Migration queue"
+      title={label}
+      description="This route is reserved for the React migration and remains backed by the existing WPF surface until its workflow is ported."
+      actions={<StatusBadge tone="neutral">Queued</StatusBadge>}
+    >
+      <Panel>
+        <div className="grid gap-4 p-5 sm:grid-cols-2">
+          <div>
+            <div className="text-xs font-bold uppercase tracking-wider text-zinc-600">Route</div>
+            <code className="mt-1 block text-sm text-[var(--color-accent)]">{path}</code>
+          </div>
+          <div>
+            <div className="text-xs font-bold uppercase tracking-wider text-zinc-600">WPF source</div>
+            <code className="mt-1 block text-sm text-zinc-400">{sourceView}</code>
+          </div>
+        </div>
+      </Panel>
+    </Page>
   )
 }

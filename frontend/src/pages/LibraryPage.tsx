@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { ChevronDown, ImageIcon, Search, Star } from 'lucide-react'
+import { Page, Panel, StateMessage, StatusBadge } from '../components/ui/Page'
 import { fetchMods, toggleMod, updateModNotes } from '../lib/api/library'
 import type { InstalledModDto, ModsListResponse } from '../types/library'
 
@@ -50,69 +52,83 @@ export default function LibraryPage() {
     },
   })
 
-  if (isLoading) return <div className="p-6 text-zinc-400">Loading library…</div>
+  if (isLoading) return <StateMessage title="Loading library" description="Reading installed mods, metadata, and current enablement state." />
 
   if (isError) {
     return (
-      <div className="p-6 text-red-400">
-        Failed to load library: {error instanceof Error ? error.message : 'Unknown error'}
-      </div>
+      <StateMessage
+        tone="danger"
+        title="Failed to load library"
+        description={error instanceof Error ? error.message : 'Unknown error'}
+      />
     )
   }
 
   const mods = data?.mods ?? []
+  const enabledCount = mods.filter((mod) => mod.isEnabled).length
 
   return (
-    <div className="p-6 space-y-4 h-full overflow-y-auto">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-zinc-100">Mod Library</h1>
-        <span className="text-sm text-zinc-500">{data?.total ?? 0} mods</span>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-wrap gap-2">
-        <input
-          className="input flex-1 min-w-40"
-          placeholder="Search mods…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <select
-          className="input w-40"
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-        >
-          {MOD_TYPES.map((t) => (
-            <option key={t} value={t}>{t}</option>
-          ))}
-        </select>
-        <select
-          className="input w-36"
-          value={enabledFilter}
-          onChange={(e) => setEnabledFilter(e.target.value as typeof enabledFilter)}
-        >
-          <option value="all">All states</option>
-          <option value="enabled">Enabled</option>
-          <option value="disabled">Disabled</option>
-        </select>
-      </div>
+    <Page
+      kicker="Inventory"
+      title="Mod Library"
+      description="Filter installed mods, review conflicts, and toggle loadout state without leaving the command center."
+      actions={
+        <>
+          <StatusBadge tone="neutral">{data?.total ?? 0} total</StatusBadge>
+          <StatusBadge tone="success">{enabledCount} enabled</StatusBadge>
+        </>
+      }
+    >
+      <Panel>
+        <div className="flex flex-wrap gap-2 p-4">
+          <div className="relative min-w-60 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-2.5 text-zinc-500" size={15} />
+            <input
+              className="input w-full pl-9"
+              placeholder="Search mods"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <select
+            className="input w-44"
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+          >
+            {MOD_TYPES.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+          <select
+            className="input w-40"
+            value={enabledFilter}
+            onChange={(e) => setEnabledFilter(e.target.value as typeof enabledFilter)}
+          >
+            <option value="all">All states</option>
+            <option value="enabled">Enabled</option>
+            <option value="disabled">Disabled</option>
+          </select>
+        </div>
+      </Panel>
 
       {mods.length === 0 ? (
-        <p className="text-zinc-500">No mods found.</p>
+        <StateMessage title="No mods found" description="Try clearing filters or run a scan from the desktop app." />
       ) : (
-        <div className="space-y-2">
-          {mods.map((mod) => (
-            <ModRow
-              key={mod.id}
-              mod={mod}
-              expanded={expandedId === mod.id}
-              onToggleExpand={() => setExpandedId(expandedId === mod.id ? null : mod.id)}
-              onToggleEnabled={(enabled) => toggleMutation.mutate({ id: mod.id, enabled })}
-            />
-          ))}
-        </div>
+        <Panel>
+          <div className="divide-y divide-zinc-800/70">
+            {mods.map((mod) => (
+              <ModRow
+                key={mod.id}
+                mod={mod}
+                expanded={expandedId === mod.id}
+                onToggleExpand={() => setExpandedId(expandedId === mod.id ? null : mod.id)}
+                onToggleEnabled={(enabled) => toggleMutation.mutate({ id: mod.id, enabled })}
+              />
+            ))}
+          </div>
+        </Panel>
       )}
-    </div>
+    </Page>
   )
 }
 
@@ -142,26 +158,24 @@ function ModRow({
   }
 
   return (
-    <div className="rounded-lg border border-zinc-800 bg-zinc-900">
-      <div className="flex items-center gap-3 px-4 py-3">
-        {/* Thumbnail */}
-        <div className="shrink-0 w-10 h-10 rounded bg-zinc-800 flex items-center justify-center overflow-hidden">
+    <div>
+      <div className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-950/35">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-md border border-zinc-800 bg-zinc-950">
           {mod.thumbnailUrl ? (
             <img src={mod.thumbnailUrl} alt={mod.name} className="w-full h-full object-cover" />
           ) : (
-            <span className="text-zinc-600 text-xs">IMG</span>
+            <ImageIcon size={17} className="text-zinc-600" />
           )}
         </div>
 
-        {/* Main info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-zinc-100 truncate">{mod.name}</span>
             {mod.hasConflict && (
-              <span className="shrink-0 text-xs rounded px-1.5 py-0.5 bg-red-900 text-red-300">Conflict</span>
+              <StatusBadge tone="danger">Conflict</StatusBadge>
             )}
             {mod.isFavorite && (
-              <span className="shrink-0 text-xs text-yellow-400">★</span>
+              <Star size={14} className="shrink-0 fill-yellow-400 text-yellow-400" />
             )}
           </div>
           <div className="flex items-center gap-2 mt-0.5">
@@ -177,41 +191,28 @@ function ModRow({
           </div>
         </div>
 
-        {/* Controls */}
         <div className="flex items-center gap-3 shrink-0">
-          {/* Enable/disable toggle */}
-          <span
+          <button
+            type="button"
             role="switch"
             aria-checked={mod.isEnabled}
             onClick={() => onToggleEnabled(!mod.isEnabled)}
-            className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors cursor-pointer ${
-              mod.isEnabled ? 'bg-blue-600' : 'bg-zinc-600'
-            }`}
+            className="toggle-track"
+            data-checked={mod.isEnabled}
           >
-            <span
-              className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
-                mod.isEnabled ? 'translate-x-4' : 'translate-x-1'
-              }`}
-            />
-          </span>
+            <span className="toggle-thumb" />
+          </button>
 
-          {/* Expand chevron */}
           <button
             onClick={onToggleExpand}
-            className="text-zinc-500 hover:text-zinc-300 transition-colors"
+            className="btn-secondary h-8 w-8 p-0"
             aria-label={expanded ? 'Collapse' : 'Expand'}
           >
-            <svg
-              className={`w-4 h-4 transition-transform ${expanded ? 'rotate-180' : ''}`}
-              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
+            <ChevronDown size={16} className={`transition-transform ${expanded ? 'rotate-180' : ''}`} />
           </button>
         </div>
       </div>
 
-      {/* Expanded notes area */}
       {expanded && (
         <div className="border-t border-zinc-800 px-4 py-3 space-y-2">
           <span className="text-xs text-zinc-500">

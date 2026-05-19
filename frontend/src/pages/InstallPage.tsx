@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { CheckCircle2, HardDriveDownload, Loader2, XCircle } from 'lucide-react'
+import { Page, Panel, StatusBadge } from '../components/ui/Page'
 import { startInstall } from '../lib/api/install'
 import { useJob } from '../lib/hooks/useJob'
 import type { InstallResultDto } from '../types/install'
@@ -36,70 +38,76 @@ export default function InstallPage() {
   }
 
   return (
-    <div className="p-6 max-w-xl space-y-6 overflow-y-auto h-full">
-      <h1 className="text-xl font-semibold text-zinc-100">Install Mod</h1>
-
-      <div className="space-y-3">
-        <label className="block text-sm text-zinc-300">Archive or folder path</label>
-        <input
-          className="input w-full"
-          placeholder="C:\Downloads\my-mod.zip"
-          value={sourcePath}
-          onChange={(e) => setSourcePath(e.target.value)}
-          disabled={isRunning}
-        />
-        <button
-          className="btn-primary"
-          onClick={handleInstall}
-          disabled={isRunning || !sourcePath.trim()}
-        >
-          {isRunning ? 'Installing…' : 'Install'}
-        </button>
-      </div>
+    <Page
+      kicker="Workflow"
+      title="Install Mod"
+      description="Start a guarded install from an archive or extracted folder and monitor job progress."
+      actions={<StatusBadge tone={isRunning ? 'warning' : 'neutral'}>{isRunning ? 'Running' : 'Idle'}</StatusBadge>}
+    >
+      <Panel title="Install Source">
+        <div className="space-y-4 p-5">
+          <label className="block text-sm font-medium text-zinc-300">Archive or folder path</label>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <input
+              className="input flex-1"
+              placeholder="C:\Downloads\my-mod.zip"
+              value={sourcePath}
+              onChange={(e) => setSourcePath(e.target.value)}
+              disabled={isRunning}
+            />
+            <button
+              className="btn-primary"
+              onClick={handleInstall}
+              disabled={isRunning || !sourcePath.trim()}
+            >
+              {isRunning ? <Loader2 size={16} className="animate-spin" /> : <HardDriveDownload size={16} />}
+              {isRunning ? 'Installing' : 'Install'}
+            </button>
+          </div>
+        </div>
+      </Panel>
 
       {submitError && (
-        <p className="text-red-400 text-sm">{submitError}</p>
+        <Panel className="border-red-900/50">
+          <p className="p-4 text-sm text-red-300">{submitError}</p>
+        </Panel>
       )}
 
       {jobId && jobStatus && (
-        <div className={`rounded-lg border px-4 py-3 space-y-3 ${
-          isFailed ? 'border-red-800 bg-red-950/30' :
-          isDone   ? 'border-green-800 bg-green-950/30' :
-                     'border-zinc-700 bg-zinc-900'
-        }`}>
-          <div className="flex items-center justify-between text-sm">
-            <span className={
-              isFailed ? 'text-red-400' :
-              isDone   ? 'text-green-400' :
-                         'text-zinc-300'
-            }>
-              {isDone ? 'Install complete' : isFailed ? 'Install failed' : `Installing… ${jobStatus.progressPct}%`}
-            </span>
+        <Panel
+          title="Job Status"
+          className={isFailed ? 'border-red-900/50' : isDone ? 'border-green-900/50' : ''}
+          meta={
+            <StatusBadge tone={isFailed ? 'danger' : isDone ? 'success' : 'warning'}>
+              {isDone ? <CheckCircle2 size={13} /> : isFailed ? <XCircle size={13} /> : <Loader2 size={13} className="animate-spin" />}
+              {isDone ? 'Complete' : isFailed ? 'Failed' : 'Installing'}
+            </StatusBadge>
+          }
+        >
+          <div className="space-y-3 p-4">
             {isRunning && (
-              <span className="text-zinc-500 font-mono">{jobStatus.progressPct}%</span>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-800">
+                <div
+                  className="h-2 rounded-full bg-[var(--color-accent)] transition-all"
+                  style={{ width: `${jobStatus.progressPct}%` }}
+                />
+              </div>
+            )}
+
+            {isRunning && <p className="text-sm text-zinc-400">{jobStatus.progressPct}% complete</p>}
+
+            {isDone && result && (
+              <p className="text-sm text-green-300">
+                {result.filesInstalled} file{result.filesInstalled !== 1 ? 's' : ''} installed.
+              </p>
+            )}
+
+            {isFailed && jobStatus.error && (
+              <p className="text-sm text-red-400">{jobStatus.error}</p>
             )}
           </div>
-
-          {isRunning && (
-            <div className="h-1.5 w-full rounded-full bg-zinc-800">
-              <div
-                className="h-1.5 rounded-full bg-blue-500 transition-all"
-                style={{ width: `${jobStatus.progressPct}%` }}
-              />
-            </div>
-          )}
-
-          {isDone && result && (
-            <p className="text-sm text-green-300">
-              {result.filesInstalled} file{result.filesInstalled !== 1 ? 's' : ''} installed.
-            </p>
-          )}
-
-          {isFailed && jobStatus.error && (
-            <p className="text-sm text-red-400">{jobStatus.error}</p>
-          )}
-        </div>
+        </Panel>
       )}
-    </div>
+    </Page>
   )
 }

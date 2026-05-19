@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
+import { RefreshCcw, ShieldAlert, Trash2 } from 'lucide-react'
+import { Page, Panel, StateMessage, StatusBadge } from '../components/ui/Page'
 import { fetchCleanupScan, applyCleanup } from '../lib/api/cleanup'
 import type { RemovalCandidateDto, CleanupApplyResponse } from '../types/cleanup'
 
@@ -59,34 +61,39 @@ export default function CleanupPage() {
     .reduce((sum, c) => sum + c.sizeBytes, 0)
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-xl font-semibold text-zinc-100">Cleanup</h1>
+    <Page
+      kicker="Maintenance"
+      title="Cleanup"
+      description="Review removable files, choose a risk mode, and apply cleanup only after a backup is created."
+      actions={
         <button className="btn-secondary" onClick={() => refetch()} disabled={isFetching}>
-          {isFetching ? 'Scanning…' : 'Scan'}
+          <RefreshCcw size={15} className={isFetching ? 'animate-spin' : ''} />
+          {isFetching ? 'Scanning' : 'Scan'}
         </button>
-      </div>
+      }
+    >
 
-      {isLoading && <p className="text-zinc-400">Scanning for removable files…</p>}
-      {isError && <p className="text-red-400">Scan failed. Ensure GTA V path is configured.</p>}
+      {isLoading && <StateMessage title="Scanning for removable files" description="The cleanup scanner is reviewing known safe candidates." />}
+      {isError && <StateMessage tone="danger" title="Scan failed" description="Ensure GTA V path is configured." />}
 
       {result && (
-        <div
-          className={`rounded-lg border px-4 py-3 text-sm ${result.success ? 'border-green-700 bg-green-900/20 text-green-400' : 'border-red-700 bg-red-900/20 text-red-400'}`}
-        >
+        <Panel className={result.success ? 'border-green-900/50' : 'border-red-900/50'}>
+          <div className={`p-4 text-sm ${result.success ? 'text-green-300' : 'text-red-300'}`}>
           {result.success
             ? `Deleted ${result.filesDeleted} file(s) successfully.`
             : `Cleanup failed: ${result.error}`}
-        </div>
+          </div>
+        </Panel>
       )}
 
       {data && candidates.length === 0 && (
-        <p className="text-zinc-400">No removable files found.</p>
+        <StateMessage title="No removable files found" description="The current install does not expose cleanup candidates." />
       )}
 
       {candidates.length > 0 && (
         <>
-          <div className="flex items-center gap-4 flex-wrap">
+          <Panel>
+          <div className="flex items-center gap-4 flex-wrap p-4">
             <div className="flex gap-2">
               <button className="btn-secondary text-xs" onClick={selectAll}>
                 Select All
@@ -115,21 +122,24 @@ export default function CleanupPage() {
             </div>
             <div className="ml-auto flex items-center gap-3">
               {selected.size > 0 && (
-                <span className="text-xs text-zinc-400">
+                <StatusBadge tone="warning">
                   {selected.size} selected ({formatBytes(totalSelectedBytes)})
-                </span>
+                </StatusBadge>
               )}
               <button
                 className="btn-primary"
                 disabled={selected.size === 0 || applyMutation.isPending}
                 onClick={handleApply}
               >
-                {applyMutation.isPending ? 'Cleaning…' : 'Clean Selected'}
+                {applyMutation.isPending ? <RefreshCcw size={15} className="animate-spin" /> : <Trash2 size={15} />}
+                {applyMutation.isPending ? 'Cleaning' : 'Clean Selected'}
               </button>
             </div>
           </div>
+          </Panel>
 
-          <div className="space-y-2">
+          <Panel title="Candidates" meta={<StatusBadge tone="neutral">Total on disk: {formatBytes(data?.totalSizeBytes ?? 0)}</StatusBadge>}>
+          <div className="divide-y divide-zinc-800/70">
             {candidates.map((c) => (
               <CandidateRow
                 key={c.relativePath}
@@ -139,13 +149,10 @@ export default function CleanupPage() {
               />
             ))}
           </div>
-
-          <p className="text-xs text-zinc-600">
-            Total on disk: {formatBytes(data?.totalSizeBytes ?? 0)}
-          </p>
+          </Panel>
         </>
       )}
-    </div>
+    </Page>
   )
 }
 
@@ -160,11 +167,7 @@ function CandidateRow({
 }) {
   const riskColor = RISK_STYLES[c.riskLevel] ?? 'text-zinc-400'
   return (
-    <div
-      className={`flex items-start gap-3 rounded-lg border px-4 py-3 ${
-        c.isBlocked ? 'border-zinc-800 bg-zinc-950 opacity-60' : 'border-zinc-700 bg-zinc-900'
-      }`}
-    >
+    <div className={`flex items-start gap-3 px-4 py-3 ${c.isBlocked ? 'opacity-60' : 'hover:bg-zinc-950/35'}`}>
       <input
         type="checkbox"
         checked={checked}
@@ -176,7 +179,8 @@ function CandidateRow({
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm font-mono text-zinc-100 truncate">{c.relativePath}</span>
           {c.isBlocked && (
-            <span className="rounded bg-red-900/40 px-1.5 py-0.5 text-xs text-red-400">
+            <span className="inline-flex items-center gap-1 rounded bg-red-900/40 px-1.5 py-0.5 text-xs text-red-400">
+              <ShieldAlert size={12} />
               Blocked
             </span>
           )}

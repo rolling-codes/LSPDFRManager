@@ -1,4 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
+import { FileClock } from 'lucide-react'
+import { Page, Panel, StateMessage, StatusBadge } from '../components/ui/Page'
 import { fetchHistory } from '../lib/api/history'
 import type { ChangeHistoryEntryDto } from '../types/history'
 
@@ -9,36 +11,41 @@ export default function HistoryPage() {
   })
 
   if (isLoading) {
-    return <div className="p-6 text-zinc-400">Loading history…</div>
+    return <StateMessage title="Loading history" description="Reading recent install and change events." />
   }
 
   if (isError) {
     return (
-      <div className="p-6 text-red-400">
-        Failed to load history: {error instanceof Error ? error.message : 'Unknown error'}
-      </div>
+      <StateMessage
+        tone="danger"
+        title="Failed to load history"
+        description={error instanceof Error ? error.message : 'Unknown error'}
+      />
     )
   }
 
   const entries = data?.entries ?? []
 
   return (
-    <div className="p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-zinc-100">Change History</h1>
-        <span className="text-sm text-zinc-500">{data?.total ?? 0} entries</span>
-      </div>
+    <Page
+      kicker="Audit"
+      title="Change History"
+      description="A chronological record of install, uninstall, enable, disable, and file operations."
+      actions={<StatusBadge tone="neutral">{data?.total ?? 0} entries</StatusBadge>}
+    >
 
       {entries.length === 0 ? (
-        <p className="text-zinc-500">No history recorded yet.</p>
+        <StateMessage title="No history recorded yet" description="Changes will appear here after installs or library operations run." />
       ) : (
-        <div className="space-y-2">
+        <Panel>
+          <div className="divide-y divide-zinc-800/70">
           {entries.map((entry) => (
             <HistoryRow key={entry.id} entry={entry} />
           ))}
-        </div>
+          </div>
+        </Panel>
       )}
-    </div>
+    </Page>
   )
 }
 
@@ -46,9 +53,12 @@ function HistoryRow({ entry }: { entry: ChangeHistoryEntryDto }) {
   const date = new Date(entry.occurredAt).toLocaleString()
 
   return (
-    <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3 space-y-1">
+    <div className="px-4 py-3 hover:bg-zinc-950/35">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-sm font-medium text-zinc-100">{entry.description}</span>
+        <span className="flex min-w-0 items-center gap-2 text-sm font-medium text-zinc-100">
+          <FileClock size={15} className="shrink-0 text-zinc-500" />
+          <span className="truncate">{entry.description}</span>
+        </span>
         <span className="shrink-0 text-xs text-zinc-500">{date}</span>
       </div>
       <div className="flex items-center gap-3 text-xs text-zinc-400">

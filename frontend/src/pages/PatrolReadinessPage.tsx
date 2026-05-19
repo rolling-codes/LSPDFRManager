@@ -1,4 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
+import { AlertTriangle, CheckCircle2, RefreshCcw, XCircle } from 'lucide-react'
+import { Page, Panel, StateMessage, StatusBadge } from '../components/ui/Page'
 import { fetchPatrolReadiness } from '../lib/api/patrol-readiness'
 
 export default function PatrolReadinessPage() {
@@ -9,46 +11,58 @@ export default function PatrolReadinessPage() {
   })
 
   if (isLoading) {
-    return <div className="p-6 text-zinc-400">Running patrol readiness checks…</div>
+    return <StateMessage title="Running patrol readiness checks" description="Validating the core launch components and current install state." />
   }
 
   if (isError) {
     return (
-      <div className="p-6 space-y-3">
-        <div className="text-red-400">Failed to run patrol readiness checks.</div>
-        <button className="btn-secondary" onClick={() => void refetch()}>Retry</button>
-      </div>
+      <StateMessage
+        tone="danger"
+        title="Failed to run patrol readiness checks"
+        description="The readiness endpoint could not complete."
+        action={<button className="btn-secondary" onClick={() => void refetch()}><RefreshCcw size={15} />Retry</button>}
+      />
     )
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-zinc-100">Patrol Readiness</h1>
+    <Page
+      kicker="Pre-flight"
+      title="Patrol Readiness"
+      description="Check the install before launching LSPDFR and separate blockers from lower-risk warnings."
+      actions={
         <button
           className="btn-secondary"
           onClick={() => void refetch()}
           disabled={isFetching}
         >
-          {isFetching ? 'Checking…' : 'Re-check'}
+          <RefreshCcw size={15} className={isFetching ? 'animate-spin' : ''} />
+          {isFetching ? 'Checking' : 'Re-check'}
         </button>
-      </div>
+      }
+    >
 
-      {/* Ready / Not Ready banner */}
       {data && (
-        <div
-          className={[
-            'rounded-lg px-4 py-3 text-sm font-semibold',
-            data.isReady
-              ? 'bg-green-900/30 border border-green-700 text-green-400'
-              : 'bg-red-900/30 border border-red-700 text-red-400',
-          ].join(' ')}
-        >
+        <Panel className={data.isReady ? 'border-green-900/50' : 'border-red-900/50'}>
+          <div className="flex items-center justify-between gap-4 p-5">
+            <div>
+              <div className={`text-lg font-semibold ${data.isReady ? 'text-green-300' : 'text-red-300'}`}>
           {data.isReady
-            ? '✓ Patrol Ready — all required components found.'
-            : '✗ Not Ready — resolve blocking issues before launching LSPDFR.'}
-        </div>
+                  ? 'Patrol ready'
+                  : 'Not ready'}
+              </div>
+              <p className="mt-1 text-sm text-zinc-400">
+                {data.isReady
+                  ? 'All required components were found.'
+                  : 'Resolve blocking issues before launching LSPDFR.'}
+              </p>
+            </div>
+            <StatusBadge tone={data.isReady ? 'success' : 'danger'}>
+              {data.isReady ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
+              {data.isReady ? 'Ready' : 'Blocked'}
+            </StatusBadge>
+          </div>
+        </Panel>
       )}
 
       {data && data.blocking.length > 0 && (
@@ -62,7 +76,7 @@ export default function PatrolReadinessPage() {
       {data && data.passing.length > 0 && (
         <CheckSection title="Passing" items={data.passing} variant="passing" />
       )}
-    </div>
+    </Page>
   )
 }
 
@@ -77,40 +91,36 @@ function CheckSection({
 }) {
   const palette = {
     blocking: {
-      heading: 'text-red-400',
-      icon: '✕',
+      heading: 'text-red-300',
+      Icon: XCircle,
       iconColor: 'text-red-500',
       border: 'border-red-900/40',
     },
     warning: {
-      heading: 'text-yellow-400',
-      icon: '⚠',
+      heading: 'text-yellow-300',
+      Icon: AlertTriangle,
       iconColor: 'text-yellow-500',
       border: 'border-yellow-900/40',
     },
     passing: {
-      heading: 'text-green-400',
-      icon: '✓',
+      heading: 'text-green-300',
+      Icon: CheckCircle2,
       iconColor: 'text-green-500',
       border: 'border-green-900/40',
     },
   }[variant]
+  const Icon = palette.Icon
 
   return (
-    <section>
-      <h2 className={`mb-2 text-sm font-semibold uppercase tracking-wide ${palette.heading}`}>
-        {title}
-      </h2>
-      <ul className={`rounded-lg border divide-y divide-zinc-800/60 ${palette.border}`}>
+    <Panel title={title} className={palette.border}>
+      <ul className="divide-y divide-zinc-800/60">
         {items.map((item, i) => (
           <li key={i} className="flex items-start gap-3 px-4 py-2.5">
-            <span className={`mt-0.5 text-sm font-bold shrink-0 ${palette.iconColor}`}>
-              {palette.icon}
-            </span>
+            <Icon size={15} className={`mt-0.5 shrink-0 ${palette.iconColor}`} />
             <span className="text-sm text-zinc-300">{item}</span>
           </li>
         ))}
       </ul>
-    </section>
+    </Panel>
   )
 }
