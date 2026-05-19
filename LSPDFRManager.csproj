@@ -11,22 +11,34 @@
     <Description>Desktop mod manager for GTA V LSPDFR installations.</Description>
     <Authors>rolling-codes</Authors>
     <RepositoryUrl>https://github.com/rolling-codes/LSPDFRManager</RepositoryUrl>
-    <Version>3.7.17</Version>
-    <AssemblyVersion>3.7.17.0</AssemblyVersion>
-    <FileVersion>3.7.17.0</FileVersion>
+    <Version>3.7.18</Version>
+    <AssemblyVersion>3.7.18.0</AssemblyVersion>
+    <FileVersion>3.7.18.0</FileVersion>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="LSPDFRManager.Api\**;LSPDFRManager.Tests\**;release-worktree\**" />
-    <EmbeddedResource Remove="LSPDFRManager.Api\**;LSPDFRManager.Tests\**;release-worktree\**" />
-    <None Remove="LSPDFRManager.Api\**;LSPDFRManager.Tests\**;release-worktree\**" />
-    <Page Remove="LSPDFRManager.Api\**;LSPDFRManager.Tests\**;release-worktree\**" />
+    <Compile Remove="LSPDFRManager.Api\**;LSPDFRManager.LocalApi\**;LSPDFRManager.Shared\**;LSPDFRManager.Tests\**;release-worktree\**;frontend\**" />
+    <EmbeddedResource Remove="LSPDFRManager.Api\**;LSPDFRManager.LocalApi\**;LSPDFRManager.Shared\**;LSPDFRManager.Tests\**;release-worktree\**;frontend\**" />
+    <None Remove="LSPDFRManager.Api\**;LSPDFRManager.LocalApi\**;LSPDFRManager.Shared\**;LSPDFRManager.Tests\**;release-worktree\**;frontend\**" />
+    <Page Remove="LSPDFRManager.Api\**;LSPDFRManager.LocalApi\**;LSPDFRManager.Shared\**;LSPDFRManager.Tests\**;release-worktree\**;frontend\**" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="SharpCompress" Version="0.38.0" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2739.15" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="LSPDFRManager.Shared\LSPDFRManager.Shared.csproj" />
+    <ProjectReference Include="LSPDFRManager.LocalApi\LSPDFRManager.LocalApi.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="LSPDFRManager.LocalApi\wwwroot\**\*"
+             Link="wwwroot\%(RecursiveDir)%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="Always" />
   </ItemGroup>
 
   <ItemGroup>

@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\LSPDFRManager.csproj" />
+    <ProjectReference Include="..\LSPDFRManager.Shared\LSPDFRManager.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

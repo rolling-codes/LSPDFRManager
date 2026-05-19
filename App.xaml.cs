@@ -1,6 +1,7 @@
 using System.Windows;
 using LSPDFRManager.Core;
 using LSPDFRManager.Domain;
+using LSPDFRManager.LocalApi;
 using LSPDFRManager.Services;
 using LSPDFRManager.ViewModels;
 
@@ -21,6 +22,13 @@ public partial class App : Application
             ex.Handled = false;
         };
 
+        // Start local API in-process (non-blocking; React UI nav waits on PortTask)
+        _ = Task.Run(async () =>
+        {
+            try { await LocalApiHost.StartAsync(); }
+            catch (Exception ex) { AppLogger.Error("[LOCALAPI] Failed to start", ex); }
+        });
+
         try
         {
             base.OnStartup(e);
@@ -36,6 +44,12 @@ public partial class App : Application
             AppLogger.Error("[APP_STARTUP] Failed", ex);
             throw;
         }
+    }
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        base.OnExit(e);
+        _ = LocalApiHost.StopAsync();
     }
 
     private static void ValidateStartup()

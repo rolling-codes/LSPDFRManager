@@ -120,6 +120,10 @@
                         <Button.Content><StackPanel Orientation="Horizontal"><TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE756;" FontSize="14" Width="20" TextAlignment="Center"/><TextBlock Text="Dev Diagnostics" FontSize="13" Margin="10,0,0,0"/></StackPanel></Button.Content>
                         <Button.Style><Style TargetType="Button" BasedOn="{StaticResource NavButton}"><Style.Triggers><DataTrigger Binding="{Binding IsDevDiagnosticsActive}" Value="True"><Setter Property="Background" Value="{StaticResource AccentActiveBg}"/><Setter Property="BorderBrush" Value="{StaticResource AccentBorder}"/><Setter Property="Foreground" Value="{StaticResource TextStrong}"/><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers></Style></Button.Style>
                     </Button>
+                    <Button Command="{Binding NavigateCommand}" CommandParameter="ReactPreview">
+                        <Button.Content><StackPanel Orientation="Horizontal"><TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE774;" FontSize="14" Width="20" TextAlignment="Center"/><TextBlock Text="React UI" FontSize="13" Margin="10,0,0,0"/></StackPanel></Button.Content>
+                        <Button.Style><Style TargetType="Button" BasedOn="{StaticResource NavButton}"><Style.Triggers><DataTrigger Binding="{Binding IsReactPreviewActive}" Value="True"><Setter Property="Background" Value="{StaticResource AccentActiveBg}"/><Setter Property="BorderBrush" Value="{StaticResource AccentBorder}"/><Setter Property="Foreground" Value="{StaticResource TextStrong}"/><Setter Property="FontWeight" Value="Bold"/></DataTrigger></Style.Triggers></Style></Button.Style>
+                    </Button>
                 </StackPanel>
                 </ScrollViewer>
 

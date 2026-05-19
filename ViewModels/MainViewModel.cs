@@ -95,6 +95,7 @@ public class MainViewModel : ObservableObject
     public PatrolReadinessDashboardViewModel PatrolReadinessVM { get; } = new();
     public SafeModeViewModel SafeModeVM { get; } = new();
     public CleanupViewModel CleanupVM  { get; } = new();
+    public ReactPreviewViewModel ReactPreviewVM { get; } = new();
 
     public LspdfrStatusService Status { get; } = LspdfrStatusService.Instance;
 
@@ -148,6 +149,7 @@ public class MainViewModel : ObservableObject
     public bool IsSafeModeActive          => _activePage == "SafeMode";
     public bool IsSetupWizardActive       => _activePage == "SetupWizard";
     public bool IsCleanupActive           => _activePage == "Cleanup";
+    public bool IsReactPreviewActive      => _activePage == "ReactPreview";
 
     public ICommand NavigateCommand { get; }
     public ICommand LaunchLspdfrCommand { get; }
@@ -175,6 +177,7 @@ public class MainViewModel : ObservableObject
             "SafeMode"        => SafeModeVM,
             "SetupWizard"     => SetupWizardVM,
             "Cleanup"         => CleanupVM,
+            "ReactPreview"    => ReactPreviewVM,
             _                 => DashboardVM,
         };
 
@@ -195,6 +198,7 @@ public class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(IsSafeModeActive));
         OnPropertyChanged(nameof(IsSetupWizardActive));
         OnPropertyChanged(nameof(IsCleanupActive));
+        OnPropertyChanged(nameof(IsReactPreviewActive));
     }
 
     private void LaunchLspdfr()
