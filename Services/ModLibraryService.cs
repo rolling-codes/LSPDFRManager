@@ -35,13 +35,7 @@ public class ModLibraryService
     {
         lock (_mutationLock)
         {
-            UiDispatcher.Invoke(() =>
-            {
-                var mod = Mods.FirstOrDefault(item => item.Id == id);
-                if (mod is not null)
-                    Mods.Remove(mod);
-            });
-
+            RemoveFromCollection(id);
             Save();
         }
     }
@@ -143,7 +137,7 @@ public class ModLibraryService
 
     public List<string> FindConflicts(InstalledMod candidate) => _fileService.FindConflicts(Mods, candidate);
 
-    public void Uninstall(Guid id)
+    public ModUninstallResult Uninstall(Guid id)
     {
         InstalledMod? target = null;
 
@@ -153,13 +147,34 @@ public class ModLibraryService
         });
 
         if (target is null)
-            return;
+            return ModUninstallResult.NotFound(id);
 
         lock (_mutationLock)
         {
-            _fileService.Uninstall(target, Mods);
-            Remove(id);
+            var result = _fileService.Uninstall(target, Mods);
+
+            if (result.Success)
+            {
+                RemoveFromCollection(id);
+                Save();
+            }
+            else
+            {
+                ModUpdated?.Invoke(target);
+            }
+
+            return result;
         }
+    }
+
+    private void RemoveFromCollection(Guid id)
+    {
+        UiDispatcher.Invoke(() =>
+        {
+            var mod = Mods.FirstOrDefault(item => item.Id == id);
+            if (mod is not null)
+                Mods.Remove(mod);
+        });
     }
 
     private void Load()

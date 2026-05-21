@@ -12,34 +12,79 @@ public class MainViewModel : ObservableObject
     private string _activePage = "Home";
     private string _statusMessage = "Ready";
     private string? _globalErrorMessage;
+    private int _errorVersion;
 
     public MainViewModel()
     {
-        _currentView = DashboardVM;
+        var showWizard = AppConfig.Instance.ShowSetupWizardOnStartup
+            || string.IsNullOrWhiteSpace(AppConfig.Instance.GtaPath);
+
+        if (showWizard)
+        {
+            _activePage = "SetupWizard";
+            _currentView = SetupWizardVM;
+            SetupWizardVM.OnFinished = () => Navigate("Home");
+        }
+        else
+        {
+            _currentView = DashboardVM;
+        }
+
+        DashboardVM.NavigateTo = page => Navigate(page);
+        CleanupVM.OnCancelled  = () => Navigate("Home");
 
         NavigateCommand = new RelayCommand(Navigate);
         LaunchLspdfrCommand = new RelayCommand(LaunchLspdfr, () => Status.IsLspdfrInstalled);
 
         InstallVM.LogAdded += message => UiDispatcher.Invoke(() => StatusMessage = message);
 
-        AppConfig.GtaPathChanged += _ => UiDispatcher.Invoke(() => OnPropertyChanged(nameof(GtaStatusText)));
+        AppConfig.GtaPathChanged += _ => UiDispatcher.Invoke(() =>
+        {
+            Status.Refresh();
+            OnPropertyChanged(nameof(GtaStatusText));
+            CommandManager.InvalidateRequerySuggested();
+        });
 
         InstallQueue.Instance.InstallFailedWithResult += (mod, result) =>
         {
-            GlobalErrorMessage = $"Install failed: {result.Error}";
+            var version = System.Threading.Interlocked.Increment(ref _errorVersion);
+            UiDispatcher.Invoke(() => GlobalErrorMessage = $"Install failed: {result.Error}");
 
             _ = Task.Run(async () =>
             {
                 await Task.Delay(TimeSpan.FromSeconds(5));
-                UiDispatcher.Invoke(() => GlobalErrorMessage = null);
+                UiDispatcher.Invoke(() =>
+                {
+                    if (_errorVersion == version)
+                        GlobalErrorMessage = null;
+                });
             });
         };
 
         // Load persistent services
         ChangeHistoryService.Instance.Load();
         RestorePointService.Instance.Load();
+
+        ModLibraryService.Instance.Mods.CollectionChanged += (_, _) =>
+        {
+            UiDispatcher.Invoke(() =>
+            {
+                OnPropertyChanged(nameof(DisabledModCount));
+                OnPropertyChanged(nameof(HasDisabledMods));
+            });
+        };
+
+        ModLibraryService.Instance.ModUpdated += _ =>
+        {
+            UiDispatcher.Invoke(() =>
+            {
+                OnPropertyChanged(nameof(DisabledModCount));
+                OnPropertyChanged(nameof(HasDisabledMods));
+            });
+        };
     }
 
+    public SetupWizardViewModel SetupWizardVM { get; } = new();
     public DashboardViewModel DashboardVM { get; } = new();
     public LibraryViewModel LibraryVM { get; } = new();
     public InstallViewModel InstallVM { get; } = new();
@@ -52,6 +97,11 @@ public class MainViewModel : ObservableObject
     public LogViewerViewModel LogViewerVM { get; } = new();
     public SettingsViewModel SettingsVM { get; } = new();
     public OivViewModel OivVM { get; } = new();
+    public DevDiagnosticsViewModel DevDiagnosticsVM { get; } = new();
+    public PatrolReadinessDashboardViewModel PatrolReadinessVM { get; } = new();
+    public SafeModeViewModel SafeModeVM { get; } = new();
+    public CleanupViewModel CleanupVM  { get; } = new();
+    public ReactPreviewViewModel ReactPreviewVM { get; } = new();
 
     public LspdfrStatusService Status { get; } = LspdfrStatusService.Instance;
 
@@ -79,10 +129,14 @@ public class MainViewModel : ObservableObject
 
     public bool HasGlobalError => !string.IsNullOrWhiteSpace(GlobalErrorMessage);
 
-    public string GtaStatusText => AppConfig.Instance.GtaPath;
+    public int DisabledModCount =>
+        ModLibraryService.Instance.Mods.Count(m => !m.IsEnabled);
 
-    public static string AppVersion =>
-        $"v{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "?.?.?"}  •  Command Center";
+    public bool HasDisabledMods => DisabledModCount > 0;
+
+    public string GtaStatusText => AppConfig.Instance.GtaPath;
+    public string AppVersionText =>
+        $"v{typeof(MainViewModel).Assembly.GetName().Version?.ToString(3) ?? "0.0.0"}  •  Command Center";
 
     public bool IsHomeActive        => _activePage == "Home";
     public bool IsLibraryActive     => _activePage == "Library";
@@ -96,6 +150,12 @@ public class MainViewModel : ObservableObject
     public bool IsSettingsActive    => _activePage == "Settings";
     public bool IsModConfigActive   => _activePage == "ModConfig";
     public bool IsOivActive         => _activePage == "Oiv";
+    public bool IsDevDiagnosticsActive    => _activePage == "DevDiagnostics";
+    public bool IsPatrolReadinessActive   => _activePage == "PatrolReadiness";
+    public bool IsSafeModeActive          => _activePage == "SafeMode";
+    public bool IsSetupWizardActive       => _activePage == "SetupWizard";
+    public bool IsCleanupActive           => _activePage == "Cleanup";
+    public bool IsReactPreviewActive      => _activePage == "ReactPreview";
 
     public ICommand NavigateCommand { get; }
     public ICommand LaunchLspdfrCommand { get; }
@@ -117,8 +177,14 @@ public class MainViewModel : ObservableObject
             "History"     => HistoryVM,
             "Logs"        => LogViewerVM,
             "Settings"    => SettingsVM,
-            "Oiv"         => OivVM,
-            _             => DashboardVM,
+            "Oiv"            => OivVM,
+            "DevDiagnostics"  => DevDiagnosticsVM,
+            "PatrolReadiness" => PatrolReadinessVM,
+            "SafeMode"        => SafeModeVM,
+            "SetupWizard"     => SetupWizardVM,
+            "Cleanup"         => CleanupVM,
+            "ReactPreview"    => ReactPreviewVM,
+            _                 => DashboardVM,
         };
 
         OnPropertyChanged(nameof(IsHomeActive));
@@ -133,12 +199,18 @@ public class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(IsSettingsActive));
         OnPropertyChanged(nameof(IsModConfigActive));
         OnPropertyChanged(nameof(IsOivActive));
+        OnPropertyChanged(nameof(IsDevDiagnosticsActive));
+        OnPropertyChanged(nameof(IsPatrolReadinessActive));
+        OnPropertyChanged(nameof(IsSafeModeActive));
+        OnPropertyChanged(nameof(IsSetupWizardActive));
+        OnPropertyChanged(nameof(IsCleanupActive));
+        OnPropertyChanged(nameof(IsReactPreviewActive));
     }
 
     private void LaunchLspdfr()
     {
-        var hook = Path.Combine(AppConfig.Instance.GtaPath, "RAGEPluginHook.exe");
-        if (!File.Exists(hook))
+        var hook = LspdfrInstallLocator.FindRagePluginHook(AppConfig.Instance.GtaPath);
+        if (hook is null)
             return;
 
         Process.Start(new ProcessStartInfo(hook)

@@ -75,4 +75,83 @@ public class LibraryViewModelTests : IDisposable
         Assert.False(plugin.IsEnabled);
         Assert.True(vehicle.IsEnabled);
     }
+
+    [Fact]
+    public void EnableVisibleCommand_EnablesOnlyFilteredMods()
+    {
+        var plugin = new InstalledMod { Name = "A", TypeLabel = "LSPDFR Plugin", IsEnabled = false };
+        var vehicle = new InstalledMod { Name = "B", TypeLabel = "Vehicle Add-On DLC", IsEnabled = false };
+        _library.Mods.Add(plugin);
+        _library.Mods.Add(vehicle);
+
+        var vm = new LibraryViewModel
+        {
+            SelectedFilter = "Vehicle Add-On DLC",
+        };
+
+        vm.EnableVisibleCommand.Execute(null);
+
+        Assert.False(plugin.IsEnabled);
+        Assert.True(vehicle.IsEnabled);
+    }
+
+    [Fact]
+    public void UndoBulkToggleCommand_RestoresPreviousVisibleStates()
+    {
+        var plugin = new InstalledMod { Name = "A", TypeLabel = "LSPDFR Plugin", IsEnabled = true };
+        var callout = new InstalledMod { Name = "B", TypeLabel = "LSPDFR Plugin", IsEnabled = true };
+        var vehicle = new InstalledMod { Name = "C", TypeLabel = "Vehicle Add-On DLC", IsEnabled = false };
+        _library.Mods.Add(plugin);
+        _library.Mods.Add(callout);
+        _library.Mods.Add(vehicle);
+
+        var vm = new LibraryViewModel
+        {
+            SelectedFilter = "LSPDFR Plugin",
+        };
+
+        vm.DisableVisibleCommand.Execute(null);
+        vm.UndoBulkToggleCommand.Execute(null);
+
+        Assert.True(plugin.IsEnabled);
+        Assert.True(callout.IsEnabled);
+        Assert.False(vehicle.IsEnabled);
+    }
+
+    [Fact]
+    public void ModItem_UninstallCommand_WhenFileDeleteFails_ShowsErrorAndKeepsRecord()
+    {
+        var filePath = Path.Combine(_tempRoot, "GTA", "plugins", "locked.dll");
+        Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+        File.WriteAllText(filePath, "locked");
+
+        var originalConfirm = AppConfig.Instance.ConfirmBeforeUninstall;
+        AppConfig.Instance.ConfirmBeforeUninstall = false;
+
+        try
+        {
+            var mod = new InstalledMod
+            {
+                Name = "Locked Mod",
+                TypeLabel = "LSPDFR Plugin",
+                InstallPath = Path.Combine(_tempRoot, "GTA"),
+                InstalledFiles = [filePath]
+            };
+            _library.Mods.Add(mod);
+            var item = new ModItemViewModel(mod);
+
+            using var locked = File.Open(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+
+            item.UninstallCommand.Execute(null);
+
+            Assert.True(item.HasError);
+            Assert.Contains("could not be deleted", item.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains(mod, _library.Mods);
+            Assert.True(File.Exists(filePath));
+        }
+        finally
+        {
+            AppConfig.Instance.ConfirmBeforeUninstall = originalConfirm;
+        }
+    }
 }

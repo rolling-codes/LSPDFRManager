@@ -1,3 +1,4 @@
+using LSPDFRManager.Domain;
 using LSPDFRManager.Services;
 using Xunit;
 
@@ -93,6 +94,23 @@ public class FileInstallerArchiveTests : IDisposable
         Assert.False(File.Exists(Path.Combine(_tempDir, "safe.dll")));
     }
 
+    [Fact]
+    public async Task Install_GenericIOException_IsClassifiedAsInvalidArchive()
+    {
+        var archive = new FakeArchive(new IArchiveEntry[]
+        {
+            new FakeArchiveEntry("fail.dll", () => throw new IOException("forced"))
+        });
+
+        var result = await FileInstaller.InstallAsync(archive, _tempDir);
+
+        Assert.False(result.Success);
+        Assert.Equal(InstallFailureCategory.InvalidArchive, result.FailureCategory);
+        Assert.Equal(
+            "An I/O error occurred during installation. Check disk space, permissions, and try again.",
+            result.UserMessage);
+    }
+
     // ── Deep Path Handling ─────────────────────────────────────────────────
 
     [Fact]
@@ -185,8 +203,21 @@ public class FileInstallerArchiveTests : IDisposable
         File.WriteAllText(existingFile, "old content");
 
         var archive = FakeArchiveFactory.CreateCleanArchive("existing.dll");
+        var plan = new InstallPlan
+        {
+            Entries =
+            [
+                new InstallPlanEntry
+                {
+                    ArchivePath = "existing.dll",
+                    TargetPath = existingFile,
+                    DestinationExists = true,
+                    PlannedAction = InstallConflictAction.BackupAndReplace,
+                },
+            ],
+        };
 
-        var result = await FileInstaller.InstallAsync(archive, _tempDir);
+        var result = await FileInstaller.InstallAsync(archive, _tempDir, plan);
 
         Assert.True(result.Success);
         var content = File.ReadAllText(existingFile);
@@ -205,7 +236,21 @@ public class FileInstallerArchiveTests : IDisposable
             new FakeArchiveEntry("fail.dll", () => throw new IOException("Cannot open stream"))
         });
 
-        var result = await FileInstaller.InstallAsync(archive, _tempDir);
+        var plan = new InstallPlan
+        {
+            Entries =
+            [
+                new InstallPlanEntry
+                {
+                    ArchivePath = "existing.dll",
+                    TargetPath = existingFile,
+                    DestinationExists = true,
+                    PlannedAction = InstallConflictAction.BackupAndReplace,
+                },
+            ],
+        };
+
+        var result = await FileInstaller.InstallAsync(archive, _tempDir, plan);
 
         Assert.False(result.Success);
         Assert.True(result.IsPartial);

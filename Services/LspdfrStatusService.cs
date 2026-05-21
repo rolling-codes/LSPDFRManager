@@ -21,14 +21,14 @@ public sealed class LspdfrStatusService : INotifyPropertyChanged
 
     // ── Validity checks ──────────────────────────────────────────────
 
-    /// <summary><c>GTA5.exe</c> exists at the configured path.</summary>
+    /// <summary>A known GTA executable exists at the configured path.</summary>
     public bool IsGtaPathValid =>
-        File.Exists(Path.Combine(AppConfig.Instance.GtaPath, "GTA5.exe"));
+        LspdfrInstallLocator.IsGtaInstalled(AppConfig.Instance.GtaPath);
 
-    /// <summary><c>RAGEPluginHook.exe</c> present → LSPDFR is installed.</summary>
+    /// <summary>LSPDFR core DLL, folder, or tool is present.</summary>
     public bool IsLspdfrInstalled =>
         IsGtaPathValid &&
-        File.Exists(Path.Combine(AppConfig.Instance.GtaPath, "RAGEPluginHook.exe"));
+        LspdfrInstallLocator.IsLspdfrInstalled(AppConfig.Instance.GtaPath);
 
     /// <summary><c>ScriptHookV.dll</c> is present.</summary>
     public bool IsScriptHookVInstalled =>
@@ -37,24 +37,24 @@ public sealed class LspdfrStatusService : INotifyPropertyChanged
 
     // ── Version strings ──────────────────────────────────────────────
 
-    /// <summary>File version of <c>GTA5.exe</c>, or "–" if not found.</summary>
+    /// <summary>File version of the detected GTA executable, or "–" if not found.</summary>
     public string GtaVersion
     {
         get
         {
-            var exe = Path.Combine(AppConfig.Instance.GtaPath, "GTA5.exe");
-            if (!File.Exists(exe)) return "–";
+            var exe = LspdfrInstallLocator.FindGtaExe(AppConfig.Instance.GtaPath);
+            if (exe is null) return "–";
             return FileVersionInfo.GetVersionInfo(exe).FileVersion ?? "–";
         }
     }
 
-    /// <summary>File version of <c>LSPDFR.dll</c>, or "–" if not found.</summary>
+    /// <summary>File version of the detected LSPDFR core DLL, or "–" if not found.</summary>
     public string LspdfrVersion
     {
         get
         {
-            var dll = Path.Combine(AppConfig.Instance.GtaPath, "plugins", "LSPDFR.dll");
-            if (!File.Exists(dll)) return "–";
+            var dll = LspdfrInstallLocator.FindLspdfrCore(AppConfig.Instance.GtaPath);
+            if (dll is null) return "–";
             return FileVersionInfo.GetVersionInfo(dll).FileVersion ?? "–";
         }
     }

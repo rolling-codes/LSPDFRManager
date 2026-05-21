@@ -83,18 +83,68 @@ public class InstallQueue : IDisposable
                 }
             }
 
-            var result = await FileInstaller.InstallAsync(mod, gtaPath).ConfigureAwait(false);
+            var plan = mod.ReviewedPlan ?? new SmartInstallPlanner().BuildPlan(mod.SourcePath);
+            foreach (var warning in plan.Warnings)
+                AppLogger.Warning($"[INSTALL_PLAN_WARNING] {mod.Name} | {warning}");
+
+            if (plan.RequiresManualConfirmation && plan.BlockingIssues.Count > 0)
+            {
+                var blockingMessage = string.Join(" | ", plan.BlockingIssues);
+                var blockedResult = new InstallResult
+                {
+                    Success = false,
+                    Error = $"Install requires manual confirmation: {blockingMessage}",
+                };
+                HandleFailedInstall(mod, blockedResult);
+                queued.Completion.TrySetResult(blockedResult);
+                return;
+            }
+
+            // Pre-allocate a transaction ID so the backup folder is ready before extraction starts
+            var transactionId = Guid.NewGuid();
+            var backupFolder = TransactionService.BackupFolderFor(transactionId);
+            Directory.CreateDirectory(backupFolder);
+
+            var result = await FileInstaller.InstallAsync(mod, gtaPath, plan, backupFolder).ConfigureAwait(false);
             if (!result.Success)
             {
+                TryCleanupBackupFolder(backupFolder);
                 HandleFailedInstall(mod, result);
                 queued.Completion.TrySetResult(result);
                 return;
             }
 
             var installed = CreateInstalledMod(mod, gtaPath, result);
+
+            // Calculate installed file sizes
+            long totalSize = 0;
+            foreach (var path in result.WrittenFiles)
+            {
+                try { if (File.Exists(path)) totalSize += new FileInfo(path).Length; } catch { }
+            }
+            installed.TotalSizeBytes = totalSize;
+
+            installed.TransactionId = transactionId;
+
+            var isDlc = installed.Type == ModType.VehicleDlc && !string.IsNullOrWhiteSpace(installed.DlcPackName);
+
+            // Save transaction BEFORE adding to library so a crash between the two never leaves
+            // a library record with a TransactionId that has no matching transaction on disk.
+            TransactionService.Instance.Add(new InstallTransaction
+            {
+                Id = transactionId,
+                ModId = installed.Id,
+                ModName = installed.Name,
+                FilesAdded = result.AddedFileRecords,
+                FilesOverwritten = result.OverwrittenFileRecords,
+                BackupFolder = backupFolder,
+                WasDlcEntry = isDlc,
+                DlcPackName = installed.DlcPackName,
+            });
+
             ModLibraryService.Instance.Add(installed);
 
-            if (installed.Type == ModType.VehicleDlc && !string.IsNullOrWhiteSpace(installed.DlcPackName))
+            if (isDlc)
                 DlcListService.AddEntry(installed.DlcPackName);
 
             InstallCompleted?.Invoke(installed);
@@ -140,7 +190,6 @@ public class InstallQueue : IDisposable
             DlcPackName = mod.DlcPackName ?? "",
             InstalledFiles = installedFiles,
             DetectionScore = (int)Math.Round(mod.Confidence * 100),
-            ThumbnailUrl = mod.ThumbnailUrl,
         };
     }
 
@@ -153,12 +202,25 @@ public class InstallQueue : IDisposable
         InstallFailedWithResult?.Invoke(mod, result);
     }
 
+    private static void TryCleanupBackupFolder(string backupFolder)
+    {
+        try
+        {
+            if (Directory.Exists(backupFolder))
+                Directory.Delete(backupFolder, recursive: true);
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Warning($"[INSTALL] Could not clean up backup folder: {ex.Message}");
+        }
+    }
+
     private static void TryDeleteTempSource(string sourcePath)
     {
         if (!AppConfig.Instance.DeleteTempAfterInstall) return;
 
         var tempDownloadDir = Path.Combine(Path.GetTempPath(), "LSPDFRManager_downloads");
-        if (!sourcePath.StartsWith(tempDownloadDir, StringComparison.OrdinalIgnoreCase)) return;
+        if (!IsUnderDirectory(sourcePath, tempDownloadDir)) return;
 
         try
         {
@@ -171,6 +233,23 @@ public class InstallQueue : IDisposable
         catch (Exception ex)
         {
             AppLogger.Error($"[CLEANUP] Could not delete temp source: {sourcePath}", ex);
+        }
+    }
+
+    private static bool IsUnderDirectory(string path, string directory)
+    {
+        try
+        {
+            var fullPath = Path.GetFullPath(path);
+            var fullDirectory = Path.GetFullPath(directory)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) +
+                Path.DirectorySeparatorChar;
+
+            return fullPath.StartsWith(fullDirectory, StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
         }
     }
 

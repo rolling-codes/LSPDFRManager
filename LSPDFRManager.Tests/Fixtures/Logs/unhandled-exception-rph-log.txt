@@ -1,0 +1,10 @@
+RAGE Plugin Hook version 1.87.1441.15835
+GTA V version 1.0.3258.0
+
+[11/09/2023 17:20:00.100] [INFO] [RAGE Plugin Hook] Loading plugin 'MyPlugin.dll'...
+[11/09/2023 17:20:00.500] [INFO] [RAGE Plugin Hook] Loaded plugin 'MyPlugin.dll'.
+[11/09/2023 17:20:10.000] [ERROR] [RAGE Plugin Hook] Unhandled exception in plugin 'MyPlugin.dll':
+System.NullReferenceException: Object reference not set to an instance of an object.
+   at MyPlugin.Core.Update()
+   at RAGE.Plugin.Host.PluginThread.DoTick()
+[11/09/2023 17:20:10.001] [FATAL] [RAGE Plugin Hook] Plugin 'MyPlugin.dll' aborted due to unhandled exception.

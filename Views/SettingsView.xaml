@@ -230,6 +230,33 @@
                 </StackPanel>
             </Border>
 
+            <!-- Display & Accessibility -->
+            <TextBlock Text="DISPLAY &amp; ACCESSIBILITY" Style="{StaticResource SectionLabel}"/>
+            <Border Style="{StaticResource SectionCard}">
+                <StackPanel>
+                    <TextBlock Text="UI SCALE"
+                               Style="{StaticResource DetailLabel}"
+                               FontWeight="Bold" Margin="0,0,0,10"/>
+                    <TextBlock Text="Scales all text, controls, and spacing app-wide. Takes effect immediately."
+                               Foreground="{StaticResource TextMuted}" FontSize="12"
+                               TextWrapping="Wrap" Margin="0,0,0,14"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
+                        <RadioButton GroupName="UiScale" Content="Small" Padding="16,8"
+                                     IsChecked="{Binding UiScaleIndex, Converter={StaticResource EqualToInt}, ConverterParameter=0}"
+                                     Style="{StaticResource SegmentedRadio}" Margin="0,0,6,0"/>
+                        <RadioButton GroupName="UiScale" Content="Default" Padding="16,8"
+                                     IsChecked="{Binding UiScaleIndex, Converter={StaticResource EqualToInt}, ConverterParameter=1}"
+                                     Style="{StaticResource SegmentedRadio}" Margin="0,0,6,0"/>
+                        <RadioButton GroupName="UiScale" Content="Large" Padding="16,8"
+                                     IsChecked="{Binding UiScaleIndex, Converter={StaticResource EqualToInt}, ConverterParameter=2}"
+                                     Style="{StaticResource SegmentedRadio}" Margin="0,0,6,0"/>
+                        <RadioButton GroupName="UiScale" Content="Extra Large" Padding="16,8"
+                                     IsChecked="{Binding UiScaleIndex, Converter={StaticResource EqualToInt}, ConverterParameter=3}"
+                                     Style="{StaticResource SegmentedRadio}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
             <!-- Progress log (visible only when busy) -->
             <Border Background="{StaticResource Surface}" CornerRadius="10" Padding="16"
                     Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"

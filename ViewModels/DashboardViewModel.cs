@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Windows.Input;
+using LSPDFRManager.Core;
 using LSPDFRManager.Domain;
 using LSPDFRManager.Services;
 
@@ -21,11 +22,24 @@ public class DashboardViewModel : ObservableObject
     public ICommand AnalyzeCrashLogsCommand { get; }
     public ICommand CreateBackupCommand { get; }
     public ICommand ApplySafeLaunchCommand { get; }
+    public Action<string>? NavigateTo { get; set; }
     public ICommand OpenGtaFolderCommand { get; }
     public ICommand OpenLogsFolderCommand { get; }
     public ICommand LaunchGtaCommand { get; }
     public ICommand LaunchRphCommand { get; }
     public ICommand RefreshCommand { get; }
+
+    public CompatibilityViewModel Compatibility { get; } = new();
+    public PatrolReadinessViewModel Readiness { get; } = new();
+
+    public IEnumerable<ComponentRow> CompatibilityRows =>
+    [
+        Compatibility.GtaRow,
+        Compatibility.LspdfrRow,
+        Compatibility.RphRow,
+        Compatibility.ShvRow,
+        Compatibility.ShvdnRow,
+    ];
 
     public DashboardViewModel()
     {
@@ -37,7 +51,12 @@ public class DashboardViewModel : ObservableObject
         OpenLogsFolderCommand = new RelayCommand(OpenLogsFolder);
         LaunchGtaCommand = new RelayCommand(LaunchGta);
         LaunchRphCommand = new RelayCommand(LaunchRph);
-        RefreshCommand = new RelayCommand(() => Status.Refresh());
+        RefreshCommand = new RelayCommand(() => _ = RefreshDashboardAsync());
+
+        Compatibility.PropertyChanged += (_, _) => OnPropertyChanged(nameof(CompatibilityRows));
+
+        _ = Compatibility.RefreshAsync();
+        _ = Readiness.CheckAsync();
     }
 
     private async Task RunScanAsync()
@@ -66,39 +85,78 @@ public class DashboardViewModel : ObservableObject
         StatusMessage = "Backup created.";
     }
 
-    private async Task RunSafeLaunchAsync()
+    private Task RunSafeLaunchAsync()
     {
-        StatusMessage = "Applying Safe Launch (LSPDFR Only)…";
-        var plan = new SafeLaunchManager().BuildPlan("LspdfrOnly");
-        await new SafeLaunchManager().ApplyAsync(plan);
-        Status.Refresh();
-        StatusMessage = "Safe Launch applied. Restart the game.";
+        NavigateTo?.Invoke("SafeMode");
+        return Task.CompletedTask;
     }
 
-    private static void OpenGtaFolder()
+    private void OpenGtaFolder()
     {
         var path = AppConfig.Instance.GtaPath;
-        if (Directory.Exists(path))
-            Process.Start("explorer.exe", path);
+        StartShellProcess("explorer.exe", path, "Could not open GTA V folder.");
     }
 
-    private static void OpenLogsFolder()
+    private async Task RefreshDashboardAsync()
     {
-        if (Directory.Exists(AppDataPaths.Root))
-            Process.Start("explorer.exe", AppDataPaths.Root);
+        Status.Refresh();
+        await Compatibility.RefreshAsync();
+        await Readiness.CheckAsync();
+        OnPropertyChanged(nameof(CompatibilityRows));
+        StatusMessage = "Status refreshed.";
     }
 
-    private static void LaunchGta()
+    private void OpenLogsFolder()
     {
-        var exe = Path.Combine(AppConfig.Instance.GtaPath, "GTA5.exe");
-        if (File.Exists(exe))
-            Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true, WorkingDirectory = AppConfig.Instance.GtaPath });
+        StartShellProcess("explorer.exe", AppDataPaths.Root, "Could not open logs folder.");
     }
 
-    private static void LaunchRph()
+    private void LaunchGta()
     {
-        var exe = Path.Combine(AppConfig.Instance.GtaPath, "RAGEPluginHook.exe");
-        if (File.Exists(exe))
-            Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true, WorkingDirectory = AppConfig.Instance.GtaPath });
+        var exe = LspdfrInstallLocator.FindGtaExe(AppConfig.Instance.GtaPath);
+        if (exe is not null)
+            StartShellProcess(exe, AppConfig.Instance.GtaPath, "Could not launch GTA V.");
+        else
+            StatusMessage = "GTA executable was not found.";
+    }
+
+    private void LaunchRph()
+    {
+        var exe = LspdfrInstallLocator.FindRagePluginHook(AppConfig.Instance.GtaPath);
+        if (exe is not null)
+            StartShellProcess(exe, AppConfig.Instance.GtaPath, "Could not launch RAGE Plugin Hook.");
+        else
+            StatusMessage = "RAGEPluginHook.exe was not found.";
+    }
+
+    private void StartShellProcess(string fileName, string workingDirectoryOrArgument, string failureMessage)
+    {
+        try
+        {
+            if (string.Equals(fileName, "explorer.exe", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!Directory.Exists(workingDirectoryOrArgument))
+                {
+                    StatusMessage = "Folder was not found.";
+                    return;
+                }
+
+                Process.Start(fileName, workingDirectoryOrArgument);
+                StatusMessage = "Folder opened.";
+                return;
+            }
+
+            Process.Start(new ProcessStartInfo(fileName)
+            {
+                UseShellExecute = true,
+                WorkingDirectory = workingDirectoryOrArgument,
+            });
+            StatusMessage = "Launch requested.";
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Error($"[Dashboard] {failureMessage}", ex);
+            StatusMessage = $"{failureMessage} {ex.Message}";
+        }
     }
 }

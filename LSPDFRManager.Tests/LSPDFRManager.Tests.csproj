@@ -24,6 +24,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\LSPDFRManager.csproj" />
+    <ProjectReference Include="..\LSPDFRManager.Shared\LSPDFRManager.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Fixtures\Logs\*.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

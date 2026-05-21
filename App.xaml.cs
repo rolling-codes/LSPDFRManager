@@ -1,6 +1,7 @@
 using System.Windows;
 using LSPDFRManager.Core;
 using LSPDFRManager.Domain;
+using LSPDFRManager.LocalApi;
 using LSPDFRManager.Services;
 using LSPDFRManager.ViewModels;
 
@@ -21,6 +22,13 @@ public partial class App : Application
             ex.Handled = false;
         };
 
+        // Start local API in-process (non-blocking; React UI nav waits on PortTask)
+        _ = Task.Run(async () =>
+        {
+            try { await LocalApiHost.StartAsync(); }
+            catch (Exception ex) { AppLogger.Error("[LOCALAPI] Failed to start", ex); }
+        });
+
         try
         {
             base.OnStartup(e);
@@ -36,6 +44,12 @@ public partial class App : Application
             AppLogger.Error("[APP_STARTUP] Failed", ex);
             throw;
         }
+    }
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        base.OnExit(e);
+        _ = LocalApiHost.StopAsync();
     }
 
     private static void ValidateStartup()
@@ -56,15 +70,31 @@ public partial class App : Application
         }
 
         var gtaPath = AppConfig.Instance.GtaPath;
-        if (string.IsNullOrWhiteSpace(gtaPath) || !Directory.Exists(gtaPath))
+        var wizardWillRun = AppConfig.Instance.ShowSetupWizardOnStartup
+            || string.IsNullOrWhiteSpace(gtaPath);
+
+        if (!wizardWillRun)
         {
-            issues.Add($"GTA V installation folder not found:\n  {gtaPath}\n  Open Settings to set the correct path.");
-        }
-        else
-        {
-            var exePath = Path.Combine(gtaPath, "GTA5.exe");
-            if (!File.Exists(exePath))
-                issues.Add($"GTA5.exe was not found in:\n  {gtaPath}\n  Verify Settings points at the GTA V installation folder.");
+            if (!Directory.Exists(gtaPath))
+            {
+                issues.Add($"GTA V installation folder not found:\n  {gtaPath}\n  Open Settings to set the correct path.");
+            }
+            else
+            {
+                if (LspdfrInstallLocator.FindGtaExe(gtaPath) is null)
+                    issues.Add($"GTA V executable not found in:\n  {gtaPath}\n  Verify Settings points at the GTA V installation folder.");
+
+                var writeProbe = Path.Combine(gtaPath, ".lspdfrmanager_write_test");
+                try
+                {
+                    File.WriteAllText(writeProbe, "");
+                    File.Delete(writeProbe);
+                }
+                catch
+                {
+                    issues.Add($"GTA V folder is not writable:\n  {gtaPath}\n  The app must run as Administrator to install mods into a protected directory.");
+                }
+            }
         }
 
         AddDiskSpaceIssueIfNeeded(issues, AppDataPaths.Root, "App data");

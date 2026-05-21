@@ -126,7 +126,7 @@
                     </StackPanel>
 
                     <!-- Detection results -->
-                    <DockPanel Visibility="{Binding HasDetection, Converter={StaticResource BoolToVis}}">
+                    <DockPanel Visibility="{Binding ShowDetectionPanel, Converter={StaticResource BoolToVis}}">
 
                         <StackPanel DockPanel.Dock="Bottom" Margin="0,14,0,0">
                             <Button Style="{StaticResource PrimaryButton}"
@@ -143,13 +143,38 @@
 
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel>
+                                <!-- Partial rollback — red, with suggested action -->
                                 <Border Style="{StaticResource ErrorPill}"
-                                        Visibility="{Binding HasLastError, Converter={StaticResource BoolToVis}}"
+                                        Visibility="{Binding OutcomeIsPartial, Converter={StaticResource BoolToVis}}"
+                                        Margin="0,0,0,12">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding LastErrorMessage, Mode=OneWay}"
+                                                   Foreground="{StaticResource DangerBrush}"
+                                                   FontSize="12" TextWrapping="Wrap"/>
+                                        <TextBlock Text="{Binding SuggestedAction, Mode=OneWay}"
+                                                   Foreground="{StaticResource DangerBrush}"
+                                                   FontSize="11" TextWrapping="Wrap"
+                                                   Margin="0,6,0,0" FontStyle="Italic"
+                                                   Visibility="{Binding HasSuggestedAction, Converter={StaticResource BoolToVis}}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Clean rollback — amber, filesystem restored -->
+                                <Border Style="{StaticResource InlineWarnPill}"
+                                        Visibility="{Binding OutcomeIsRestored, Converter={StaticResource BoolToVis}}"
                                         Margin="0,0,0,12">
                                     <TextBlock Text="{Binding LastErrorMessage, Mode=OneWay}"
-                                               Foreground="{StaticResource DangerBrush}"
-                                               FontSize="12"
-                                               TextWrapping="Wrap"/>
+                                               Foreground="{StaticResource WarningText}"
+                                               FontSize="12" TextWrapping="Wrap"/>
+                                </Border>
+
+                                <!-- No mutation (cancel or early reject) — muted -->
+                                <Border Style="{StaticResource InlineWarnPill}"
+                                        Visibility="{Binding OutcomeIsSimpleFailure, Converter={StaticResource BoolToVis}}"
+                                        Margin="0,0,0,12">
+                                    <TextBlock Text="{Binding LastErrorMessage, Mode=OneWay}"
+                                               Foreground="{StaticResource TextMuted}"
+                                               FontSize="12" TextWrapping="Wrap"/>
                                 </Border>
 
                                 <!-- Type + confidence badges -->
@@ -223,6 +248,353 @@
                             </StackPanel>
                         </ScrollViewer>
                     </DockPanel>
+                    <!-- ── Pre-install review panel ── -->
+                    <DockPanel Visibility="{Binding IsReviewing, Converter={StaticResource BoolToVis}}">
+
+                        <!-- Action buttons -->
+                        <StackPanel DockPanel.Dock="Bottom" Margin="0,14,0,0">
+                            <Button Style="{StaticResource PrimaryButton}"
+                                    Content="&#xE73E;  Confirm Install"
+                                    FontFamily="Segoe MDL2 Assets, Segoe UI"
+                                    Command="{Binding ConfirmInstallCommand}"
+                                    IsEnabled="{Binding ReviewCanConfirm}"
+                                    HorizontalAlignment="Stretch"
+                                    Padding="0,10"/>
+                            <Button Style="{StaticResource GhostButton}"
+                                    Content="Back"
+                                    Command="{Binding CancelReviewCommand}"
+                                    HorizontalAlignment="Stretch"
+                                    Margin="0,8,0,0"/>
+                        </StackPanel>
+
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+
+                                <!-- Mod intelligence card -->
+                                <Border Background="{StaticResource Surface2}"
+                                        BorderBrush="{StaticResource AccentBorder}"
+                                        BorderThickness="1" CornerRadius="8"
+                                        Padding="12,10" Margin="0,0,0,10">
+                                    <StackPanel>
+
+                                        <!-- Type + confidence row -->
+                                        <StackPanel Orientation="Horizontal">
+                                            <!-- Unknown: neutral message -->
+                                            <TextBlock Foreground="{StaticResource TextMuted}"
+                                                       FontSize="12" VerticalAlignment="Center"
+                                                       Visibility="{Binding ReviewIsUnknown, Converter={StaticResource BoolToVis}}">
+                                                Could not determine mod type — review files manually
+                                            </TextBlock>
+
+                                            <!-- Known type -->
+                                            <StackPanel Orientation="Horizontal"
+                                                        Visibility="{Binding ReviewIsUnknown, Converter={StaticResource InverseBoolToVis}}">
+                                                <Border Background="{StaticResource Accent}"
+                                                        CornerRadius="5" Padding="8,3" Margin="0,0,6,0">
+                                                    <TextBlock Text="{Binding ReviewModTypeLabel}"
+                                                               Foreground="White" FontSize="11"
+                                                               FontWeight="Bold"/>
+                                                </Border>
+                                                <Border Background="{StaticResource SurfaceLift}"
+                                                        CornerRadius="5" Padding="8,3" Margin="0,0,8,0"
+                                                        Visibility="{Binding ReviewIsMixed, Converter={StaticResource BoolToVis}}">
+                                                    <TextBlock Text="MIXED" Foreground="{StaticResource TextMuted}"
+                                                               FontSize="10" FontWeight="ExtraBold"/>
+                                                </Border>
+                                                <TextBlock Text="{Binding ReviewConfidenceLabel}"
+                                                           Foreground="{StaticResource TextMuted}"
+                                                           FontSize="11" VerticalAlignment="Center"
+                                                           Margin="0,0,8,0"/>
+                                                <TextBlock Text="confidence"
+                                                           Foreground="{StaticResource TextFaint}"
+                                                           FontSize="11" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                        <!-- Secondary types (mixed archives) -->
+                                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0"
+                                                    Visibility="{Binding ReviewHasSecondaryTypes, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock Text="Also contains:"
+                                                       Foreground="{StaticResource TextFaint}"
+                                                       FontSize="11" VerticalAlignment="Center"
+                                                       Margin="0,0,6,0"/>
+                                            <ItemsControl ItemsSource="{Binding ReviewSecondaryTypeLabels}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <StackPanel Orientation="Horizontal"/>
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Background="{StaticResource SurfaceLift}"
+                                                                CornerRadius="4" Padding="6,2" Margin="0,0,4,0">
+                                                            <TextBlock Text="{Binding}"
+                                                                       Foreground="{StaticResource TextMuted}"
+                                                                       FontSize="10"/>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+
+                                        <!-- Evidence (collapsed by default, Expander) -->
+                                        <Expander Margin="0,8,0,0"
+                                                  Visibility="{Binding ReviewHasEvidence, Converter={StaticResource BoolToVis}}">
+                                            <Expander.Header>
+                                                <TextBlock Text="Detection evidence"
+                                                           Foreground="{StaticResource TextFaint}"
+                                                           FontSize="11"/>
+                                            </Expander.Header>
+                                            <ItemsControl ItemsSource="{Binding ReviewEvidence}" Margin="4,4,0,0">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding}"
+                                                                   Style="{StaticResource ConsoleText}"
+                                                                   FontSize="10" Margin="0,1"
+                                                                   TextWrapping="Wrap"/>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </Expander>
+
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- OIV primary block banner -->
+                                <Border Visibility="{Binding ReviewIsOivPrimary, Converter={StaticResource BoolToVis}}"
+                                        Background="#33FF6B00" BorderBrush="#FFFF6B00"
+                                        BorderThickness="1" CornerRadius="4" Padding="10,8" Margin="0,0,0,8">
+                                    <StackPanel>
+                                        <TextBlock Text="OIV PACKAGE — CANNOT INSTALL AS LOOSE FILES"
+                                                   Foreground="#FFFF6B00" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,4"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource TextSubtle}"
+                                                   Text="This is an OIV package. OIV packages must be installed through OpenIV or a compatible OIV installer (such as the one included with some mods). Normal file extraction is blocked to prevent a broken install."
+                                                   Margin="0,0,0,6"/>
+
+                                        <!-- OIV metadata card (shown when assembly.xml parsed successfully) -->
+                                        <Border Visibility="{Binding ReviewHasOivMetadata, Converter={StaticResource BoolToVis}}"
+                                                Background="#22000000" BorderBrush="#44FF6B00"
+                                                BorderThickness="1" CornerRadius="3" Padding="8,6">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+
+                                                <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource DetailLabel}"
+                                                           Text="NAME" Margin="0,0,8,2"/>
+                                                <TextBlock Grid.Row="0" Grid.Column="1" FontSize="11"
+                                                           Foreground="{StaticResource TextPrimary}"
+                                                           Text="{Binding ReviewOivName}" TextWrapping="Wrap"/>
+
+                                                <TextBlock Grid.Row="1" Grid.Column="0" Style="{StaticResource DetailLabel}"
+                                                           Text="VERSION" Margin="0,0,8,2"/>
+                                                <TextBlock Grid.Row="1" Grid.Column="1" FontSize="11"
+                                                           Foreground="{StaticResource TextPrimary}"
+                                                           Text="{Binding ReviewOivVersion}"/>
+
+                                                <TextBlock Grid.Row="2" Grid.Column="0" Style="{StaticResource DetailLabel}"
+                                                           Text="AUTHOR" Margin="0,0,8,2"/>
+                                                <TextBlock Grid.Row="2" Grid.Column="1" FontSize="11"
+                                                           Foreground="{StaticResource TextPrimary}"
+                                                           Text="{Binding ReviewOivAuthor}" TextWrapping="Wrap"/>
+
+                                                <TextBlock Grid.Row="3" Grid.Column="0" Style="{StaticResource DetailLabel}"
+                                                           Text="TARGET" Margin="0,0,8,2"
+                                                           Visibility="{Binding ReviewOivTargetGame, Converter={StaticResource StringToVis}}"/>
+                                                <TextBlock Grid.Row="3" Grid.Column="1" FontSize="11"
+                                                           Foreground="{StaticResource TextPrimary}"
+                                                           Text="{Binding ReviewOivTargetGame}"
+                                                           Visibility="{Binding ReviewOivTargetGame, Converter={StaticResource StringToVis}}"/>
+
+                                                <TextBlock Grid.Row="4" Grid.Column="0" Style="{StaticResource DetailLabel}"
+                                                           Text="FILES" Margin="0,0,8,0"/>
+                                                <TextBlock Grid.Row="4" Grid.Column="1" FontSize="11"
+                                                           Foreground="{StaticResource TextSubtle}">
+                                                    <Run Text="{Binding ReviewOivFileCount, Mode=OneWay}"/>
+                                                    <Run Text="file(s) declared in manifest"/>
+                                                </TextBlock>
+                                            </Grid>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- OIV secondary/mixed warning -->
+                                <Border Visibility="{Binding ReviewIsOivSecondary, Converter={StaticResource BoolToVis}}"
+                                        Background="#22FFAA00" BorderBrush="#FFAA7700"
+                                        BorderThickness="1" CornerRadius="4" Padding="10,8" Margin="0,0,0,8">
+                                    <StackPanel>
+                                        <TextBlock Text="OIV CONTENT DETECTED"
+                                                   Foreground="#FFCC8800" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,4"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource TextSubtle}"
+                                                   Text="This archive may contain OIV package content (assembly.xml or .oiv files). Those files should be applied through OpenIV or a compatible OIV installer rather than extracted directly."/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Blocking issues (red — disables Confirm) -->
+                                <ItemsControl ItemsSource="{Binding ReviewBlockingIssues}"
+                                              Visibility="{Binding ReviewHasBlockingIssues, Converter={StaticResource BoolToVis}}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Style="{StaticResource ErrorPill}" Margin="0,0,0,4">
+                                                <TextBlock Text="{Binding}"
+                                                           Foreground="{StaticResource DangerBrush}"
+                                                           FontSize="12" TextWrapping="Wrap"/>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- Dependency warnings -->
+                                <StackPanel Visibility="{Binding ReviewHasDependencyWarnings, Converter={StaticResource BoolToVis}}"
+                                            Margin="0,0,0,4">
+                                    <TextBlock Style="{StaticResource DetailLabel}" Margin="0,0,0,4"
+                                               Text="REQUIRED DEPENDENCIES"/>
+                                    <ItemsControl ItemsSource="{Binding ReviewDependencyWarnings}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Style="{StaticResource InlineWarnPill}" Margin="0,0,0,4">
+                                                    <TextBlock Text="{Binding}"
+                                                               Foreground="{StaticResource WarningText}"
+                                                               FontSize="12" TextWrapping="Wrap"/>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+
+                                <!-- General warnings (path conflicts, overwrites, etc.) -->
+                                <ItemsControl ItemsSource="{Binding ReviewGeneralWarnings}"
+                                              Visibility="{Binding ReviewHasGeneralWarnings, Converter={StaticResource BoolToVis}}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Style="{StaticResource InlineWarnPill}" Margin="0,0,0,4">
+                                                <TextBlock Text="{Binding}"
+                                                           Foreground="{StaticResource WarningText}"
+                                                           FontSize="12" TextWrapping="Wrap"/>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- Will Install -->
+                                <TextBlock Style="{StaticResource DetailLabel}" Margin="0,10,0,4">
+                                    <Run Text="WILL INSTALL"/>
+                                    <Run Text=" (" Foreground="{StaticResource TextFaint}"/>
+                                    <Run Text="{Binding ReviewWillInstallCount, Mode=OneWay}" Foreground="{StaticResource TextFaint}"/>
+                                    <Run Text=" files)" Foreground="{StaticResource TextFaint}"/>
+                                </TextBlock>
+                                <ItemsControl ItemsSource="{Binding ReviewWillInstall}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding ArchivePath}"
+                                                       Style="{StaticResource ConsoleText}"
+                                                       FontSize="11"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Margin="0,1"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- Will Overwrite -->
+                                <TextBlock Style="{StaticResource DetailLabel}" Margin="0,10,0,4"
+                                           Visibility="{Binding ReviewHasOverwrites, Converter={StaticResource BoolToVis}}">
+                                    <Run Text="WILL OVERWRITE"/>
+                                    <Run Text=" (" Foreground="{StaticResource WarningText}"/>
+                                    <Run Text="{Binding ReviewWillOverwriteCount, Mode=OneWay}" Foreground="{StaticResource WarningText}"/>
+                                    <Run Text=" files)" Foreground="{StaticResource WarningText}"/>
+                                </TextBlock>
+                                <ItemsControl ItemsSource="{Binding ReviewWillOverwrite}"
+                                              Visibility="{Binding ReviewHasOverwrites, Converter={StaticResource BoolToVis}}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding ArchivePath}"
+                                                       Foreground="{StaticResource WarningText}"
+                                                       Style="{StaticResource ConsoleText}"
+                                                       FontSize="11"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Margin="0,1"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- Suspicious (executables, etc.) -->
+                                <TextBlock Style="{StaticResource DetailLabel}" Margin="0,10,0,4"
+                                           Visibility="{Binding ReviewHasSuspicious, Converter={StaticResource BoolToVis}}">
+                                    <Run Text="SUSPICIOUS"/>
+                                    <Run Text=" (" Foreground="{StaticResource WarningText}"/>
+                                    <Run Text="{Binding ReviewSuspiciousCount, Mode=OneWay}" Foreground="{StaticResource WarningText}"/>
+                                    <Run Text=" files)" Foreground="{StaticResource WarningText}"/>
+                                </TextBlock>
+                                <ItemsControl ItemsSource="{Binding ReviewSuspicious}"
+                                              Visibility="{Binding ReviewHasSuspicious, Converter={StaticResource BoolToVis}}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding ArchivePath}"
+                                                       Foreground="{StaticResource WarningText}"
+                                                       Style="{StaticResource ConsoleText}"
+                                                       FontSize="11"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Margin="0,1"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- Blocked (unsafe paths) -->
+                                <TextBlock Style="{StaticResource DetailLabel}" Margin="0,10,0,4"
+                                           Visibility="{Binding ReviewHasBlocked, Converter={StaticResource BoolToVis}}">
+                                    <Run Text="BLOCKED"/>
+                                    <Run Text=" (" Foreground="{StaticResource DangerBrush}"/>
+                                    <Run Text="{Binding ReviewBlockedCount, Mode=OneWay}" Foreground="{StaticResource DangerBrush}"/>
+                                    <Run Text=" files)" Foreground="{StaticResource DangerBrush}"/>
+                                </TextBlock>
+                                <ItemsControl ItemsSource="{Binding ReviewBlocked}"
+                                              Visibility="{Binding ReviewHasBlocked, Converter={StaticResource BoolToVis}}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding ArchivePath}"
+                                                       Foreground="{StaticResource DangerBrush}"
+                                                       Style="{StaticResource ConsoleText}"
+                                                       FontSize="11"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Margin="0,1"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- Junk (auto-skipped) -->
+                                <TextBlock Style="{StaticResource DetailLabel}" Margin="0,10,0,4"
+                                           Visibility="{Binding ReviewHasJunk, Converter={StaticResource BoolToVis}}">
+                                    <Run Text="JUNK / AUTO-SKIPPED"/>
+                                    <Run Text=" (" Foreground="{StaticResource TextFaint}"/>
+                                    <Run Text="{Binding ReviewJunkCount, Mode=OneWay}" Foreground="{StaticResource TextFaint}"/>
+                                    <Run Text=" files)" Foreground="{StaticResource TextFaint}"/>
+                                </TextBlock>
+                                <ItemsControl ItemsSource="{Binding ReviewJunk}"
+                                              Visibility="{Binding ReviewHasJunk, Converter={StaticResource BoolToVis}}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding ArchivePath}"
+                                                       Foreground="{StaticResource TextFaint}"
+                                                       Style="{StaticResource ConsoleText}"
+                                                       FontSize="11"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Margin="0,1"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                            </StackPanel>
+                        </ScrollViewer>
+                    </DockPanel>
+
                 </Grid>
             </Border>
         </Grid>

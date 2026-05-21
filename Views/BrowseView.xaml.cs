@@ -11,12 +11,13 @@ public partial class BrowseView : UserControl
 {
     private BrowseViewModel? Vm => DataContext as BrowseViewModel;
 
-    private string? _pendingThumbnailUrl;
-
     public BrowseView() => InitializeComponent();
 
     private async void BrowseView_Loaded(object sender, RoutedEventArgs e)
     {
+        if (Vm is not null)
+            Vm.IsBrowserReady = false;
+
         try
         {
             // Persistent profile so cookies/login survive between app launches
@@ -29,11 +30,19 @@ public partial class BrowseView : UserControl
 
             await WebView.EnsureCoreWebView2Async(env);
             WebView.CoreWebView2.DownloadStarting += CoreWebView2_DownloadStarting;
+            if (Vm is not null)
+            {
+                Vm.IsBrowserReady = true;
+                Vm.StatusMessage = "Ready";
+            }
         }
         catch (Exception ex)
         {
             if (Vm is not null)
-                Vm.StatusMessage = $"WebView2 init failed: {ex.Message}";
+            {
+                Vm.IsBrowserReady = false;
+                Vm.StatusMessage = $"Browser unavailable. Install or repair Microsoft WebView2 Runtime, then restart the app. Details: {ex.Message}";
+            }
         }
     }
 
@@ -59,7 +68,7 @@ public partial class BrowseView : UserControl
             {
                 Dispatcher.Invoke(() =>
                 {
-                    ModDownloadBridge.Instance.OnDownloadCompleted(destPath, suggestedName, _pendingThumbnailUrl);
+                    ModDownloadBridge.Instance.OnDownloadCompleted(destPath, suggestedName);
                 });
             }
             else if (op.State == CoreWebView2DownloadState.Interrupted)
@@ -107,7 +116,7 @@ public partial class BrowseView : UserControl
         UpdateNavButtons();
     }
 
-    private async void WebView_NavigationCompleted(object? sender, CoreWebView2NavigationCompletedEventArgs e)
+    private void WebView_NavigationCompleted(object? sender, CoreWebView2NavigationCompletedEventArgs e)
     {
         if (Vm is null) return;
         Vm.IsLoading = false;
@@ -115,48 +124,6 @@ public partial class BrowseView : UserControl
         Vm.CurrentUrl = WebView.Source?.ToString() ?? "";
         Vm.StatusMessage = e.IsSuccess ? "Ready" : $"Failed to load page ({e.WebErrorStatus})";
         UpdateNavButtons();
-
-        if (e.IsSuccess)
-            _pendingThumbnailUrl = await ExtractThumbnailUrlAsync();
-    }
-
-    private async Task<string?> ExtractThumbnailUrlAsync()
-    {
-        try
-        {
-            var result = await WebView.CoreWebView2.ExecuteScriptAsync("""
-                (function() {
-                    var selectors = [
-                        '.ipsContained img',
-                        '.cCmsRecord_image img',
-                        'article .ipsType_richText img',
-                        '.ipsType_richText img',
-                        'article img'
-                    ];
-                    for (var i = 0; i < selectors.length; i++) {
-                        var imgs = document.querySelectorAll(selectors[i]);
-                        for (var j = 0; j < imgs.length; j++) {
-                            var img = imgs[j];
-                            var src = img.src || img.dataset.src || '';
-                            var w = img.naturalWidth || img.width || 0;
-                            var h = img.naturalHeight || img.height || 0;
-                            if (src && src.startsWith('http') && w >= 100 && h >= 100)
-                                return src;
-                        }
-                    }
-                    return null;
-                })()
-                """);
-
-            if (result is null || result == "null")
-                return null;
-
-            return result.Trim('"');
-        }
-        catch
-        {
-            return null;
-        }
     }
 
     private void UpdateNavButtons()
@@ -171,6 +138,19 @@ public partial class BrowseView : UserControl
 
     private async void InstallButton_Click(object sender, RoutedEventArgs e)
     {
+        if (Vm is not null && !Vm.CanTriggerInstall)
+        {
+            Vm.StatusMessage = "Browser is not ready yet.";
+            return;
+        }
+
+        if (WebView.CoreWebView2 is null)
+        {
+            if (Vm is not null)
+                Vm.StatusMessage = "Browser is not ready. Install/repair Microsoft WebView2 Runtime and try again.";
+            return;
+        }
+
         // Inject JS to click the primary download button on the lcpdfr.com mod page
         // This triggers the site's download flow, which fires DownloadStarting above
         try

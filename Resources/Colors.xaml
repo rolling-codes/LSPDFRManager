@@ -105,7 +105,9 @@
     <!-- ══ Compatibility aliases (keep existing keys working) ════════ -->
     <SolidColorBrush x:Key="Bg"          Color="#0C1119"/>
     <SolidColorBrush x:Key="Surface"     Color="#141D2A"/>
+    <SolidColorBrush x:Key="BgCard"      Color="#141D2A"/>
     <SolidColorBrush x:Key="Surface2"    Color="#1A2434"/>
+    <SolidColorBrush x:Key="BgHover"     Color="#1A2434"/>
     <SolidColorBrush x:Key="Sidebar"     Color="#0F1A2A"/>
     <SolidColorBrush x:Key="Border"      Color="#233247"/>
     <SolidColorBrush x:Key="Accent"      Color="#3A98FF"/>

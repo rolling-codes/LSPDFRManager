@@ -9,6 +9,7 @@ public class SettingsViewModel : ObservableObject
     private readonly BackupService _backup = new();
     private readonly ExportService _export = new();
     private readonly BatchReinstallService _reinstall = new();
+    private readonly LSPDFRManager.Features.Updates.IUpdateController _updateController;
 
     private string _gtaPath = AppConfig.Instance.GtaPath;
     private string _backupPath = AppConfig.Instance.BackupPath;
@@ -19,9 +20,21 @@ public class SettingsViewModel : ObservableObject
     private bool _deleteTempAfterInstall = AppConfig.Instance.DeleteTempAfterInstall;
     private string _statusMessage = "";
     private bool _isBusy;
+    private int _uiScaleIndex;
 
-    public SettingsViewModel()
+    private static readonly double[] ScaleSteps = [0.85, 1.0, 1.25, 1.5];
+
+    private static int ScaleToIndex(double scale) =>
+        ScaleSteps
+            .Select((s, i) => (s, i))
+            .OrderBy(t => Math.Abs(t.s - scale))
+            .First().i;
+
+    public SettingsViewModel(LSPDFRManager.Features.Updates.IUpdateController? updateController = null)
     {
+        _updateController = updateController ?? new LSPDFRManager.Features.Updates.UpdateWorkflowController();
+        _uiScaleIndex = ScaleToIndex(AppConfig.Instance.UiScale);
+
         BrowseGtaPathCommand = new RelayCommand(BrowseForGtaPath);
         BrowseBackupPathCommand = new RelayCommand(BrowseForBackupPath);
         SaveSettingsCommand = new RelayCommand(SaveSettings);
@@ -30,6 +43,7 @@ public class SettingsViewModel : ObservableObject
         ExportManifestCommand = new RelayCommand(ExportManifest, () => IsIdle);
         ImportManifestCommand = new RelayCommand(ImportManifest, () => IsIdle);
         OpenLogFolderCommand = new RelayCommand(OpenLogFolder);
+        CheckForUpdatesCommand = new RelayCommand(() => _ = ExecuteCheckForUpdatesAsync(), () => IsIdle);
     }
 
     public ObservableCollection<string> ProgressLog { get; } = [];
@@ -128,6 +142,20 @@ public class SettingsViewModel : ObservableObject
         }
     }
 
+    /// <summary>0=Small(85%), 1=Default(100%), 2=Large(125%), 3=ExtraLarge(150%)</summary>
+    public int UiScaleIndex
+    {
+        get => _uiScaleIndex;
+        set
+        {
+            if (!SetProperty(ref _uiScaleIndex, value)) return;
+            var scale = ScaleSteps[Math.Clamp(value, 0, ScaleSteps.Length - 1)];
+            AppConfig.Instance.UiScale = scale;
+            AppConfig.Instance.Save();
+            AppConfig.NotifyUiScaleChanged(scale);
+        }
+    }
+
     public string StatusMessage
     {
         get => _statusMessage;
@@ -157,6 +185,12 @@ public class SettingsViewModel : ObservableObject
     public ICommand ExportManifestCommand { get; }
     public ICommand ImportManifestCommand { get; }
     public ICommand OpenLogFolderCommand { get; }
+    public ICommand CheckForUpdatesCommand { get; }
+
+    public string? LatestVersion { get; private set; }
+    public bool UpdateAvailable { get; private set; }
+    public string? UpdateError { get; private set; }
+    public string? DownloadUrl { get; private set; }
 
     private void BrowseForGtaPath()
     {
@@ -260,6 +294,38 @@ public class SettingsViewModel : ObservableObject
         {
             IsBusy = false;
             OnPropertyChanged(nameof(LastBackupDate));
+        }
+    }
+
+    private async Task ExecuteCheckForUpdatesAsync()
+    {
+        IsBusy = true;
+        StatusMessage = "Checking for updates...";
+        try
+        {
+            var result = await _updateController.CheckForUpdatesAsync(CancellationToken.None);
+
+            UpdateAvailable = result.UpdateAvailable;
+            LatestVersion = result.LatestVersion;
+            UpdateError = result.IsOffline ? "Update check failed (offline)." : null;
+            DownloadUrl = result.DownloadUrl;
+
+            OnPropertyChanged(nameof(UpdateAvailable));
+            OnPropertyChanged(nameof(LatestVersion));
+            OnPropertyChanged(nameof(UpdateError));
+            OnPropertyChanged(nameof(DownloadUrl));
+
+            StatusMessage = UpdateAvailable
+                ? $"Update {LatestVersion} is available!"
+                : "You are on the latest version.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Update check failed: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
         }
     }
 }

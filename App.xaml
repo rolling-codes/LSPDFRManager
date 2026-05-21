@@ -46,6 +46,24 @@
             <DataTemplate DataType="{x:Type vm:OivViewModel}">
                 <views:OivView/>
             </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:DevDiagnosticsViewModel}">
+                <views:DevDiagnosticsView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:PatrolReadinessDashboardViewModel}">
+                <views:PatrolReadinessDashboardView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:SafeModeViewModel}">
+                <views:SafeModeView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:SetupWizardViewModel}">
+                <views:SetupWizardView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:CleanupViewModel}">
+                <views:CleanupView/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:ReactPreviewViewModel}">
+                <views:ReactPreviewView/>
+            </DataTemplate>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

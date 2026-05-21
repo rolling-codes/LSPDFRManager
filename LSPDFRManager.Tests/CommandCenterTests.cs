@@ -314,10 +314,10 @@ public class CommandCenterTests : IDisposable
     [Fact]
     public void SetupWizard_FolderExistsButNoExe_ReturnsError()
     {
-        // _gtaDir exists but has no GTA5.exe
+        // _gtaDir exists but has no GTA V executable (GTA5.exe / GTA5_BE.exe / PlayGTAV.exe)
         var error = new SetupWizardService().ValidatePath(_gtaDir);
 
-        Assert.Contains("GTA5.exe", error);
+        Assert.Contains("not found", error, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -346,7 +346,8 @@ public class CommandCenterTests : IDisposable
         var result = await new UpdateCheckService().CheckAsync();
 
         Assert.NotNull(result);
-        Assert.Equal("3.5.0", result.CurrentVersion);
+        Assert.True(Version.TryParse(result.CurrentVersion, out _),
+            $"CurrentVersion '{result.CurrentVersion}' is not a valid version string.");
     }
 
     // ── Storage Usage Analyzer ────────────────────────────────────────

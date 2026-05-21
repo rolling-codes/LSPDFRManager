@@ -1,0 +1,9 @@
+RAGE Plugin Hook version 1.87.1441.15835
+GTA V version 1.0.3258.0
+Started at: 11/09/2023 17:20:00
+
+[11/09/2023 17:20:00.100] [INFO] [RAGE Plugin Hook] Initializing...
+[11/09/2023 17:20:00.200] [INFO] [RAGE Plugin Hook] Loading plugin 'LSPDFR.dll'...
+[11/09/2023 17:20:00.500] [INFO] [RAGE Plugin Hook] Loaded plugin 'LSPDFR.dll'.
+[11/09/2023 17:20:01.000] [INFO] [LSPDFR] Plugin started successfully.
+[11/09/2023 17:20:01.100] [INFO] [RAGE Plugin Hook] All plugins loaded. GTA V is ready.

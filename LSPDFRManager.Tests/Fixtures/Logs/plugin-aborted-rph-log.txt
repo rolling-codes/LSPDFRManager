@@ -1,0 +1,8 @@
+RAGE Plugin Hook version 1.87.1441.15835
+GTA V version 1.0.3258.0
+
+[11/09/2023 17:20:00.100] [INFO] [RAGE Plugin Hook] Loading plugin 'LSPDFR.dll'...
+[11/09/2023 17:20:00.500] [INFO] [RAGE Plugin Hook] Loaded plugin 'LSPDFR.dll'.
+[11/09/2023 17:20:01.000] [INFO] [RAGE Plugin Hook] Initializing plugin 'LSPDFR.dll'...
+[11/09/2023 17:20:05.000] [ERROR] [RAGE Plugin Hook] Plugin 'LSPDFR.dll' aborted!
+[11/09/2023 17:20:05.001] [INFO] [RAGE Plugin Hook] Unloading plugin 'LSPDFR.dll'.

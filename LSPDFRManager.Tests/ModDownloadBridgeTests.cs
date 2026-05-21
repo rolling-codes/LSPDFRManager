@@ -40,134 +40,97 @@ public class ModDownloadBridgeTests : IDisposable
         return path;
     }
 
-    /// <summary>
-    /// Constructs a fresh bridge instance so tests are isolated.
-    /// We reach into the internal constructor via reflection-free instantiation
-    /// (the bridge constructor is private-equivalent — it is actually public for
-    /// testability; only the static Instance property is the "public" singleton).
-    /// </summary>
-    private static TestBridge CreateBridge() => new();
-
-    // ── TestBridge helper ────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Thin wrapper that replaces InstallQueue.Enqueue with a no-op capture so
-    /// tests never touch the real queue / file system during unit testing.
-    /// </summary>
-    private sealed class TestBridge
-    {
-        private readonly ModDetector _detector = new();
-
-        public List<ModInfo> Queued   { get; } = [];
-        public List<string>  Detected { get; } = [];
-        public List<(string Name, string Error)> Failed { get; } = [];
-
-        public event Action<ModInfo>?        OnQueued;
-        public event Action<string>?         OnDetecting;
-        public event Action<string, string>? OnFailed;
-
-        public async Task RunAsync(string localPath, string displayName)
-        {
-            if (string.IsNullOrWhiteSpace(localPath)) return;
-
-            OnDetecting?.Invoke(displayName);
-            Detected.Add(displayName);
-
-            try
-            {
-                var mod = await Task.Run(() => _detector.Detect(localPath));
-
-                if (string.IsNullOrWhiteSpace(mod.Name) || mod.Name.StartsWith("Mod "))
-                    mod.Name = CleanDisplayName(displayName);
-
-                Queued.Add(mod);
-                OnQueued?.Invoke(mod);
-            }
-            catch (Exception ex)
-            {
-                Failed.Add((displayName, ex.Message));
-                OnFailed?.Invoke(displayName, ex.Message);
-            }
-        }
-
-        private static string CleanDisplayName(string fileName)
-        {
-            var stem = Path.GetFileNameWithoutExtension(fileName);
-            stem = System.Text.RegularExpressions.Regex.Replace(stem, @"[_\-\.]+", " ");
-            return System.Globalization.CultureInfo.CurrentCulture.TextInfo
-                .ToTitleCase(stem.Trim().ToLowerInvariant());
-        }
-    }
+    private static ModDownloadBridge CreateBridge() => new();
 
     // ── Tests ────────────────────────────────────────────────────────────────
 
     [Fact]
-    public async Task DetectsModAndQueuesIt_WhenValidArchiveGiven()
+    public async Task DetectsModAndStagesIt_WhenValidArchiveGiven()
     {
         var zip = MakeZip("CalloutPlugin", "plugins/LSPDFR/CalloutPlugin.dll");
         var bridge = CreateBridge();
+        var staged = new List<ModInfo>();
+        bridge.Staged += staged.Add;
 
-        await bridge.RunAsync(zip, "CalloutPlugin.zip");
+        await bridge.StageDownloadAsync(zip, "CalloutPlugin.zip");
 
-        Assert.Single(bridge.Queued);
-        Assert.Equal(ModType.LspdfrPlugin, bridge.Queued[0].Type);
+        Assert.Single(staged);
+        Assert.Equal(ModType.LspdfrPlugin, staged[0].Type);
     }
 
     [Fact]
-    public async Task RaisesDetectingEvent_BeforeQueueing()
+    public async Task RaisesDetectingEvent_BeforeStaging()
     {
         var zip = MakeZip("some_mod", "plugins/LSPDFR/SomeMod.dll");
         var bridge = CreateBridge();
 
         var detectingRaised = false;
-        var queuedRaised    = false;
+        var stagedRaised    = false;
         var detectingFirst  = false;
 
-        bridge.OnDetecting += _ => detectingRaised = true;
-        bridge.OnQueued    += _ => { queuedRaised = true; detectingFirst = detectingRaised; };
+        bridge.Detecting += _ => detectingRaised = true;
+        bridge.Staged    += _ => { stagedRaised = true; detectingFirst = detectingRaised; };
 
-        await bridge.RunAsync(zip, "some_mod.zip");
+        await bridge.StageDownloadAsync(zip, "some_mod.zip");
 
         Assert.True(detectingRaised);
-        Assert.True(queuedRaised);
-        Assert.True(detectingFirst, "Detecting event must fire before Queued event");
+        Assert.True(stagedRaised);
+        Assert.True(detectingFirst, "Detecting event must fire before Staged event");
     }
 
     [Fact]
-    public async Task LowConfidenceArchive_StillQueued_NotFailed()
+    public async Task LowConfidenceArchive_StillStaged_NotFailed()
     {
         // ModDetector never throws — even unrecognised archives produce a low-confidence
-        // result that the bridge should still queue (caller sees it in the Install tab).
+        // result that the bridge should still stage (caller sees it in the Install tab).
         var zip = MakeZip("random_stuff", "readme.txt", "data.dat");
         var bridge = CreateBridge();
+        var staged = new List<ModInfo>();
+        var failed = new List<(string Name, string Error)>();
+        bridge.Staged += staged.Add;
+        bridge.Failed += (name, error) => failed.Add((name, error));
 
-        await bridge.RunAsync(zip, "random_stuff.zip");
+        await bridge.StageDownloadAsync(zip, "random_stuff.zip");
 
-        Assert.Empty(bridge.Failed);
-        Assert.Single(bridge.Queued);
-        Assert.True(bridge.Queued[0].Confidence < 0.5f, "Expected low confidence for unrecognised archive");
+        Assert.Empty(failed);
+        Assert.Single(staged);
+        Assert.True(staged[0].Confidence < 0.5f, "Expected low confidence for unrecognised archive");
     }
 
     [Fact]
     public async Task DoesNothing_WhenLocalPathIsEmpty()
     {
         var bridge = CreateBridge();
-        await bridge.RunAsync("", "something.zip");
+        var staged = new List<ModInfo>();
+        var detected = new List<string>();
+        var failed = new List<(string Name, string Error)>();
+        bridge.Staged += staged.Add;
+        bridge.Detecting += detected.Add;
+        bridge.Failed += (name, error) => failed.Add((name, error));
 
-        Assert.Empty(bridge.Queued);
-        Assert.Empty(bridge.Detected);
-        Assert.Empty(bridge.Failed);
+        await bridge.StageDownloadAsync("", "something.zip");
+
+        Assert.Empty(staged);
+        Assert.Empty(detected);
+        Assert.Empty(failed);
     }
 
     [Fact]
     public async Task DoesNothing_WhenLocalPathIsWhitespace()
     {
         var bridge = CreateBridge();
-        await bridge.RunAsync("   ", "something.zip");
+        var staged = new List<ModInfo>();
+        var detected = new List<string>();
+        var failed = new List<(string Name, string Error)>();
+        bridge.Staged += staged.Add;
+        bridge.Detecting += detected.Add;
+        bridge.Failed += (name, error) => failed.Add((name, error));
 
-        Assert.Empty(bridge.Queued);
-        Assert.Empty(bridge.Detected);
-        Assert.Empty(bridge.Failed);
+        await bridge.StageDownloadAsync("   ", "something.zip");
+
+        Assert.Empty(staged);
+        Assert.Empty(detected);
+        Assert.Empty(failed);
     }
 
     [Fact]
@@ -177,43 +140,51 @@ public class ModDownloadBridgeTests : IDisposable
         // Bridge should replace it with a cleaned version of the display name.
         var zip = MakeZip("random_files_pack", "readme.txt", "data.dat");
         var bridge = CreateBridge();
+        var staged = new List<ModInfo>();
+        bridge.Staged += staged.Add;
 
-        await bridge.RunAsync(zip, "random_files_pack.zip");
+        await bridge.StageDownloadAsync(zip, "random_files_pack.zip");
 
-        // Whether queued or failed, the display name must have been cleaned
+        // Whether staged or failed, the display name must have been cleaned
         // (underscores → spaces, title-cased).
-        if (bridge.Queued.Count == 1)
+        if (staged.Count == 1)
         {
             // Name must not contain underscores and must not start with "Mod "
-            Assert.DoesNotContain("_", bridge.Queued[0].Name);
+            Assert.DoesNotContain("_", staged[0].Name);
         }
         // If detection failed, that is also acceptable for this archive type.
     }
 
     [Fact]
-    public async Task QueuedMod_HasCorrectSourcePath()
+    public async Task StagedMod_HasCorrectSourcePath()
     {
         var zip = MakeZip("MyPlugin", "plugins/LSPDFR/MyPlugin.dll");
         var bridge = CreateBridge();
+        var staged = new List<ModInfo>();
+        bridge.Staged += staged.Add;
 
-        await bridge.RunAsync(zip, "MyPlugin.zip");
+        await bridge.StageDownloadAsync(zip, "MyPlugin.zip");
 
-        Assert.Single(bridge.Queued);
-        Assert.Equal(zip, bridge.Queued[0].SourcePath);
+        Assert.Single(staged);
+        Assert.Equal(zip, staged[0].SourcePath);
     }
 
     [Fact]
-    public async Task MultipleDownloads_AreEachQueued()
+    public async Task MultipleDownloads_AreEachStaged()
     {
         var zip1 = MakeZip("PluginA", "plugins/LSPDFR/PluginA.dll");
         var zip2 = MakeZip("PluginB", "plugins/LSPDFR/PluginB.dll");
         var bridge = CreateBridge();
+        var staged = new List<ModInfo>();
+        var detected = new List<string>();
+        bridge.Staged += staged.Add;
+        bridge.Detecting += detected.Add;
 
-        await bridge.RunAsync(zip1, "PluginA.zip");
-        await bridge.RunAsync(zip2, "PluginB.zip");
+        await bridge.StageDownloadAsync(zip1, "PluginA.zip");
+        await bridge.StageDownloadAsync(zip2, "PluginB.zip");
 
-        Assert.Equal(2, bridge.Queued.Count);
-        Assert.Equal(2, bridge.Detected.Count);
+        Assert.Equal(2, staged.Count);
+        Assert.Equal(2, detected.Count);
     }
 
     [Fact]
@@ -223,11 +194,13 @@ public class ModDownloadBridgeTests : IDisposable
             "dlcpacks/mycar/dlc.rpf",
             "dlcpacks/mycar/content.xml");
         var bridge = CreateBridge();
+        var staged = new List<ModInfo>();
+        bridge.Staged += staged.Add;
 
-        await bridge.RunAsync(zip, "myCar_addon.zip");
+        await bridge.StageDownloadAsync(zip, "myCar_addon.zip");
 
-        Assert.Single(bridge.Queued);
-        Assert.Equal(ModType.VehicleDlc, bridge.Queued[0].Type);
+        Assert.Single(staged);
+        Assert.Equal(ModType.VehicleDlc, staged[0].Type);
     }
 
     [Fact]
@@ -235,10 +208,12 @@ public class ModDownloadBridgeTests : IDisposable
     {
         var zip = MakeZip("trainer_asi", "TrainerV.asi");
         var bridge = CreateBridge();
+        var staged = new List<ModInfo>();
+        bridge.Staged += staged.Add;
 
-        await bridge.RunAsync(zip, "trainer_asi.zip");
+        await bridge.StageDownloadAsync(zip, "trainer_asi.zip");
 
-        Assert.Single(bridge.Queued);
-        Assert.Equal(ModType.AsiMod, bridge.Queued[0].Type);
+        Assert.Single(staged);
+        Assert.Equal(ModType.AsiMod, staged[0].Type);
     }
 }

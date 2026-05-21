@@ -1,0 +1,236 @@
+<UserControl x:Class="LSPDFRManager.Views.SetupWizardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:LSPDFRManager.ViewModels">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+            <TextBlock Text="Setup Wizard" FontSize="22" FontWeight="Bold" Foreground="{StaticResource TextStrong}"/>
+            <TextBlock Text="{Binding PageTitle}" FontSize="14" Foreground="{StaticResource AccentPrimary}" Margin="0,4,0,0"/>
+        </StackPanel>
+
+        <!-- Page content -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+
+                <!-- Page 0: Welcome -->
+                <StackPanel>
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding CurrentPage}" Value="0">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    <TextBlock TextWrapping="Wrap" Foreground="{StaticResource TextStrong}" FontSize="14" LineHeight="22">
+                        Welcome to LSPDFR Manager. This wizard will help you locate your GTA V installation and configure a backup folder.
+                    </TextBlock>
+                    <TextBlock Margin="0,16,0,0" TextWrapping="Wrap" Foreground="{StaticResource TextMuted}" FontSize="13">
+                        Click Next to begin, or close this wizard and configure the path manually in Settings.
+                    </TextBlock>
+                </StackPanel>
+
+                <!-- Page 1: Detect GTA V -->
+                <StackPanel>
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding CurrentPage}" Value="1">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    <TextBlock Text="Detected candidates:" Foreground="{StaticResource TextStrong}" FontSize="13" Margin="0,0,0,8"/>
+                    <Button Content="Auto-Detect" Command="{Binding DetectPathsCommand}" Style="{StaticResource GhostButton}" HorizontalAlignment="Left" Margin="0,0,0,12"/>
+                    <ItemsControl ItemsSource="{Binding DetectedPaths}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Command="{Binding DataContext.SelectCandidateCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}"
+                                        Style="{StaticResource GhostButton}" HorizontalAlignment="Left" Margin="0,0,0,4">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Path}" FontSize="12" Foreground="{StaticResource TextStrong}"/>
+                                        <TextBlock Text=" — " Foreground="{StaticResource TextMuted}" FontSize="12"/>
+                                        <TextBlock Text="{Binding Source}" Foreground="{StaticResource TextMuted}" FontSize="12"/>
+                                    </StackPanel>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <!-- Page 2: Validate GTA V Folder -->
+                <StackPanel>
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding CurrentPage}" Value="2">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    <TextBlock Text="GTA V installation folder:" Foreground="{StaticResource TextStrong}" FontSize="13" Margin="0,0,0,6"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" Text="{Binding GtaPath, UpdateSourceTrigger=PropertyChanged}"
+                                 Background="{StaticResource Surface}" Foreground="{StaticResource TextStrong}"
+                                 BorderBrush="{StaticResource BorderSubtle}" Padding="8,6" FontSize="13"/>
+                        <Button Grid.Column="1" Content="Browse" Command="{Binding BrowseGtaPathCommand}"
+                                Style="{StaticResource GhostButton}" Margin="6,0,0,0"/>
+                        <Button Grid.Column="2" Content="Scan" Command="{Binding ScanCommand}"
+                                Style="{StaticResource GhostButton}" Margin="6,0,0,0"/>
+                    </Grid>
+                    <TextBlock Text="{Binding ValidationMessage}" Margin="0,8,0,0" FontSize="12"
+                               Foreground="{StaticResource Warning}" TextWrapping="Wrap"
+                               Visibility="{Binding ValidationMessage, Converter={StaticResource StringToVis}}"/>
+
+                    <!-- Scan result -->
+                    <Border Margin="0,12,0,0" Padding="12" CornerRadius="8"
+                            Background="{StaticResource Surface}" BorderBrush="{StaticResource BorderSubtle}" BorderThickness="1"
+                            Visibility="{Binding ScanResult, Converter={StaticResource NullToCollapsed}}">
+                        <StackPanel>
+                            <TextBlock Text="Scan result:" Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,0,0,6"/>
+                            <TextBlock FontSize="13" TextWrapping="Wrap">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{StaticResource SuccessGreen}"/>
+                                        <Setter Property="Text" Value="GTA V root detected"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ScanResult.IsValidGtaRoot}" Value="False">
+                                                <Setter Property="Foreground" Value="{StaticResource ErrorText}"/>
+                                                <Setter Property="Text" Value="GTA V executable not found in this folder"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TextBlock Margin="0,4,0,0" FontSize="12" Foreground="{StaticResource TextMuted}"
+                                       Text="{Binding ScanResult.GtaExeFound, StringFormat='Exe: {0}', FallbackValue=''}"
+                                       Visibility="{Binding ScanResult.GtaExeFound, Converter={StaticResource NullToCollapsed}}"/>
+                            <TextBlock Margin="0,4,0,0" FontSize="12" Foreground="{StaticResource TextMuted}"
+                                       Text="LSPDFR: not installed (can install later)"
+                                       Visibility="{Binding ScanResult.HasLspdfrCore, Converter={StaticResource InverseBoolToVis}, FallbackValue=Collapsed}"/>
+                            <TextBlock Margin="0,4,0,0" FontSize="12" Foreground="{StaticResource TextMuted}"
+                                       Text="RAGE Plugin Hook: not installed (can install later)"
+                                       Visibility="{Binding ScanResult.HasRagePluginHook, Converter={StaticResource InverseBoolToVis}, FallbackValue=Collapsed}"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Page 3: Detect Dependencies -->
+                <StackPanel>
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding CurrentPage}" Value="3">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    <TextBlock TextWrapping="Wrap" Foreground="{StaticResource TextStrong}" FontSize="14">
+                        LSPDFR and RAGE Plugin Hook are required to use most features.
+                    </TextBlock>
+                    <TextBlock Margin="0,12,0,0" TextWrapping="Wrap" Foreground="{StaticResource TextMuted}" FontSize="13">
+                        You can install them later — the app will remind you when needed.
+                    </TextBlock>
+                </StackPanel>
+
+                <!-- Page 4: Backup Folder -->
+                <StackPanel>
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding CurrentPage}" Value="4">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    <TextBlock Text="Backup folder:" Foreground="{StaticResource TextStrong}" FontSize="13" Margin="0,0,0,6"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" Text="{Binding BackupPath, UpdateSourceTrigger=PropertyChanged}"
+                                 Background="{StaticResource Surface}" Foreground="{StaticResource TextStrong}"
+                                 BorderBrush="{StaticResource BorderSubtle}" Padding="8,6" FontSize="13"/>
+                        <Button Grid.Column="1" Content="Browse" Command="{Binding BrowseBackupPathCommand}"
+                                Style="{StaticResource GhostButton}" Margin="6,0,0,0"/>
+                    </Grid>
+                </StackPanel>
+
+                <!-- Page 5: Browse API -->
+                <StackPanel>
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding CurrentPage}" Value="5">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    <TextBlock TextWrapping="Wrap" Foreground="{StaticResource TextStrong}" FontSize="14">
+                        The Browse tab uses an optional local API to show lcpdfr.com content.
+                    </TextBlock>
+                    <TextBlock Margin="0,12,0,0" TextWrapping="Wrap" Foreground="{StaticResource TextMuted}" FontSize="13">
+                        You can configure this later in Settings. Click Next to skip.
+                    </TextBlock>
+                </StackPanel>
+
+                <!-- Page 6: Finish -->
+                <StackPanel>
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding CurrentPage}" Value="6">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    <TextBlock TextWrapping="Wrap" Foreground="{StaticResource TextStrong}" FontSize="14">
+                        Setup is complete. Click Finish to save your settings and open the app.
+                    </TextBlock>
+                    <TextBlock Margin="0,12,0,0" TextWrapping="Wrap" Foreground="{StaticResource TextMuted}" FontSize="13">
+                        You can change any of these settings at any time in the Settings tab.
+                    </TextBlock>
+                </StackPanel>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Footer nav -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="Back" Command="{Binding BackCommand}" Style="{StaticResource GhostButton}" Margin="0,0,8,0"
+                    Visibility="{Binding CanGoBack, Converter={StaticResource BoolToVis}}"/>
+            <Button Content="Next" Command="{Binding NextCommand}" Style="{StaticResource PrimaryButton}"
+                    Visibility="{Binding IsLastPage, Converter={StaticResource InverseBoolToVis}}"/>
+            <Button Content="Finish" Command="{Binding FinishCommand}" Style="{StaticResource PrimaryButton}"
+                    Visibility="{Binding IsLastPage, Converter={StaticResource BoolToVis}}"/>
+        </StackPanel>
+    </Grid>
+</UserControl>
