@@ -1,4 +1,5 @@
 using System.Windows.Input;
+using LSPDFRManager.Core;
 using LSPDFRManager.Domain;
 using LSPDFRManager.Services;
 
@@ -151,7 +152,7 @@ public class BackupsViewModel : ObservableObject
     public BackupsViewModel()
     {
         CreateBackupCommand = new RelayCommand(() => _ = CreateBackupAsync(), () => IsIdle);
-        RestoreBackupCommand = new RelayCommand(RestoreBackup, () => IsIdle);
+        RestoreBackupCommand = new RelayCommand(() => _ = RestoreBackupAsync(), () => IsIdle);
         OpenBackupFolderCommand = new RelayCommand(OpenBackupFolder);
         RestorePointCommand = new RelayCommand(() => _ = RestorePointAsync(), () => SelectedRestorePoint != null && IsIdle);
         DeleteRestorePointCommand = new RelayCommand(() => _ = DeleteRestorePointAsync(), () => SelectedRestorePoint != null);
@@ -186,14 +187,28 @@ public class BackupsViewModel : ObservableObject
         finally { IsBusy = false; }
     }
 
-    private void RestoreBackup()
+    private async Task RestoreBackupAsync()
     {
         var dialog = new Microsoft.Win32.OpenFileDialog { Title = "Select Backup", Filter = "Backup Files|*.zip|All|*.*", InitialDirectory = AppConfig.Instance.BackupPath };
         if (dialog.ShowDialog() != true) return;
+
         IsBusy = true;
+        ProgressLog.Clear();
         var progress = new Progress<string>(m => Core.UiDispatcher.Invoke(() => { ProgressLog.Add(m); StatusMessage = m; }));
-        _ = _backupService.RestoreFromBackupAsync(dialog.FileName, progress)
-            .ContinueWith(_ => Core.UiDispatcher.Invoke(() => IsBusy = false));
+        try
+        {
+            await _backupService.RestoreFromBackupAsync(dialog.FileName, progress);
+            StatusMessage = "Restore complete. Please restart the application.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Restore failed: {ex.Message}";
+            AppLogger.Error("[BACKUP_RESTORE] Restore failed", ex);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     private async Task RestorePointAsync()

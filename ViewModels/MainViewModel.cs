@@ -47,8 +47,8 @@ public class MainViewModel : ObservableObject
 
         InstallQueue.Instance.InstallFailedWithResult += (mod, result) =>
         {
-            GlobalErrorMessage = $"Install failed: {result.Error}";
             var version = System.Threading.Interlocked.Increment(ref _errorVersion);
+            UiDispatcher.Invoke(() => GlobalErrorMessage = $"Install failed: {result.Error}");
 
             _ = Task.Run(async () =>
             {

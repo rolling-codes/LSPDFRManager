@@ -47,9 +47,19 @@ public class BackupService
         await Task.Run(() =>
         {
             using var zip = ZipFile.OpenRead(backupPath);
-            foreach (var entry in zip.Entries.Where(entry => !string.IsNullOrWhiteSpace(entry.FullName)))
+            foreach (var entry in zip.Entries.Where(e => !string.IsNullOrWhiteSpace(e.FullName) && !e.FullName.EndsWith('/')))
             {
-                var destination = Path.Combine(AppDataPaths.Root, entry.FullName);
+                string destination;
+                try
+                {
+                    destination = PathSafety.GetSafePath(AppDataPaths.Root, entry.FullName);
+                }
+                catch (InvalidOperationException)
+                {
+                    AppLogger.Warning($"[RESTORE] Skipped unsafe entry: {entry.FullName}");
+                    continue;
+                }
+
                 var directory = Path.GetDirectoryName(destination);
                 if (!string.IsNullOrWhiteSpace(directory))
                     Directory.CreateDirectory(directory);

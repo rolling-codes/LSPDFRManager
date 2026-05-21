@@ -134,9 +134,12 @@ public class ModDetector
         try
         {
             if (Directory.Exists(path))
+            {
+                var root = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
                 return Directory.GetFiles(path, "*", SearchOption.AllDirectories)
-                    .Select(f => f.Replace('\\', '/').ToLowerInvariant())
+                    .Select(f => Path.GetRelativePath(root, f).Replace('\\', '/').ToLowerInvariant())
                     .ToList();
+            }
 
             var ext = Path.GetExtension(path).ToLowerInvariant();
             if (ext == ".zip")
