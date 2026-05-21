@@ -115,6 +115,7 @@ public sealed class OivBuildPipeline
 
         // Stage 6: Build (skip if dryRun)
         OivBuildResult? buildResult = null;
+        var refusalReasons = new List<string>();
         if (!dryRun)
         {
             var buildInput = new OivBuildInput(
@@ -127,7 +128,9 @@ public sealed class OivBuildPipeline
             buildResult = await _oivBuilder.BuildAsync(buildInput, ct);
             if (!buildResult.Success)
             {
-                warnings.Add($"OIV builder: {buildResult.Error}");
+                var builderError = $"OIV builder: {buildResult.Error}";
+                warnings.Add(builderError);
+                refusalReasons.Add(builderError);
             }
         }
 
@@ -141,7 +144,7 @@ public sealed class OivBuildPipeline
             ValidationResults = validation.Gates,
             InstallOperations = operations,
             Warnings = warnings,
-            RefusalReasons = [],
+            RefusalReasons = refusalReasons,
             FileHashes = BuildFileHashes(files),
             Timestamp = ts,
             AppVersion = ver,
@@ -159,7 +162,7 @@ public sealed class OivBuildPipeline
             Success = buildResult?.Success ?? true,
             Report = finalReport,
             ReportPath = finalReportPath,
-            RefusalReasons = []
+            RefusalReasons = refusalReasons
         };
     }
 

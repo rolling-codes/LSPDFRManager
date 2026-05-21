@@ -47,7 +47,7 @@ public static class LspdfrInstallLocator
 
     public static bool IsLspdfrInstalled(string gtaPath) =>
         FindRagePluginHook(gtaPath) is not null &&
-        File.Exists(Path.Combine(gtaPath, Normalize(@"plugins\LSPD First Response.dll")));
+        FindLspdfrCore(gtaPath) is not null;
 
     public static bool IsRagePluginHookInstalled(string gtaPath) =>
         FindRagePluginHook(gtaPath) is not null &&

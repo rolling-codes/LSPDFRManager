@@ -126,4 +126,22 @@ public class BackupServiceTests : IDisposable
         var restored = File.ReadAllText(AppDataPaths.LibraryFile);
         Assert.Equal(originalContent, restored);
     }
+
+    [Fact]
+    public async Task RestoreFromBackup_UnsafeEntry_ThrowsInsteadOfReportingComplete()
+    {
+        var svc = new BackupService();
+        var zipPath = Path.Combine(_tempRoot, "unsafe.zip");
+        using (var zip = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+        {
+            var entry = zip.CreateEntry("../evil.txt");
+            using var writer = new StreamWriter(entry.Open());
+            writer.Write("bad");
+        }
+
+        var ex = await Assert.ThrowsAsync<InvalidDataException>(() => svc.RestoreFromBackupAsync(zipPath));
+
+        Assert.Contains("unsafe", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.False(File.Exists(Path.Combine(_tempRoot, "evil.txt")));
+    }
 }

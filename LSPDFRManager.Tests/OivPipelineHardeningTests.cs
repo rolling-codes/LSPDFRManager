@@ -324,6 +324,8 @@ public class OivPipelineHardeningTests : IDisposable
 
         Assert.False(result.Success);
         Assert.Contains(result.Report.Warnings, w => w.Contains("OIV builder"));
+        Assert.Contains(result.RefusalReasons, r => r.Contains("OIV builder"));
+        Assert.Contains(result.Report.RefusalReasons, r => r.Contains("OIV builder"));
     }
 
     // ── SirenPack ─────────────────────────────────────────────────────────────
