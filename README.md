@@ -8,6 +8,8 @@ A complete GTA V and LSPDFR command center — install and manage mods, run diag
 
 **[Download Latest Release →](https://github.com/rolling-codes/LSPDFRManager/releases/latest)**
 
+See the [GitHub Releases page](https://github.com/rolling-codes/LSPDFRManager/releases/latest) for the latest release notes.
+
 ---
 
 ## Features
@@ -74,7 +76,8 @@ Before any file is written, the planner builds a full install plan:
 
 ## Install
 
-Download `LSPDFRManager-v3.7.19-win-x64.zip` from [Releases](https://github.com/rolling-codes/LSPDFRManager/releases/latest), extract anywhere, and run `LSPDFRManager.exe`. No installer needed.
+**Download** the ZIP from the [latest release](https://github.com/rolling-codes/LSPDFRManager/releases/latest), extract, and run `LSPDFRManager.exe`. No installer needed.
+See `INSTALL.txt` in the ZIP for full first-run instructions.
 
 The first run will prompt you to set your GTA V path if it is not auto-detected.
 

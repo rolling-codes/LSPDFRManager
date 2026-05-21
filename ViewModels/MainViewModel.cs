@@ -12,6 +12,7 @@ public class MainViewModel : ObservableObject
     private string _activePage = "Home";
     private string _statusMessage = "Ready";
     private string? _globalErrorMessage;
+    private int _errorVersion;
 
     public MainViewModel()
     {
@@ -47,11 +48,16 @@ public class MainViewModel : ObservableObject
         InstallQueue.Instance.InstallFailedWithResult += (mod, result) =>
         {
             GlobalErrorMessage = $"Install failed: {result.Error}";
+            var version = System.Threading.Interlocked.Increment(ref _errorVersion);
 
             _ = Task.Run(async () =>
             {
                 await Task.Delay(TimeSpan.FromSeconds(5));
-                UiDispatcher.Invoke(() => GlobalErrorMessage = null);
+                UiDispatcher.Invoke(() =>
+                {
+                    if (_errorVersion == version)
+                        GlobalErrorMessage = null;
+                });
             });
         };
 

@@ -346,7 +346,8 @@ public class CommandCenterTests : IDisposable
         var result = await new UpdateCheckService().CheckAsync();
 
         Assert.NotNull(result);
-        Assert.Equal("3.7.19", result.CurrentVersion);
+        Assert.True(Version.TryParse(result.CurrentVersion, out _),
+            $"CurrentVersion '{result.CurrentVersion}' is not a valid version string.");
     }
 
     // ── Storage Usage Analyzer ────────────────────────────────────────
