@@ -47,6 +47,9 @@ public static class InstallPlanner
 
         foreach (var file in files)
         {
+            if (IsManifestOrMetadata(file.RelativePath))
+                continue;
+
             var strippedPath = rootPrefix is not null && file.RelativePath.StartsWith(rootPrefix, StringComparison.OrdinalIgnoreCase)
                 ? file.RelativePath[rootPrefix.Length..]
                 : file.RelativePath;
@@ -71,6 +74,9 @@ public static class InstallPlanner
 
         foreach (var file in files)
         {
+            if (IsManifestOrMetadata(file.RelativePath))
+                continue;
+
             if (file.Extension.Equals(".yft", StringComparison.OrdinalIgnoreCase) ||
                 file.Extension.Equals(".ytd", StringComparison.OrdinalIgnoreCase))
             {
@@ -90,6 +96,9 @@ public static class InstallPlanner
 
         foreach (var file in files)
         {
+            if (IsManifestOrMetadata(file.RelativePath))
+                continue;
+
             if (file.Extension.Equals(".xml", StringComparison.OrdinalIgnoreCase))
             {
                 ops.Add(new CopyOperation(
@@ -108,6 +117,9 @@ public static class InstallPlanner
 
         foreach (var file in files)
         {
+            if (IsManifestOrMetadata(file.RelativePath))
+                continue;
+
             if (file.Extension.Equals(".dll", StringComparison.OrdinalIgnoreCase))
             {
                 ops.Add(new CopyOperation(
@@ -126,6 +138,9 @@ public static class InstallPlanner
 
         foreach (var file in files)
         {
+            if (IsManifestOrMetadata(file.RelativePath))
+                continue;
+
             if (file.Extension.Equals(".dll", StringComparison.OrdinalIgnoreCase) ||
                 file.Extension.Equals(".cs", StringComparison.OrdinalIgnoreCase))
             {
@@ -145,6 +160,9 @@ public static class InstallPlanner
 
         foreach (var file in files)
         {
+            if (IsManifestOrMetadata(file.RelativePath))
+                continue;
+
             ops.Add(new CopyOperation(file.RelativePath, file.RelativePath, true));
         }
 
@@ -161,6 +179,9 @@ public static class InstallPlanner
 
         foreach (var file in files)
         {
+            if (IsManifestOrMetadata(file.RelativePath))
+                continue;
+
             var strippedPath = rootPrefix is not null && file.RelativePath.StartsWith(rootPrefix, StringComparison.OrdinalIgnoreCase)
                 ? file.RelativePath[rootPrefix.Length..]
                 : file.RelativePath;
@@ -219,5 +240,11 @@ public static class InstallPlanner
         }
 
         return result;
+    }
+
+    private static bool IsManifestOrMetadata(string path)
+    {
+        var fileName = Path.GetFileName(path.Replace('\\', '/'));
+        return fileName.Equals("manifest.json", StringComparison.OrdinalIgnoreCase);
     }
 }

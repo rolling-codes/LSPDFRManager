@@ -41,25 +41,38 @@ public class SafeLaunchManager
         return new SafeLaunchPlan { Mode = mode, Changes = changes };
     }
 
-    public async Task<IReadOnlyList<string>> ApplyAsync(SafeLaunchPlan plan, IProgress<string>? progress = null)
+    public async Task<IReadOnlyList<string>> ApplyAsync(
+        SafeLaunchPlan plan,
+        IProgress<string>? progress = null,
+        CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var restorePoint = new RestorePoint { OperationName = $"Safe Launch: {plan.Mode}" };
         restorePoint.Entries.AddRange(plan.Changes.Select(c => new RestorePointEntry
         {
             RelativePath = Path.GetRelativePath(AppConfig.Instance.GtaPath, c.FilePath),
             WasEnabled = c.WasEnabled,
         }));
-        await RestorePointService.Instance.SaveAsync(restorePoint);
+        await RestorePointService.Instance.SaveAsync(restorePoint, cancellationToken);
 
         var failures = new List<string>();
 
         foreach (var change in plan.Changes)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             try
             {
                 if (!change.WillBeEnabled && !change.FilePath.EndsWith(".disabled"))
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
                     File.Move(change.FilePath, change.FilePath + ".disabled");
+                }
                 progress?.Report($"Disabled: {Path.GetFileName(change.FilePath)}");
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {

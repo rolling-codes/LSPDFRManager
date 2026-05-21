@@ -20,7 +20,13 @@ public static class ManifestReader
         if (manifestFile is null)
             return new ManifestReadResult();
 
-        var fsPath = Path.Combine(bundleRoot, manifestFile.RelativePath.Replace('/', Path.DirectorySeparatorChar));
+        var normalizedRelativePath = manifestFile.RelativePath.Replace('/', Path.DirectorySeparatorChar);
+        var bundleRootFull = Path.GetFullPath(bundleRoot);
+        var bundleRootPrefix = bundleRootFull.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        var fsPath = Path.GetFullPath(Path.Combine(bundleRootFull, normalizedRelativePath));
+        if (!fsPath.StartsWith(bundleRootPrefix, StringComparison.OrdinalIgnoreCase))
+            return new ManifestReadResult { ValidationErrors = ["manifest.json read error: path escapes bundle root."] };
+
         string json;
         try
         {

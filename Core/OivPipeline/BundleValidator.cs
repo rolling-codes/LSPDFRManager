@@ -107,8 +107,8 @@ public static class BundleValidator
         gates.Add(new ValidationGate("has_ytd", hasYtd,
             hasYtd ? null : "vehicle_replace must include a .ytd texture file."));
 
-        var targetDeterminable = manifest?.TargetArchivePath is not null ||
-            (manifest?.ReplaceSlot is not null && KnownSlotMap.ContainsKey(manifest.ReplaceSlot));
+        var targetDeterminable = !string.IsNullOrWhiteSpace(manifest?.TargetArchivePath) ||
+            (!string.IsNullOrWhiteSpace(manifest?.ReplaceSlot) && KnownSlotMap.ContainsKey(manifest.ReplaceSlot));
         gates.Add(new ValidationGate("target_path_determinable", targetDeterminable,
             targetDeterminable ? null : "Target archive path cannot be determined. Set 'targetArchivePath' in manifest.json or use a slot from the verified slot map."));
 
@@ -238,7 +238,8 @@ public static class BundleValidator
 
         // A .yft/.ytd is "loose" (replace indicator) only if it is NOT inside any DLC pack folder
         return files.Any(f =>
-            (f.Extension == ".yft" || f.Extension == ".ytd") &&
+            (f.Extension.Equals(".yft", StringComparison.OrdinalIgnoreCase) ||
+             f.Extension.Equals(".ytd", StringComparison.OrdinalIgnoreCase)) &&
             !dlcPackDirs.Any(dir =>
                 string.IsNullOrEmpty(dir)
                     ? false

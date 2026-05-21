@@ -22,11 +22,12 @@ public class RestorePointService
         catch { _points = []; }
     }
 
-    public virtual async Task SaveAsync(RestorePoint point)
+    public virtual async Task SaveAsync(RestorePoint point, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         _points.Insert(0, point);
         if (_points.Count > 50) _points = _points.Take(50).ToList();
-        await PersistIndexAsync();
+        await PersistIndexAsync(cancellationToken);
         ChangeHistoryService.Instance.Record(ChangeHistoryAction.RestorePointCreated, $"Restore point created: {point.OperationName}", detail: point.Id);
     }
 
@@ -70,11 +71,11 @@ public class RestorePointService
         await PersistIndexAsync();
     }
 
-    private async Task PersistIndexAsync()
+    private async Task PersistIndexAsync(CancellationToken cancellationToken = default)
     {
         var dir = AppDataPaths.RestorePointsDirectory;
         Directory.CreateDirectory(dir);
         var json = System.Text.Json.JsonSerializer.Serialize(_points, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
-        await File.WriteAllTextAsync(AppDataPaths.RestorePointsIndex, json);
+        await File.WriteAllTextAsync(AppDataPaths.RestorePointsIndex, json, cancellationToken);
     }
 }
