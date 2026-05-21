@@ -31,11 +31,11 @@ public class BackupScheduler
 
     public async Task CreateBackupAsync(IProgress<string>? progress = null)
     {
-        await _backup.CreateBackupAsync(progress);
+        var backupPath = await _backup.CreateBackupAsync(progress);
 
         var manifest = new BackupManifest
         {
-            FileName = $"backup_{DateTime.Now:yyyyMMdd_HHmmss}.zip",
+            FileName = Path.GetFileName(backupPath),
             BackupType = "Full",
             CreatedAt = DateTime.UtcNow,
             ModCount = ModLibraryService.Instance.Mods.Count,

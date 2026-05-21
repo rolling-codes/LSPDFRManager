@@ -9,6 +9,7 @@ public class InstalledModFileService
     {
         ArgumentNullException.ThrowIfNull(mod);
 
+        var failed = new List<string>();
         foreach (var file in mod.InstalledFiles.Distinct(StringComparer.OrdinalIgnoreCase))
         {
             try
@@ -18,10 +19,14 @@ public class InstalledModFileService
             catch (Exception ex)
             {
                 AppLogger.Warning($"Toggle '{file}' failed: {ex.Message}");
+                failed.Add(file);
             }
         }
 
-        mod.IsEnabled = enabled;
+        if (failed.Count == 0)
+            mod.IsEnabled = enabled;
+        else
+            AppLogger.Warning($"SetEnabled({enabled}) incomplete for '{mod.Name}': {failed.Count} file(s) could not be toggled — library state not updated.");
     }
 
     public void Uninstall(InstalledMod mod) => Uninstall(mod, []);
