@@ -257,4 +257,38 @@ public class FileInstallerArchiveTests : IDisposable
         Assert.Equal("old content", File.ReadAllText(existingFile));
         Assert.False(File.Exists(Path.Combine(_tempDir, "fail.dll")));
     }
+
+    [Fact]
+    public async Task Install_WithPersistentBackupFolder_CreatesAndPreservesFolderOnFailure()
+    {
+        var existingFile = Path.Combine(_tempDir, "existing.dll");
+        File.WriteAllText(existingFile, "old content");
+        var persistentBackup = Path.Combine(_tempDir, "persistent-backups");
+
+        var archive = new FakeArchive(new IArchiveEntry[]
+        {
+            new FakeArchiveEntry("existing.dll", new byte[] {1, 2, 3}),
+            new FakeArchiveEntry("fail.dll", () => throw new IOException("Cannot open stream"))
+        });
+
+        var plan = new InstallPlan
+        {
+            Entries =
+            [
+                new InstallPlanEntry
+                {
+                    ArchivePath = "existing.dll",
+                    TargetPath = existingFile,
+                    DestinationExists = true,
+                    PlannedAction = InstallConflictAction.BackupAndReplace,
+                },
+            ],
+        };
+
+        var result = await FileInstaller.InstallAsync(archive, _tempDir, plan, persistentBackupFolder: persistentBackup);
+
+        Assert.False(result.Success);
+        Assert.True(Directory.Exists(persistentBackup));
+        Assert.Equal("old content", File.ReadAllText(existingFile));
+    }
 }

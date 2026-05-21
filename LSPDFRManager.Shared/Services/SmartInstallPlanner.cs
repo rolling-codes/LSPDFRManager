@@ -240,15 +240,7 @@ public class SmartInstallPlanner
             foreach (var entry in archive.Entries.Where(e => !e.IsDirectory))
             {
                 var rel = (entry.Key ?? string.Empty).Replace('\\', '/');
-                byte[] content;
-                using (var entryStream = entry.OpenEntryStream())
-                using (var buffer = new MemoryStream())
-                {
-                    entryStream.CopyTo(buffer);
-                    content = buffer.ToArray();
-                }
-
-                entries.Add(new SourceEntry(rel, () => new MemoryStream(content, writable: false), index++));
+                entries.Add(new SourceEntry(rel, () => OpenArchiveEntryStream(archivePath, rel), index++));
             }
         }
         catch (Exception ex)
@@ -257,6 +249,23 @@ public class SmartInstallPlanner
         }
 
         return entries;
+    }
+
+    private static Stream OpenArchiveEntryStream(string archivePath, string relativePath)
+    {
+        using var archive = ArchiveFactory.Open(archivePath);
+        var entry = archive.Entries.FirstOrDefault(e =>
+            !e.IsDirectory &&
+            string.Equals((e.Key ?? string.Empty).Replace('\\', '/'), relativePath, StringComparison.Ordinal));
+
+        if (entry is null)
+            throw new FileNotFoundException($"Archive entry not found: {relativePath}", relativePath);
+
+        using var entryStream = entry.OpenEntryStream();
+        var buffer = new MemoryStream();
+        entryStream.CopyTo(buffer);
+        buffer.Position = 0;
+        return buffer;
     }
 
     private static bool CanReadAsText(string relativePath)

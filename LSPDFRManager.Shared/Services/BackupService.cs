@@ -45,6 +45,7 @@ public class BackupService
         await Task.Run(() =>
         {
             using var zip = ZipFile.OpenRead(backupPath);
+            var skippedUnsafeEntries = new List<string>();
             foreach (var entry in zip.Entries.Where(e => !string.IsNullOrWhiteSpace(e.FullName) && !e.FullName.EndsWith('/')))
             {
                 string destination;
@@ -55,6 +56,7 @@ public class BackupService
                 catch (InvalidOperationException)
                 {
                     AppLogger.Warning($"[RESTORE] Skipped unsafe entry: {entry.FullName}");
+                    skippedUnsafeEntries.Add(entry.FullName);
                     continue;
                 }
 
@@ -65,6 +67,9 @@ public class BackupService
                 entry.ExtractToFile(destination, overwrite: true);
                 progress?.Report($"Restored: {entry.FullName}");
             }
+
+            if (skippedUnsafeEntries.Count > 0)
+                throw new InvalidDataException($"Backup restore skipped {skippedUnsafeEntries.Count} unsafe entr{(skippedUnsafeEntries.Count == 1 ? "y" : "ies")}: {string.Join(", ", skippedUnsafeEntries)}");
         });
 
         AppLogger.Info($"Restored from backup: {backupPath}");

@@ -123,13 +123,14 @@ public class OivInspectionTests : CommandCenterTestBase
     }
 
     [Fact]
-    public void ParseFromStream_EmptyContent_ReturnsZeroFiles()
+    public void ParseFromStream_EmptyContent_ReturnsInvalidPackage()
     {
         var xml = "<package><metadata><name>N</name><author>A</author><description/></metadata><content /></package>";
         using var stream = new System.IO.MemoryStream(System.Text.Encoding.UTF8.GetBytes(xml));
         var pkg = OivService.ParseFromStream(stream);
 
-        Assert.True(pkg.IsValid);
+        Assert.False(pkg.IsValid);
+        Assert.Contains("no installable", pkg.ValidationError, StringComparison.OrdinalIgnoreCase);
         Assert.Empty(pkg.Files);
     }
 

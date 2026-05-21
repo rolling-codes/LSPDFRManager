@@ -147,6 +147,7 @@ public static class FileInstaller
         var backupRoot = isPersistentBackup
             ? persistentBackupFolder!
             : CreateBackupRoot(targetRoot);
+        Directory.CreateDirectory(backupRoot);
 
         var planEntriesByPath = BuildPlanEntryMap(plan);
         var orderedEntries = OrderEntries(archive.Entries, planEntriesByPath);
@@ -290,7 +291,8 @@ public static class FileInstaller
             AppLogger.Error($"[EXTRACT_ERROR] rollback {rollbackFiles.Count} files", ex);
             var fileRollbackErrors = await RollbackAsync(rollbackFiles);
             var dirRollbackErrors  = RollbackDirectories(createdDirectories, targetRoot);
-            DeleteBackupRoot(backupRoot); // always clean up on failure
+            if (!isPersistentBackup)
+                DeleteBackupRoot(backupRoot);
             var (category, userMessage) = ClassifyFailure(ex);
 
             return new InstallResult

@@ -31,6 +31,9 @@ public static class OivService
             if (string.IsNullOrWhiteSpace(entry.InstallPath))
                 return (false, $"File entry '{entry.SourcePath}' has no install path.");
 
+            if (!IsSafeInstallPath(entry.InstallPath))
+                return (false, $"File entry '{entry.SourcePath}' has an unsafe install path: {entry.InstallPath}");
+
             if (!File.Exists(entry.SourcePath))
                 return (false, $"Source file not found: {entry.SourcePath}");
         }
@@ -125,6 +128,19 @@ public static class OivService
 
     private static string NormalizeEntryName(string path) =>
         path.Replace('\\', '/').TrimStart('/');
+
+    private static bool IsSafeInstallPath(string installPath)
+    {
+        try
+        {
+            _ = ResolveTargetPath(installPath, Path.GetTempPath());
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
 
     // ── Parser ────────────────────────────────────────────────────────────────
 
@@ -289,6 +305,9 @@ public static class OivService
             }
 
             AppLogger.Info($"[OIV_PARSE] Parsed '{name}' v{version} with {files.Count} file(s)");
+
+            if (files.Count == 0)
+                return InvalidPackage("assembly.xml contains no installable <add> entries.", sourcePath);
 
             return new OivPackage
             {

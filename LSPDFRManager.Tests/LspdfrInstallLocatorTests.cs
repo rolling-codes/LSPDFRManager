@@ -50,13 +50,13 @@ public class LspdfrInstallLocatorTests : CommandCenterTestBase
     }
 
     [Fact]
-    public void IsLspdfrInstalled_ReturnsFalse_WhenOfficialPluginDllMissing()
+    public void IsLspdfrInstalled_ReturnsTrue_WhenRphExeAndLegacyCoreDllExist()
     {
         File.WriteAllText(Path.Combine(GtaDir, "RAGEPluginHook.exe"), "fake");
         Directory.CreateDirectory(Path.Combine(GtaDir, "plugins"));
         File.WriteAllText(Path.Combine(GtaDir, "plugins", "LSPDFR.dll"), "fake");
 
-        Assert.False(LspdfrInstallLocator.IsLspdfrInstalled(GtaDir));
+        Assert.True(LspdfrInstallLocator.IsLspdfrInstalled(GtaDir));
     }
 
     [Fact]

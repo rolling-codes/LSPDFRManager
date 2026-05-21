@@ -155,6 +155,41 @@ public class OivTests : IDisposable
         Assert.NotNull(xmlEntry);
     }
 
+    [Theory]
+    [InlineData("../plugins/bad.dll")]
+    [InlineData("..\\plugins\\bad.dll")]
+    [InlineData("C:/Games/GTA/plugins/bad.dll")]
+    [InlineData("//server/share/bad.dll")]
+    public void CreatePackage_RejectsUnsafeInstallPath(string installPath)
+    {
+        var sourceFile = Path.Combine(_tempDir, "myfile.dll");
+        File.WriteAllText(sourceFile, "binary data");
+
+        var outputPath = Path.Combine(_tempDir, "unsafe.oiv");
+        var pkg = new OivPackage
+        {
+            Name = "Unsafe Package",
+            Version = "1.0",
+            Author = "Dev",
+            Files =
+            [
+                new OivFileEntry
+                {
+                    SourcePath = sourceFile,
+                    InstallPath = installPath,
+                    Action = OivFileAction.Add
+                }
+            ]
+        };
+
+        var success = OivService.CreatePackage(pkg, outputPath);
+
+        Assert.False(success);
+        Assert.False(pkg.IsValid);
+        Assert.False(File.Exists(outputPath));
+        Assert.Contains("unsafe install path", pkg.ValidationError, StringComparison.OrdinalIgnoreCase);
+    }
+
     // ── Test 5: PreviewInstall marks Add vs Replace ───────────────────────────
 
     [Fact]
