@@ -415,4 +415,125 @@ public class OivPipelineHardeningTests : IDisposable
         Assert.Contains(result.Report.ValidationResults,
             g => g.Name == "no_loose_weapon_meta" && !g.Passed);
     }
+
+    [Fact]
+    public async Task VehicleAddon_ManifestlessHardSignature_ProducesInstallPlan()
+    {
+        var bundleDir = MakeTempDir();
+        var outputDir = MakeTempDir();
+
+        CreateBundle(bundleDir,
+        [
+            ("myaddon/dlc.rpf", "rpf"),
+            ("myaddon/vehicles.meta", "meta")
+        ]);
+
+        var result = await new OivBuildPipeline().RunAsync(bundleDir, outputDir, dryRun: true);
+
+        Assert.True(result.Success, $"Expected success but: {string.Join(", ", result.RefusalReasons)}");
+        Assert.Equal("VehicleAddon", result.Report.DetectedType);
+        Assert.Contains(result.Report.InstallOperations,
+            op => op is CopyOperation c &&
+                  c.SourceRelativePath == "myaddon/dlc.rpf" &&
+                  c.TargetGamePath == "mods/update/x64/dlcpacks/myaddon/dlc.rpf");
+        Assert.DoesNotContain(result.Report.InstallOperations.OfType<CopyOperation>(),
+            c => c.TargetGamePath.Contains("myaddon/myaddon/", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Theory]
+    [InlineData("bad/pack")]
+    [InlineData("bad pack")]
+    [InlineData("../pack")]
+    [InlineData("pack.name")]
+    public async Task Manifest_DlcPackName_AllowsOnlySafePackNames(string dlcPackName)
+    {
+        var bundleDir = MakeTempDir();
+        var outputDir = MakeTempDir();
+
+        CreateBundle(bundleDir, [("myaddon/dlc.rpf", "rpf")]);
+        WriteManifest(bundleDir, new { type = "vehicle_addon", dlcPackName });
+
+        var result = await new OivBuildPipeline().RunAsync(bundleDir, outputDir, dryRun: true);
+
+        Assert.False(result.Success);
+        Assert.Contains(result.RefusalReasons, r => r.Contains("dlcPackName", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Theory]
+    [InlineData("../myaddon")]
+    [InlineData("/myaddon")]
+    [InlineData("C:/myaddon")]
+    public async Task Manifest_SourceFolder_RejectsRootedOrTraversalPaths(string sourceFolder)
+    {
+        var bundleDir = MakeTempDir();
+        var outputDir = MakeTempDir();
+
+        CreateBundle(bundleDir, [("myaddon/dlc.rpf", "rpf")]);
+        WriteManifest(bundleDir, new { type = "vehicle_addon", dlcPackName = "myaddon", sourceFolder });
+
+        var result = await new OivBuildPipeline().RunAsync(bundleDir, outputDir, dryRun: true);
+
+        Assert.False(result.Success);
+        Assert.Contains(result.RefusalReasons, r => r.Contains("sourceFolder", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task Manifest_SourceFolder_MustExistInScannedBundle()
+    {
+        var bundleDir = MakeTempDir();
+        var outputDir = MakeTempDir();
+
+        CreateBundle(bundleDir, [("actual/dlc.rpf", "rpf")]);
+        WriteManifest(bundleDir, new { type = "vehicle_addon", dlcPackName = "myaddon", sourceFolder = "missing" });
+
+        var result = await new OivBuildPipeline().RunAsync(bundleDir, outputDir, dryRun: true);
+
+        Assert.False(result.Success);
+        Assert.Contains(result.RefusalReasons, r => r.Contains("sourceFolder", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task VehicleAddon_SourceFolder_StripsPrefixWithoutDuplicatingTargetPath()
+    {
+        var bundleDir = MakeTempDir();
+        var outputDir = MakeTempDir();
+
+        CreateBundle(bundleDir,
+        [
+            ("release/myaddon/dlc.rpf", "rpf"),
+            ("release/myaddon/data/vehicles.meta", "meta")
+        ]);
+        WriteManifest(bundleDir, new { type = "vehicle_addon", dlcPackName = "myaddon", sourceFolder = "release/myaddon" });
+
+        var result = await new OivBuildPipeline().RunAsync(bundleDir, outputDir, dryRun: true);
+
+        Assert.True(result.Success, $"Expected success but: {string.Join(", ", result.RefusalReasons)}");
+        var targets = result.Report.InstallOperations.OfType<CopyOperation>().Select(c => c.TargetGamePath).ToList();
+        Assert.Contains("mods/update/x64/dlcpacks/myaddon/dlc.rpf", targets);
+        Assert.Contains("mods/update/x64/dlcpacks/myaddon/data/vehicles.meta", targets);
+        Assert.DoesNotContain(targets, p => p.Contains("release/myaddon", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(targets, p => p.Contains("myaddon/myaddon/", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Theory]
+    [InlineData("../mods/update/x64/file.rpf")]
+    [InlineData("/mods/update/x64/file.rpf")]
+    [InlineData("C:/mods/update/x64/file.rpf")]
+    public async Task Manifest_TargetArchivePath_RejectsRootedOrTraversalPaths(string targetArchivePath)
+    {
+        var bundleDir = MakeTempDir();
+        var outputDir = MakeTempDir();
+
+        CreateBundle(bundleDir,
+        [
+            ("car.yft", "yft"),
+            ("car.ytd", "ytd")
+        ]);
+        WriteManifest(bundleDir, new { type = "vehicle_replace", targetArchivePath });
+
+        var result = await new OivBuildPipeline().RunAsync(bundleDir, outputDir, dryRun: true);
+
+        Assert.False(result.Success);
+        Assert.Contains(result.RefusalReasons, r => r.Contains("targetArchivePath", StringComparison.OrdinalIgnoreCase));
+    }
 }

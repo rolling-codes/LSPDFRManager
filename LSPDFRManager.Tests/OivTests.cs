@@ -448,4 +448,35 @@ public class OivTests : IDisposable
         var content = File.ReadAllText(existingFile);
         Assert.Equal("original", content);
     }
+
+    [Fact]
+    public async Task InstallPackage_CorruptArchive_ReturnsFailureResult()
+    {
+        var targetRoot = Path.Combine(_tempDir, "gta5_corrupt");
+        Directory.CreateDirectory(targetRoot);
+
+        var corruptOiv = Path.Combine(_tempDir, "corrupt.oiv");
+        File.WriteAllText(corruptOiv, "this is not a zip");
+
+        var pkg = new OivPackage
+        {
+            Name = "Corrupt",
+            IsValid = true,
+            SourcePath = corruptOiv,
+            Files =
+            [
+                new OivFileEntry
+                {
+                    SourcePath = "content/plugins/corrupt.dll",
+                    InstallPath = "plugins/corrupt.dll"
+                }
+            ]
+        };
+
+        var result = await OivService.InstallPackage(pkg, targetRoot);
+
+        Assert.False(result.Success);
+        Assert.False(string.IsNullOrWhiteSpace(result.Error));
+        Assert.False(File.Exists(Path.Combine(targetRoot, "plugins", "corrupt.dll")));
+    }
 }

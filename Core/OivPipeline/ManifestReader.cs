@@ -1,10 +1,13 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using LSPDFRManager.OivPipeline.Models;
 
 namespace LSPDFRManager.OivPipeline;
 
 public static class ManifestReader
 {
+    private static readonly Regex DlcPackNamePattern = new("^[A-Za-z0-9_-]+$", RegexOptions.CultureInvariant);
+
     private static readonly HashSet<string> ValidTypes = new(StringComparer.OrdinalIgnoreCase)
     {
         "vehicle_addon", "vehicle_replace", "els", "rph_plugin",
@@ -67,6 +70,8 @@ public static class ManifestReader
                 var dlc = GetString(root, "dlcPackName");
                 if (string.IsNullOrEmpty(dlc))
                     errors.Add($"manifest.json: 'dlcPackName' is required for type '{typeValue}'.");
+                else if (!DlcPackNamePattern.IsMatch(dlc))
+                    errors.Add("manifest.json: 'dlcPackName' may only contain letters, numbers, underscores, and hyphens.");
             }
 
             if (typeValue.Equals("vehicle_replace", StringComparison.OrdinalIgnoreCase))
@@ -77,6 +82,19 @@ public static class ManifestReader
                     errors.Add("manifest.json: 'replaceSlot' or 'targetArchivePath' is required for type 'vehicle_replace'.");
             }
 
+            var sourceFolder = GetString(root, "sourceFolder");
+            if (!string.IsNullOrWhiteSpace(sourceFolder))
+            {
+                if (!IsSafeRelativeManifestPath(sourceFolder))
+                    errors.Add("manifest.json: 'sourceFolder' must be a relative path and cannot contain '..' segments.");
+                else if (!BundleContainsFolder(files, sourceFolder))
+                    errors.Add($"manifest.json: 'sourceFolder' '{sourceFolder}' was not found in the bundle.");
+            }
+
+            var targetArchivePath = GetString(root, "targetArchivePath");
+            if (!string.IsNullOrWhiteSpace(targetArchivePath) && !IsSafeRelativeManifestPath(targetArchivePath))
+                errors.Add("manifest.json: 'targetArchivePath' must be a relative path and cannot contain '..' segments.");
+
             if (errors.Count > 0)
                 return new ManifestReadResult { ValidationErrors = errors };
 
@@ -86,14 +104,33 @@ public static class ManifestReader
                 PackageName = GetString(root, "packageName"),
                 DlcPackName = GetString(root, "dlcPackName"),
                 ReplaceSlot = GetString(root, "replaceSlot"),
-                SourceFolder = GetString(root, "sourceFolder"),
+                SourceFolder = sourceFolder,
                 ConfigOnly = GetBool(root, "configOnly"),
                 Dependencies = GetStringArray(root, "dependencies"),
-                TargetArchivePath = GetString(root, "targetArchivePath")
+                TargetArchivePath = targetArchivePath
             };
 
             return new ManifestReadResult { Manifest = manifest };
         }
+    }
+
+    private static bool IsSafeRelativeManifestPath(string path)
+    {
+        var normalized = path.Replace('\\', '/').Trim();
+        if (string.IsNullOrWhiteSpace(normalized))
+            return false;
+
+        if (Path.IsPathRooted(path) || normalized.StartsWith('/') || normalized.StartsWith('\\'))
+            return false;
+
+        var segments = normalized.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        return segments.Length > 0 && !segments.Any(s => s.Equals("..", StringComparison.Ordinal));
+    }
+
+    private static bool BundleContainsFolder(IReadOnlyList<BundleFile> files, string sourceFolder)
+    {
+        var prefix = sourceFolder.Replace('\\', '/').Trim().TrimEnd('/') + "/";
+        return files.Any(f => f.RelativePath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
     }
 
     private static string? GetString(JsonElement element, string property)

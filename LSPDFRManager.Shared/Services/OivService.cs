@@ -372,9 +372,10 @@ public static class OivService
             return new InstallResult { Success = false, Error = err };
         }
 
-        // Pre-flight: verify all declared content entries exist in the archive before writing anything.
-        using (var preflight = ZipFile.OpenRead(pkg.SourcePath))
+        try
         {
+            // Pre-flight: verify all declared content entries exist in the archive before writing anything.
+            using var preflight = ZipFile.OpenRead(pkg.SourcePath);
             var missingEntries = pkg.Files
                 .Select(f => f.SourcePath.Replace('\\', '/').TrimStart('/'))
                 .Where(key => preflight.GetEntry(key) is null)
@@ -386,6 +387,12 @@ public static class OivService
                 AppLogger.Error($"[OIV_ERROR] {err}");
                 return new InstallResult { Success = false, Error = err };
             }
+        }
+        catch (Exception ex)
+        {
+            var err = $"Unable to read OIV archive: {ex.Message}";
+            AppLogger.Error($"[OIV_ERROR] {err}", ex);
+            return new InstallResult { Success = false, Error = err };
         }
 
         var writtenFiles = new List<string>();

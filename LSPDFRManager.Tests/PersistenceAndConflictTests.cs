@@ -118,6 +118,59 @@ public class PersistenceAndConflictTests : IDisposable
         Assert.Empty(result.FailedFiles);
     }
 
+    [Fact]
+    public void SetEnabled_DisableFailure_RollsBackSuccessfulRenames()
+    {
+        var firstPath = Path.Combine(_tempRoot, "plugins", "First.dll");
+        var secondPath = Path.Combine(_tempRoot, "plugins", "Second.dll");
+        Directory.CreateDirectory(Path.GetDirectoryName(firstPath)!);
+        File.WriteAllText(firstPath, "first");
+        File.WriteAllText(secondPath, "second");
+        File.WriteAllText(secondPath + ".disabled", "existing disabled conflict");
+
+        var mod = new InstalledMod
+        {
+            Name = "Rollback Disable",
+            IsEnabled = true,
+            InstalledFiles = [firstPath, secondPath]
+        };
+
+        new InstalledModFileService().SetEnabled(mod, false);
+
+        Assert.True(mod.IsEnabled);
+        Assert.True(File.Exists(firstPath));
+        Assert.False(File.Exists(firstPath + ".disabled"));
+        Assert.True(File.Exists(secondPath));
+        Assert.True(File.Exists(secondPath + ".disabled"));
+    }
+
+    [Fact]
+    public void SetEnabled_EnableFailure_RollsBackSuccessfulRenames()
+    {
+        var firstPath = Path.Combine(_tempRoot, "plugins", "First.dll");
+        var secondPath = Path.Combine(_tempRoot, "plugins", "Second.dll");
+        Directory.CreateDirectory(Path.GetDirectoryName(firstPath)!);
+        File.WriteAllText(firstPath + ".disabled", "first");
+        File.WriteAllText(secondPath + ".disabled", "second");
+        Directory.CreateDirectory(secondPath);
+
+        var mod = new InstalledMod
+        {
+            Name = "Rollback Enable",
+            IsEnabled = false,
+            InstalledFiles = [firstPath, secondPath]
+        };
+
+        new InstalledModFileService().SetEnabled(mod, true);
+
+        Assert.False(mod.IsEnabled);
+        Assert.False(File.Exists(firstPath));
+        Assert.True(File.Exists(firstPath + ".disabled"));
+        Assert.False(File.Exists(secondPath));
+        Assert.True(Directory.Exists(secondPath));
+        Assert.True(File.Exists(secondPath + ".disabled"));
+    }
+
     private sealed class TestSettings
     {
         public string Name { get; set; } = "";
