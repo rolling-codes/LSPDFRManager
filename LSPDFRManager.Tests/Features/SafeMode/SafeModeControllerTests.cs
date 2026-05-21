@@ -258,6 +258,6 @@ public class SafeModeControllerTests : IDisposable
 /// <summary>Simulates a backup service that always fails to save.</summary>
 file sealed class FailingRestorePointService : RestorePointService
 {
-    public override Task SaveAsync(RestorePoint point)
+    public override Task SaveAsync(RestorePoint point, CancellationToken cancellationToken = default)
         => throw new IOException("Simulated backup failure");
 }
