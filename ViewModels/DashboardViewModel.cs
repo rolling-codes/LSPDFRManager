@@ -70,7 +70,7 @@ public class DashboardViewModel : ObservableObject
     {
         StatusMessage = "Applying Safe Launch (LSPDFR Only)…";
         var plan = new SafeLaunchManager().BuildPlan("LspdfrOnly");
-        var failures = await new SafeLaunchManager().ApplyAsync(plan);
+        var failures = await new SafeLaunchManager().ApplyAsync(plan, cancellationToken: CancellationToken.None);
         Status.Refresh();
         StatusMessage = failures.Count == 0
             ? "Safe Launch applied. Restart the game."

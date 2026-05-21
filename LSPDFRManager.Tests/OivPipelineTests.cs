@@ -1,10 +1,5 @@
 namespace LSPDFRManager.Tests;
 
-using System.Text.Json;
-using LSPDFRManager.OivPipeline;
-using LSPDFRManager.OivPipeline.Models;
-using Xunit;
-
 public class OivPipelineTests : IDisposable
 {
     private readonly List<string> _tempDirs = [];

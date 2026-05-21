@@ -53,7 +53,9 @@ dotnet test -v detailed
 - **ViewModels/** — MVVM view models; MainViewModel orchestrates tab navigation; each tab has a dedicated VM
 - **Domain/** — Data classes (InstalledMod, ModInfo, ModType, AppConfig, ModManifest)
 - **Services/** — Business logic (ModLibraryService, ModDetector, FileInstaller, ConfigManagerService, BackupService, etc.)
-- **Core/** — AppLogger (file logging), InstallQueue (background async install processor), UiDispatcher (cross-thread UI marshalling); **Core/CarInstall/** — XmlPatcher/IXmlPatcher, OpenIvExecutor, OpenIvInstallPlanner, OpenIvInstallPlanValidator, DiskSpaceValidator (all OIV/XML install logic)
+- **Core/** — AppLogger (file logging), InstallQueue (background async install processor), UiDispatcher (cross-thread UI marshalling)
+- **Core/CarInstall/** — XmlPatcher/IXmlPatcher, OpenIvExecutor, OpenIvInstallPlanner, OpenIvInstallPlanValidator, DiskSpaceValidator (core OIV/XML helpers and validators)
+- **Core/OivPipeline/** — Higher-level OIV bundle scanning, classification, validation, planning, build orchestration, and report generation
 - **LSPDFRManager.Api/** — ASP.NET background service; exposes a local HTTP API used by the embedded lcpdfr.com WebView2 browser to queue mod downloads/installs; contains LcpdfrScraper
 - **Converters/** — WPF value converters (e.g., InverseBoolConverter, StringToBrushConverter)
 
@@ -153,7 +155,7 @@ All data → `%APPDATA%\LSPDFRManager\`:
 **File Locking**
 - On enable/disable, renames files on disk while GTA V may have them open
 - May fail silently if GTA V holds file handle
-- Check app.log for rename errors
+- Check `logs/app.log` for rename errors
 
 **Archive Extraction**
 - SharpCompress extracts RAR/7-Zip; ZipFile (System.IO.Compression) for ZIP
@@ -293,7 +295,7 @@ All existing tests MUST pass unchanged after refactor.
 - WebView2 "Install This Mod" button posts to this API
 
 **Debug install failures**
-- Check app.log for error message
+- Check `logs/app.log` for error messages
 - InstallQueue.ProcessLoop logs InstallStarted/InstallFailed events
 - Verify GTA path is valid and writable
 - Confirm archive is not corrupted (SharpCompress extraction)

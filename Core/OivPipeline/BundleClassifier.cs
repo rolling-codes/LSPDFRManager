@@ -53,11 +53,6 @@ public static class BundleClassifier
                 if (!segments[i].Equals("dlc.rpf", StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                // Segment must be exactly "dlc.rpf" (already matched case-insensitively above;
-                // per spec the segment at index must be "dlc.rpf" exactly — enforce case here)
-                if (segments[i] != "dlc.rpf")
-                    continue;
-
                 bool hasDlcpacks = segments.Any(s => s.Equals("dlcpacks", StringComparison.OrdinalIgnoreCase));
                 bool hasParent = i > 0;
 
@@ -76,8 +71,8 @@ public static class BundleClassifier
         if (hasDlcRpf)
             return false;
 
-        bool hasYft = files.Any(f => f.Extension == ".yft");
-        bool hasYtd = files.Any(f => f.Extension == ".ytd");
+        bool hasYft = files.Any(f => f.Extension.Equals(".yft", StringComparison.OrdinalIgnoreCase));
+        bool hasYtd = files.Any(f => f.Extension.Equals(".ytd", StringComparison.OrdinalIgnoreCase));
 
         return hasYft && hasYtd;
     }
@@ -85,7 +80,7 @@ public static class BundleClassifier
     private static bool HasElsSignature(IReadOnlyList<BundleFile> files)
     {
         return files.Any(f =>
-            f.Extension == ".xml" &&
+            f.Extension.Equals(".xml", StringComparison.OrdinalIgnoreCase) &&
             f.RelativePath.Contains("ELS/", StringComparison.OrdinalIgnoreCase));
     }
 
@@ -99,7 +94,7 @@ public static class BundleClassifier
 
         return files.Any(f =>
         {
-            if (f.Extension != ".meta")
+            if (!f.Extension.Equals(".meta", StringComparison.OrdinalIgnoreCase))
                 return false;
             var fileName = Path.GetFileName(f.RelativePath);
             return fileName.StartsWith("weapon", StringComparison.OrdinalIgnoreCase) ||

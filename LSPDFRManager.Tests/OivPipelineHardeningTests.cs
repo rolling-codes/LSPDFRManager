@@ -1,11 +1,5 @@
 namespace LSPDFRManager.Tests;
 
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using LSPDFRManager.OivPipeline;
-using LSPDFRManager.OivPipeline.Models;
-using Xunit;
-
 /// <summary>
 /// Hardening tests: serialization, determinism, mixed-bundle regressions, StubOivBuilder, SirenPack.
 /// Complements the baseline OivPipelineTests.cs.
@@ -328,7 +322,7 @@ public class OivPipelineHardeningTests : IDisposable
         // Non-dry-run uses the StubOivBuilder
         var result = await new OivBuildPipeline().RunAsync(bundleDir, outputDir, dryRun: false);
 
-        // Pipeline itself passes (planning succeeded) but OIV generation warns
+        Assert.False(result.Success);
         Assert.Contains(result.Report.Warnings, w => w.Contains("OIV builder"));
     }
 

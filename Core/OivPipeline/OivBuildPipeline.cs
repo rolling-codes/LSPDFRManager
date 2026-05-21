@@ -80,7 +80,7 @@ public sealed class OivBuildPipeline
             {
                 Success = false,
                 Report = report,
-                ReportPath = dryRun ? null : Path.Combine(outputDir, "build_report.json"),
+                ReportPath = reportPath,
                 RefusalReasons = validation.RefusalReasons
             };
         }
@@ -193,16 +193,15 @@ public sealed class OivBuildPipeline
             DryRun = dryRun
         };
 
+        string? reportPath = null;
         if (!dryRun)
-        {
-            BuildReporter.WriteReport(outputDir, report);
-        }
+            reportPath = BuildReporter.WriteReport(outputDir, report);
 
         return new PipelineResult
         {
             Success = false,
             Report = report,
-            ReportPath = dryRun ? null : Path.Combine(outputDir, "build_report.json"),
+            ReportPath = reportPath,
             RefusalReasons = reasons
         };
     }
