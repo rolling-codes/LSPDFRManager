@@ -36,7 +36,36 @@ public class LspdfrInstallLocatorTests : CommandCenterTestBase
         File.WriteAllText(tool, "fake");
 
         Assert.Equal(tool, LspdfrInstallLocator.FindLspdfrTool(GtaDir));
+        Assert.False(LspdfrInstallLocator.IsLspdfrInstalled(GtaDir));
+    }
+
+    [Fact]
+    public void IsLspdfrInstalled_ReturnsTrue_WhenRphExeAndOfficialPluginDllExist()
+    {
+        File.WriteAllText(Path.Combine(GtaDir, "RAGEPluginHook.exe"), "fake");
+        Directory.CreateDirectory(Path.Combine(GtaDir, "plugins"));
+        File.WriteAllText(Path.Combine(GtaDir, "plugins", "LSPD First Response.dll"), "fake");
+
         Assert.True(LspdfrInstallLocator.IsLspdfrInstalled(GtaDir));
+    }
+
+    [Fact]
+    public void IsLspdfrInstalled_ReturnsFalse_WhenOfficialPluginDllMissing()
+    {
+        File.WriteAllText(Path.Combine(GtaDir, "RAGEPluginHook.exe"), "fake");
+        Directory.CreateDirectory(Path.Combine(GtaDir, "plugins"));
+        File.WriteAllText(Path.Combine(GtaDir, "plugins", "LSPDFR.dll"), "fake");
+
+        Assert.False(LspdfrInstallLocator.IsLspdfrInstalled(GtaDir));
+    }
+
+    [Fact]
+    public void IsLspdfrInstalled_ReturnsFalse_WhenRagePluginHookExeMissing()
+    {
+        Directory.CreateDirectory(Path.Combine(GtaDir, "plugins"));
+        File.WriteAllText(Path.Combine(GtaDir, "plugins", "LSPD First Response.dll"), "fake");
+
+        Assert.False(LspdfrInstallLocator.IsLspdfrInstalled(GtaDir));
     }
 
     [Fact]

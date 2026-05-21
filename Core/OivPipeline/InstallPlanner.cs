@@ -7,7 +7,7 @@ public static class InstallPlanner
     public static IReadOnlyList<InstallOperation> Plan(
         ClassificationResult classification,
         IReadOnlyList<BundleFile> files,
-        BundleManifest manifest)
+        BundleManifest? manifest)
     {
         if (!classification.IsClassified)
             throw new InvalidOperationException("Cannot plan installation for an unclassified bundle.");
@@ -37,11 +37,11 @@ public static class InstallPlanner
             .ToList();
     }
 
-    private static List<InstallOperation> PlanVehicleAddon(IReadOnlyList<BundleFile> files, BundleManifest manifest)
+    private static List<InstallOperation> PlanVehicleAddon(IReadOnlyList<BundleFile> files, BundleManifest? manifest)
     {
-        var dlcPackName = manifest.DlcPackName!;
+        var dlcPackName = ResolveDlcPackName(files, manifest);
         var dlcBase = $"mods/update/x64/dlcpacks/{dlcPackName}";
-        var rootPrefix = DetermineRootPrefix(files, manifest.SourceFolder, dlcPackName);
+        var rootPrefix = DetermineRootPrefix(files, manifest?.SourceFolder, dlcPackName);
 
         var ops = new List<InstallOperation>();
 
@@ -65,10 +65,16 @@ public static class InstallPlanner
         return ops;
     }
 
-    private static List<InstallOperation> PlanVehicleReplace(IReadOnlyList<BundleFile> files, BundleManifest manifest)
+    private static List<InstallOperation> PlanVehicleReplace(IReadOnlyList<BundleFile> files, BundleManifest? manifest)
     {
+        if (manifest is null)
+            throw new InvalidOperationException("vehicle_replace planning requires manifest target metadata.");
+
         var targetArchivePath = manifest.TargetArchivePath
             ?? BundleValidator.KnownSlotMapLookup(manifest.ReplaceSlot!);
+
+        if (targetArchivePath is null)
+            throw new InvalidOperationException("vehicle_replace planning requires a target archive path.");
 
         var ops = new List<InstallOperation>();
 
@@ -90,7 +96,7 @@ public static class InstallPlanner
         return ops;
     }
 
-    private static List<InstallOperation> PlanEls(IReadOnlyList<BundleFile> files, BundleManifest manifest)
+    private static List<InstallOperation> PlanEls(IReadOnlyList<BundleFile> files, BundleManifest? manifest)
     {
         var ops = new List<InstallOperation>();
 
@@ -111,7 +117,7 @@ public static class InstallPlanner
         return ops;
     }
 
-    private static List<InstallOperation> PlanRphPlugin(IReadOnlyList<BundleFile> files, BundleManifest manifest)
+    private static List<InstallOperation> PlanRphPlugin(IReadOnlyList<BundleFile> files, BundleManifest? manifest)
     {
         var ops = new List<InstallOperation>();
 
@@ -132,7 +138,7 @@ public static class InstallPlanner
         return ops;
     }
 
-    private static List<InstallOperation> PlanShvdnScript(IReadOnlyList<BundleFile> files, BundleManifest manifest)
+    private static List<InstallOperation> PlanShvdnScript(IReadOnlyList<BundleFile> files, BundleManifest? manifest)
     {
         var ops = new List<InstallOperation>();
 
@@ -154,7 +160,7 @@ public static class InstallPlanner
         return ops;
     }
 
-    private static List<InstallOperation> PlanSirenPack(IReadOnlyList<BundleFile> files, BundleManifest manifest)
+    private static List<InstallOperation> PlanSirenPack(IReadOnlyList<BundleFile> files, BundleManifest? manifest)
     {
         var ops = new List<InstallOperation>();
 
@@ -169,11 +175,11 @@ public static class InstallPlanner
         return ops;
     }
 
-    private static List<InstallOperation> PlanWeaponAddon(IReadOnlyList<BundleFile> files, BundleManifest manifest)
+    private static List<InstallOperation> PlanWeaponAddon(IReadOnlyList<BundleFile> files, BundleManifest? manifest)
     {
-        var dlcPackName = manifest.DlcPackName!;
+        var dlcPackName = ResolveDlcPackName(files, manifest);
         var dlcBase = $"mods/update/x64/dlcpacks/{dlcPackName}";
-        var rootPrefix = DetermineRootPrefix(files, manifest.SourceFolder, dlcPackName);
+        var rootPrefix = DetermineRootPrefix(files, manifest?.SourceFolder, dlcPackName);
 
         var ops = new List<InstallOperation>();
 
@@ -219,6 +225,15 @@ public static class InstallPlanner
         }
 
         return null;
+    }
+
+    private static string ResolveDlcPackName(IReadOnlyList<BundleFile> files, BundleManifest? manifest)
+    {
+        var dlcPackName = manifest?.DlcPackName ?? BundleValidator.DetectDlcPackName(files);
+        if (string.IsNullOrWhiteSpace(dlcPackName))
+            throw new InvalidOperationException("DLC pack name cannot be determined.");
+
+        return dlcPackName;
     }
 
     private static List<InstallOperation> DeduplicatePatches(List<InstallOperation> ops)

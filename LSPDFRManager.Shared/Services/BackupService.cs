@@ -10,9 +10,7 @@ public class BackupService
         var config = AppConfig.Instance;
         Directory.CreateDirectory(config.BackupPath);
 
-        var backupPath = Path.Combine(
-            config.BackupPath,
-            $"lspmanager_backup_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.zip");
+        var backupPath = GetUniqueBackupPath(config.BackupPath);
 
         progress?.Report("Creating backup...");
 
@@ -80,6 +78,13 @@ public class BackupService
 
         return Directory.GetFiles(AppConfig.Instance.BackupPath, "lspmanager_backup_*.zip")
             .OrderByDescending(file => file);
+    }
+
+    private static string GetUniqueBackupPath(string backupDirectory)
+    {
+        var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss-fff");
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        return Path.Combine(backupDirectory, $"lspmanager_backup_{timestamp}_{suffix}.zip");
     }
 
     private static IEnumerable<string> GetFilesToBackup()

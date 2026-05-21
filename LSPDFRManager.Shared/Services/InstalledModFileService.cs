@@ -10,11 +10,14 @@ public class InstalledModFileService
         ArgumentNullException.ThrowIfNull(mod);
 
         var failed = new List<string>();
+        var completedRenames = new List<(string from, string to)>();
         foreach (var file in mod.InstalledFiles.Distinct(StringComparer.OrdinalIgnoreCase))
         {
             try
             {
-                ToggleFile(file, enabled);
+                var rename = ToggleFile(file, enabled);
+                if (rename is not null)
+                    completedRenames.Add(rename.Value);
             }
             catch (Exception ex)
             {
@@ -26,7 +29,10 @@ public class InstalledModFileService
         if (failed.Count == 0)
             mod.IsEnabled = enabled;
         else
+        {
+            RollbackRenames(completedRenames);
             AppLogger.Warning($"SetEnabled({enabled}) incomplete for '{mod.Name}': {failed.Count} file(s) could not be toggled — library state not updated.");
+        }
     }
 
     public ModUninstallResult Uninstall(InstalledMod mod) => Uninstall(mod, []);
@@ -157,19 +163,43 @@ public class InstalledModFileService
             other.DlcPackName.Equals(mod.DlcPackName, StringComparison.OrdinalIgnoreCase));
     }
 
-    private static void ToggleFile(string file, bool enabled)
+    private static (string from, string to)? ToggleFile(string file, bool enabled)
     {
         var disabledPath = GetDisabledPath(file);
 
         if (enabled)
         {
             if (File.Exists(disabledPath) && !File.Exists(file))
+            {
                 File.Move(disabledPath, file);
-            return;
+                return (disabledPath, file);
+            }
+            return null;
         }
 
         if (File.Exists(file))
+        {
             File.Move(file, disabledPath);
+            return (file, disabledPath);
+        }
+
+        return null;
+    }
+
+    private static void RollbackRenames(List<(string from, string to)> completedRenames)
+    {
+        foreach (var (from, to) in completedRenames.AsEnumerable().Reverse())
+        {
+            try
+            {
+                if (File.Exists(to) && !File.Exists(from))
+                    File.Move(to, from);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Warning($"Rollback toggle '{to}' -> '{from}' failed: {ex.Message}");
+            }
+        }
     }
 
     private static string GetDisabledPath(string file) => file + ".disabled";

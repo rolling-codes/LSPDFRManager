@@ -59,13 +59,13 @@ public class VersionDetectorServiceTests : CommandCenterTestBase
     }
 
     [Fact]
-    public async Task Detect_SetsLspdfrPresent_WhenRootLspdfrFolderExists()
+    public async Task Detect_DoesNotSetLspdfrPresent_WhenOnlyRootLspdfrFolderExists()
     {
         Directory.CreateDirectory(Path.Combine(GtaDir, "lspdfr"));
 
         var bundle = await _sut.DetectAsync(GtaDir);
 
-        Assert.True(bundle.LspdfrPresent);
+        Assert.False(bundle.LspdfrPresent);
     }
 
     // ── Hash stability ─────────────────────────────────────────────────────

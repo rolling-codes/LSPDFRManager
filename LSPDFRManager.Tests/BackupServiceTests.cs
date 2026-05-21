@@ -67,6 +67,19 @@ public class BackupServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task CreateBackup_TwiceInSameSecond_UsesDistinctFileNames()
+    {
+        var svc = new BackupService();
+
+        var first = await svc.CreateBackupAsync();
+        var second = await svc.CreateBackupAsync();
+
+        Assert.NotEqual(first, second);
+        Assert.True(File.Exists(first));
+        Assert.True(File.Exists(second));
+    }
+
+    [Fact]
     public async Task ListBackups_AfterCreate_ReturnsCreatedBackup()
     {
         // Arrange

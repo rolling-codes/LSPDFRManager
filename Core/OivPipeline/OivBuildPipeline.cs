@@ -89,7 +89,7 @@ public sealed class OivBuildPipeline
         IReadOnlyList<InstallOperation> operations;
         try
         {
-            operations = InstallPlanner.Plan(classification, files, manifestResult.Manifest!);
+            operations = InstallPlanner.Plan(classification, files, manifestResult.Manifest);
         }
         catch (Exception ex)
         {
