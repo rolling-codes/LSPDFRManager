@@ -259,11 +259,11 @@ public class OivTests : IDisposable
         var pkg = OivService.ParsePackage(oivPath);
         Assert.True(pkg.IsValid, pkg.ValidationError);
 
+        // With pre-flight validation, missing content entry is now a hard failure.
         var result = await OivService.InstallPackage(pkg, targetRoot);
+        Assert.False(result.Success);
+        Assert.Contains("missing", result.Error ?? "", StringComparison.OrdinalIgnoreCase);
 
-        // Install should succeed for files that exist in zip
-        // The missing file entry is skipped (not a hard error), so check the first was written
-        // This test verifies that when a write throws the first file is rolled back
         // Force a real rollback scenario by using a bad target path:
         var badPkg = new OivPackage
         {
@@ -341,5 +341,111 @@ public class OivTests : IDisposable
 
         Assert.False(pkg.IsValid);
         Assert.Contains("assembly.xml", pkg.ValidationError ?? "");
+    }
+
+    // ── Path traversal tests ─────────────────────────────────────────────────
+
+    [Theory]
+    [InlineData("../escape.dll")]
+    [InlineData("..\\escape.dll")]
+    [InlineData("sub/../../escape.dll")]
+    [InlineData("C:\\Windows\\system32\\evil.dll")]
+    [InlineData("/etc/passwd")]
+    public void PreviewInstall_PathTraversal_Throws(string maliciousInstallPath)
+    {
+        var targetRoot = Path.Combine(_tempDir, "gta5_traversal");
+        Directory.CreateDirectory(targetRoot);
+
+        var pkg = new OivPackage
+        {
+            Name = "Evil Mod",
+            IsValid = true,
+            SourcePath = "fake.oiv",
+            Files = [new OivFileEntry { SourcePath = "content/x.dll", InstallPath = maliciousInstallPath }]
+        };
+
+        Assert.Throws<InvalidOperationException>(() => OivService.PreviewInstall(pkg, targetRoot));
+    }
+
+    [Theory]
+    [InlineData("../escape.dll")]
+    [InlineData("..\\escape.dll")]
+    [InlineData("sub/../../escape.dll")]
+    [InlineData("C:\\Windows\\system32\\evil.dll")]
+    [InlineData("/etc/passwd")]
+    public async Task InstallPackage_PathTraversal_ReturnsFailure(string maliciousInstallPath)
+    {
+        var targetRoot = Path.Combine(_tempDir, "gta5_traversal2");
+        Directory.CreateDirectory(targetRoot);
+
+        var oivPath = CreateOiv(contentFiles: new Dictionary<string, string>
+        {
+            ["content/x.dll"] = maliciousInstallPath
+        });
+
+        // Manually build the pkg with the malicious InstallPath — ParsePackage would return the raw value from assembly.xml
+        var pkg = new OivPackage
+        {
+            Name = "Evil Mod",
+            Version = "1.0",
+            IsValid = true,
+            SourcePath = oivPath,
+            Files = [new OivFileEntry { SourcePath = "content/x.dll", InstallPath = maliciousInstallPath }]
+        };
+
+        var result = await OivService.InstallPackage(pkg, targetRoot);
+
+        Assert.False(result.Success);
+        Assert.False(string.IsNullOrEmpty(result.Error));
+    }
+
+    [Fact]
+    public async Task InstallPackage_MissingContentEntry_FailsWithoutWritingAnyFiles()
+    {
+        var targetRoot = Path.Combine(_tempDir, "gta5_missing_content");
+        Directory.CreateDirectory(targetRoot);
+        Directory.CreateDirectory(Path.Combine(targetRoot, "plugins"));
+
+        var existingFile = Path.Combine(targetRoot, "plugins", "real.dll");
+        File.WriteAllText(existingFile, "original");
+
+        var oivPath = Path.Combine(_tempDir, "missing_content.oiv");
+        using (var zip = ZipFile.Open(oivPath, ZipArchiveMode.Create))
+        {
+            var xmlEntry = zip.CreateEntry("assembly.xml");
+            using (var s = xmlEntry.Open())
+            using (var w = new StreamWriter(s))
+                w.Write(@"<?xml version=""1.0"" encoding=""UTF-8""?>
+<package version=""2.0"">
+  <metadata>
+    <name>Missing Content</name>
+    <version><major>1</major><minor>0</minor></version>
+    <author>Test</author>
+    <description><![CDATA[test]]></description>
+  </metadata>
+  <content>
+    <add source=""content/plugins/real.dll"">plugins/real.dll</add>
+    <add source=""content/plugins/ghost.dll"">plugins/ghost.dll</add>
+  </content>
+</package>");
+
+            // Only add real.dll; ghost.dll is absent
+            var e = zip.CreateEntry("content/plugins/real.dll");
+            using (var s = e.Open())
+            using (var w = new StreamWriter(s))
+                w.Write("new real content");
+        }
+
+        var pkg = OivService.ParsePackage(oivPath);
+        Assert.True(pkg.IsValid, pkg.ValidationError);
+
+        var result = await OivService.InstallPackage(pkg, targetRoot);
+
+        Assert.False(result.Success);
+        Assert.Contains("ghost.dll", result.Error ?? "", StringComparison.OrdinalIgnoreCase);
+
+        // Pre-flight failure means nothing should have been written
+        var content = File.ReadAllText(existingFile);
+        Assert.Equal("original", content);
     }
 }

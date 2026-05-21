@@ -16,7 +16,7 @@ public class PreLaunchChecklistService
         if (requireLspdfr)
         {
             Check(results, "RAGEPluginHook.exe exists", File.Exists(Path.Combine(gtaPath, "RAGEPluginHook.exe")), "RAGEPluginHook.exe not found.", false);
-            Check(results, "LSPDFR.dll exists", File.Exists(Path.Combine(gtaPath, "plugins", "LSPDFR.dll")), "LSPDFR.dll not found.", false);
+            Check(results, $"{LspdfrPaths.LspdfrDllName} exists", File.Exists(Path.Combine(gtaPath, LspdfrPaths.LspdfrDllRelative)), $"{LspdfrPaths.LspdfrDllName} not found.", false);
         }
 
         Check(results, "ScriptHookV.dll exists", File.Exists(Path.Combine(gtaPath, "ScriptHookV.dll")), "ScriptHookV.dll not found (needed for scripted mods).", false);

@@ -70,9 +70,11 @@ public class DashboardViewModel : ObservableObject
     {
         StatusMessage = "Applying Safe Launch (LSPDFR Only)…";
         var plan = new SafeLaunchManager().BuildPlan("LspdfrOnly");
-        await new SafeLaunchManager().ApplyAsync(plan);
+        var failures = await new SafeLaunchManager().ApplyAsync(plan);
         Status.Refresh();
-        StatusMessage = "Safe Launch applied. Restart the game.";
+        StatusMessage = failures.Count == 0
+            ? "Safe Launch applied. Restart the game."
+            : $"Safe Launch applied with {failures.Count} error(s): {failures[0]}";
     }
 
     private static void OpenGtaFolder()

@@ -260,14 +260,8 @@ public static class OivService
         return result;
     }
 
-    private static string ResolveTargetPath(string installPath, string targetRoot)
-    {
-        // If installPath is already absolute, use it; otherwise combine with targetRoot
-        if (Path.IsPathRooted(installPath))
-            return installPath;
-
-        return Path.GetFullPath(Path.Combine(targetRoot, installPath));
-    }
+    private static string ResolveTargetPath(string installPath, string targetRoot) =>
+        PathSafety.GetSafePath(targetRoot, installPath);
 
     // ── Installer ─────────────────────────────────────────────────────────────
 
@@ -292,6 +286,22 @@ public static class OivService
             return new InstallResult { Success = false, Error = err };
         }
 
+        // Pre-flight: verify all declared content entries exist in the archive before writing anything.
+        using (var preflight = ZipFile.OpenRead(pkg.SourcePath))
+        {
+            var missingEntries = pkg.Files
+                .Select(f => f.SourcePath.Replace('\\', '/').TrimStart('/'))
+                .Where(key => preflight.GetEntry(key) is null)
+                .ToList();
+
+            if (missingEntries.Count > 0)
+            {
+                var err = $"Content entries missing from OIV archive: {string.Join(", ", missingEntries)}";
+                AppLogger.Error($"[OIV_ERROR] {err}");
+                return new InstallResult { Success = false, Error = err };
+            }
+        }
+
         var writtenFiles = new List<string>();
         var backupRoot = Path.Combine(Path.GetTempPath(), $".oiv_rollback_{Guid.NewGuid():N}");
         var rollbackItems = new List<(string dest, string? backup)>();
@@ -309,12 +319,7 @@ public static class OivService
                 var targetPath = ResolveTargetPath(fileEntry.InstallPath, targetRoot);
                 var contentKey = fileEntry.SourcePath.Replace('\\', '/').TrimStart('/');
 
-                var zipEntry = zip.GetEntry(contentKey);
-                if (zipEntry is null)
-                {
-                    AppLogger.Info($"[OIV_SKIP_DUPLICATE] Entry not found in zip, skipping: {contentKey}");
-                    continue;
-                }
+                var zipEntry = zip.GetEntry(contentKey)!; // pre-flight guarantees entry exists
 
                 // Ensure target directory exists
                 var targetDir = Path.GetDirectoryName(targetPath);

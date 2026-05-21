@@ -21,10 +21,10 @@ dotnet publish LSPDFRManager.csproj -c Release -r win-x64 --self-contained true 
 
 **Build release ZIP (framework-dependent)**
 ```bash
-dotnet publish LSPDFRManager.csproj -c Release -r win-x64 --self-contained false -o publish/v3.2.1 -p:DebugType=None -p:DebugSymbols=false
-New-Item -ItemType Directory -Path release-package/LSPDFRManager-v3.2.1 -Force
-Copy-Item -Path publish/v3.2.1/* -Destination release-package/LSPDFRManager-v3.2.1 -Recurse
-Compress-Archive -Path release-package/LSPDFRManager-v3.2.1 -DestinationPath LSPDFRManager-v3.2.1-win-x64.zip
+dotnet publish LSPDFRManager.csproj -c Release -r win-x64 --self-contained false -o publish/v3.5.2 -p:DebugType=None -p:DebugSymbols=false
+New-Item -ItemType Directory -Path release-package/LSPDFRManager-v3.5.2 -Force
+Copy-Item -Path publish/v3.5.2/* -Destination release-package/LSPDFRManager-v3.5.2 -Recurse
+Compress-Archive -Path release-package/LSPDFRManager-v3.5.2 -DestinationPath LSPDFRManager-v3.5.2-win-x64.zip
 ```
 
 ## Testing
@@ -53,12 +53,13 @@ dotnet test -v detailed
 - **ViewModels/** — MVVM view models; MainViewModel orchestrates tab navigation; each tab has a dedicated VM
 - **Domain/** — Data classes (InstalledMod, ModInfo, ModType, AppConfig, ModManifest)
 - **Services/** — Business logic (ModLibraryService, ModDetector, FileInstaller, ConfigManagerService, BackupService, etc.)
-- **Core/** — AppLogger (file logging), InstallQueue (background async install processor)
+- **Core/** — AppLogger (file logging), InstallQueue (background async install processor), UiDispatcher (cross-thread UI marshalling); **Core/CarInstall/** — XmlPatcher/IXmlPatcher, OpenIvExecutor, OpenIvInstallPlanner, OpenIvInstallPlanValidator, DiskSpaceValidator (all OIV/XML install logic)
+- **LSPDFRManager.Api/** — ASP.NET background service; exposes a local HTTP API used by the embedded lcpdfr.com WebView2 browser to queue mod downloads/installs; contains LcpdfrScraper
 - **Converters/** — WPF value converters (e.g., InverseBoolConverter, StringToBrushConverter)
 
 ### Repository References
 - Repository: https://github.com/rolling-codes/LSPDFRManager
-- Current release notes: [RELEASE_v3.2.1.md](RELEASE_v3.2.1.md)
+- Current release notes: [RELEASE_v3.5.2.md](RELEASE_v3.5.2.md)
 - Desktop app project: [LSPDFRManager.csproj](LSPDFRManager.csproj)
 - Solution: [LSPDFRManager.sln](LSPDFRManager.sln)
 
@@ -99,7 +100,7 @@ All data → `%APPDATA%\LSPDFRManager\`:
 - `config.json` — App settings
 - `keys/` — Cached key files
 - `Backups/` — ZIP archives
-- `app.log` — Runtime log
+- `logs/app.log` — Runtime log
 
 ### Testing
 
@@ -268,6 +269,14 @@ All existing tests MUST pass unchanged after refactor.
 
 ## Common Tasks
 
+**Add OIV/XML mod support**
+- Install planning: [Core/CarInstall/OpenIvInstallPlanner.cs](Core/CarInstall/OpenIvInstallPlanner.cs)
+- XML patching: [Core/CarInstall/XmlPatcher.cs](Core/CarInstall/XmlPatcher.cs) (implements IXmlPatcher)
+- Execution: [Core/CarInstall/OpenIvExecutor.cs](Core/CarInstall/OpenIvExecutor.cs)
+- OIV package model: [Domain/OivPackage.cs](Domain/OivPackage.cs)
+- Service layer: [Services/OivService.cs](Services/OivService.cs)
+- ViewModel/View: OivViewModel.cs / Views/OivView.xaml
+
 **Add a new mod type**
 - Add entry to ModType enum [Domain/ModType.cs](Domain/ModType.cs)
 - Update ModDetector detection logic [Services/ModDetector.cs](Services/ModDetector.cs)
@@ -277,6 +286,11 @@ All existing tests MUST pass unchanged after refactor.
 - Add property to AppConfig [Domain/AppConfig.cs](Domain/AppConfig.cs)
 - Update config.json schema
 - Wire UI control in SettingsView/SettingsViewModel
+
+**Debug browser install (lcpdfr.com embedded browser)**
+- LSPDFRManager.Api runs as a local HTTP server; check its startup in [LSPDFRManager.Api/Program.cs](LSPDFRManager.Api/Program.cs)
+- Scraping logic lives in [LSPDFRManager.Api/Services/LcpdfrScraper.cs](LSPDFRManager.Api/Services/LcpdfrScraper.cs)
+- WebView2 "Install This Mod" button posts to this API
 
 **Debug install failures**
 - Check app.log for error message

@@ -59,7 +59,11 @@ public class OivViewModel : ObservableObject
         }
     }
 
-    public bool IsInstallerMode => !_isCreatorMode;
+    public bool IsInstallerMode
+    {
+        get => !_isCreatorMode;
+        set => IsCreatorMode = !value;
+    }
 
     // ── Shared ────────────────────────────────────────────────────────────────
 

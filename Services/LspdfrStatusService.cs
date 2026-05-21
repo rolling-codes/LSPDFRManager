@@ -53,7 +53,7 @@ public sealed class LspdfrStatusService : INotifyPropertyChanged
     {
         get
         {
-            var dll = Path.Combine(AppConfig.Instance.GtaPath, "plugins", "LSPDFR.dll");
+            var dll = Path.Combine(AppConfig.Instance.GtaPath, LspdfrPaths.LspdfrDllRelative);
             if (!File.Exists(dll)) return "–";
             return FileVersionInfo.GetVersionInfo(dll).FileVersion ?? "–";
         }

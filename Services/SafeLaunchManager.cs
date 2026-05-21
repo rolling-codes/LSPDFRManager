@@ -8,7 +8,7 @@ public class SafeLaunchManager
     [
         "GTA5.exe", "PlayGTAV.exe", "RAGEPluginHook.exe",
         "ScriptHookV.dll", "dinput8.dll",
-        @"plugins\LSPDFR.dll", @"plugins\RageNativeUI.dll",
+        LspdfrPaths.LspdfrDllRelative, @"plugins\RageNativeUI.dll",
     ];
 
     private static readonly string[] OptionalAsiFolders = ["mods", "ELS"];
@@ -41,7 +41,7 @@ public class SafeLaunchManager
         return new SafeLaunchPlan { Mode = mode, Changes = changes };
     }
 
-    public async Task ApplyAsync(SafeLaunchPlan plan, IProgress<string>? progress = null)
+    public async Task<IReadOnlyList<string>> ApplyAsync(SafeLaunchPlan plan, IProgress<string>? progress = null)
     {
         var restorePoint = new RestorePoint { OperationName = $"Safe Launch: {plan.Mode}" };
         restorePoint.Entries.AddRange(plan.Changes.Select(c => new RestorePointEntry
@@ -50,6 +50,8 @@ public class SafeLaunchManager
             WasEnabled = c.WasEnabled,
         }));
         await RestorePointService.Instance.SaveAsync(restorePoint);
+
+        var failures = new List<string>();
 
         foreach (var change in plan.Changes)
         {
@@ -61,11 +63,14 @@ public class SafeLaunchManager
             }
             catch (Exception ex)
             {
-                progress?.Report($"Failed: {Path.GetFileName(change.FilePath)} — {ex.Message}");
+                var msg = $"Failed: {Path.GetFileName(change.FilePath)} — {ex.Message}";
+                progress?.Report(msg);
+                failures.Add(msg);
             }
         }
 
         ChangeHistoryService.Instance.Record(ChangeHistoryAction.SafeLaunchApplied, $"Safe Launch applied: {plan.Mode}");
+        return failures;
     }
 
     private void DisableNonEssential(string gtaPath, List<SafeLaunchChange> changes, bool keepLspdfr)

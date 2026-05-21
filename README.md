@@ -5,7 +5,9 @@
 
 Open-source GTA V & LSPDFR command center — mod install, diagnostics, profiles, crash analysis, safe launch, and more. Built with .NET 8 WPF.
 
-**[Latest Release →](https://github.com/rolling-codes/LSPDFRManager/releases/latest)**
+**[Download Latest Release →](https://github.com/rolling-codes/LSPDFRManager/releases/latest)**
+
+See the [GitHub Releases page](https://github.com/rolling-codes/LSPDFRManager/releases/latest) for the latest release notes.
 
 ---
 
@@ -33,7 +35,7 @@ Open-source GTA V & LSPDFR command center — mod install, diagnostics, profiles
 
 ## Install
 
-**Download** the ZIP from [Releases](https://github.com/rolling-codes/LSPDFRManager/releases), extract, run `run.bat`.  
+**Download** the ZIP from the [latest release](https://github.com/rolling-codes/LSPDFRManager/releases/latest), extract, run `run.bat`.  
 See `INSTALL.txt` in the ZIP for full first-run instructions.
 
 **Or via PowerShell:**
