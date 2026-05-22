@@ -51,7 +51,8 @@ public static class ProfileEndpoints
         {
             try
             {
-                var path = ProfilePath(id);
+                var path = SafeProfilePath(id);
+                if (path is null) return Results.BadRequest("Invalid profile ID.");
                 if (!File.Exists(path))
                     return Results.NotFound($"Profile {id} not found.");
 
@@ -76,7 +77,8 @@ public static class ProfileEndpoints
         {
             try
             {
-                var path = ProfilePath(id);
+                var path = SafeProfilePath(id);
+                if (path is null) return Results.BadRequest("Invalid profile ID.");
                 if (!File.Exists(path))
                     return Results.NotFound($"Profile {id} not found.");
 
@@ -110,6 +112,13 @@ public static class ProfileEndpoints
 
     private static string ProfilePath(string id) =>
         Path.Combine(AppDataPaths.ProfilesDirectory, $"{id}.json");
+
+    private static string? SafeProfilePath(string id)
+    {
+        if (!Guid.TryParse(id, out _)) return null;
+        try { return PathSafety.GetSafePath(AppDataPaths.ProfilesDirectory, $"{id}.json"); }
+        catch { return null; }
+    }
 
     private static void SaveProfile(ModProfile p)
     {

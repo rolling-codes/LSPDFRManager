@@ -25,6 +25,7 @@ public class BatchReinstallService
             RestoreConfigSnapshots(manifest, progress);
 
             var detector = new ModDetector();
+            var installTasks = new List<Task<InstallResult>>();
 
             foreach (var entry in manifest.Mods)
             {
@@ -44,10 +45,18 @@ public class BatchReinstallService
                 modInfo.Author = entry.Author;
                 modInfo.DlcPackName = entry.DlcPackName;
 
-                _queue.Enqueue(modInfo);
+                installTasks.Add(_queue.EnqueueAsync(modInfo));
             }
 
-            progress?.Report("All mods queued. Installation continues in background.");
+            // Wait for all installs to complete before leaving — the finally block
+            // deletes the temp directory that contains the embedded archives.
+            if (installTasks.Count > 0)
+            {
+                progress?.Report("Installing — waiting for queue to complete...");
+                await Task.WhenAll(installTasks);
+            }
+
+            progress?.Report("All mods reinstalled.");
             return issues;
         }
         finally

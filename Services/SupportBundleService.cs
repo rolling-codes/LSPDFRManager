@@ -19,7 +19,9 @@ public sealed class SupportBundleService
         var zipPath = outputPath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)
             ? outputPath : outputPath + ".zip";
 
-        Directory.CreateDirectory(Path.GetDirectoryName(zipPath)!);
+        var zipDir = Path.GetDirectoryName(Path.GetFullPath(zipPath));
+        if (!string.IsNullOrWhiteSpace(zipDir))
+            Directory.CreateDirectory(zipDir);
 
         using var zip = System.IO.Compression.ZipFile.Open(zipPath, System.IO.Compression.ZipArchiveMode.Create);
 
@@ -148,7 +150,7 @@ public sealed class SupportBundleService
         try
         {
             // Read, sanitize, write — don't copy raw in case log contains full paths
-            var lines = File.ReadAllLines(logPath);
+            var lines = LogFileReader.ReadAllLines(logPath);
             var sanitized = lines.Select(l => ContainsSensitive(l) ? "[REDACTED LINE]" : SanitizePath(l));
             var entry = zip.CreateEntry(entryName);
             using var stream = entry.Open();

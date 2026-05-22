@@ -51,7 +51,7 @@ public sealed class BrowseApiServiceManager : IDisposable
         var exePath = FindApiExecutable();
         if (exePath is null)
         {
-            SetStatus(BrowseApiStatus.MissingExecutable, "LSPDFRManager.Api.exe not found.");
+            SetStatus(BrowseApiStatus.MissingExecutable, "Browse API executable not found (LSPDFRManager.LocalApi.exe).");
             return;
         }
 
@@ -66,8 +66,8 @@ public sealed class BrowseApiServiceManager : IDisposable
                 {
                     UseShellExecute = false,
                     CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
+                    // Do not redirect stdout/stderr — unread pipe buffers can deadlock
+                    // the child process when it writes enough output to fill the buffer.
                 }
             };
             _process.Start();
@@ -128,6 +128,7 @@ public sealed class BrowseApiServiceManager : IDisposable
         var appDir = AppDomain.CurrentDomain.BaseDirectory;
         var candidates = new[]
         {
+            Path.Combine(appDir, "LSPDFRManager.LocalApi.exe"),
             Path.Combine(appDir, "LSPDFRManager.Api.exe"),
             Path.Combine(appDir, "Api", "LSPDFRManager.Api.exe"),
             Path.Combine(appDir, "LSPDFRManager.Api", "LSPDFRManager.Api.exe"),

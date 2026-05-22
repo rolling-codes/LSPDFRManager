@@ -36,9 +36,8 @@ public class DependencyScannerTests : CommandCenterTestBase
 
 
     [Fact]
-    public void RagePluginHookDll_OptionalEntryExistsInResults()
+    public void RagePluginHookDll_EntryExistsInResults()
     {
-        // RagePluginHook.dll must appear as its own entry so missing-DLL installs are visible.
         var results = new DependencyScanner().Scan();
         Assert.Contains(results, r => r.Name == "RagePluginHook.dll");
     }
@@ -49,6 +48,30 @@ public class DependencyScannerTests : CommandCenterTestBase
         File.WriteAllText(Path.Combine(GtaDir, "RagePluginHook.dll"), "");
         var results = new DependencyScanner().Scan();
         Assert.Equal(DependencyStatus.Installed, results.First(r => r.Name == "RagePluginHook.dll").Status);
+    }
+
+    [Fact]
+    public void RagePluginHookDll_MissingWhenAbsent()
+    {
+        var results = new DependencyScanner().Scan();
+        Assert.Equal(DependencyStatus.Missing, results.First(r => r.Name == "RagePluginHook.dll").Status);
+    }
+
+    [Fact]
+    public void RagePluginHookExe_MissingWhenAbsent()
+    {
+        var results = new DependencyScanner().Scan();
+        Assert.Equal(DependencyStatus.Missing, results.First(r => r.Name == "RAGEPluginHook.exe").Status);
+    }
+
+    [Fact]
+    public void RagePluginHook_MissingNote_IndicatesLspdfrLaunch()
+    {
+        var results = new DependencyScanner().Scan();
+        var dll = results.First(r => r.Name == "RagePluginHook.dll");
+        var exe = results.First(r => r.Name == "RAGEPluginHook.exe");
+        Assert.Contains("LSPDFR", dll.Note ?? "");
+        Assert.Contains("LSPDFR", exe.Note ?? "");
     }
 
     [Fact]

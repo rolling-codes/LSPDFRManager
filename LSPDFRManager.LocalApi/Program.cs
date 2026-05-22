@@ -20,6 +20,6 @@ app.MapPatrolReadiness();
 app.MapBrowse();
 app.MapFallbackToFile("index.html");
 
-app.Run();
+app.Run("http://127.0.0.1:5284");
 
 public partial class Program { }
