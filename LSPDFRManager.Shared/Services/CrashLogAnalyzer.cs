@@ -61,7 +61,7 @@ public class CrashLogAnalyzer
             return results;
 
         string[] lines;
-        try { lines = File.ReadAllLines(logPath); }
+        try { lines = LogFileReader.ReadAllLines(logPath); }
         catch { return results; }
 
         var logName = Path.GetFileName(logPath);

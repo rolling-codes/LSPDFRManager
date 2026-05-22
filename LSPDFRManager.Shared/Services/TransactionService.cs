@@ -78,13 +78,30 @@ public class TransactionService
         var skipped = new List<string>();
         var failed = new List<string>();
 
+        var gtaPath = AppConfig.Instance.GtaPath;
+        var backupFolder = transaction.BackupFolder ?? "";
+
         // Restore overwritten files first so the user is never left with missing files
         foreach (var file in transaction.FilesOverwritten)
         {
+            if (!IsWithinGtaRoot(file.DestinationPath, gtaPath))
+            {
+                failed.Add(file.DestinationPath);
+                AppLogger.Warning($"[ROLLBACK] Rejected destination outside GTA root: {file.DestinationPath}");
+                continue;
+            }
+
             if (string.IsNullOrEmpty(file.BackupPath) || !File.Exists(file.BackupPath))
             {
                 failed.Add(file.DestinationPath);
                 AppLogger.Warning($"[ROLLBACK] Backup missing for overwritten file: {file.DestinationPath}");
+                continue;
+            }
+
+            if (!IsWithinFolder(file.BackupPath, backupFolder))
+            {
+                failed.Add(file.DestinationPath);
+                AppLogger.Warning($"[ROLLBACK] Rejected backup path outside transaction folder: {file.BackupPath}");
                 continue;
             }
 
@@ -107,6 +124,13 @@ public class TransactionService
         // Remove files that were newly added by this install
         foreach (var file in transaction.FilesAdded)
         {
+            if (!IsWithinGtaRoot(file.DestinationPath, gtaPath))
+            {
+                skipped.Add(file.DestinationPath);
+                AppLogger.Warning($"[ROLLBACK] Skipped delete — path outside GTA root: {file.DestinationPath}");
+                continue;
+            }
+
             if (!File.Exists(file.DestinationPath))
                 continue; // already gone — fine
 
@@ -187,6 +211,30 @@ public class TransactionService
             SkippedFiles = skipped,
             FailedFiles = failed,
         };
+    }
+
+    private static bool IsWithinGtaRoot(string fullPath, string gtaPath)
+    {
+        if (string.IsNullOrWhiteSpace(gtaPath) || string.IsNullOrWhiteSpace(fullPath)) return false;
+        try
+        {
+            var rel = Path.GetRelativePath(gtaPath, fullPath);
+            PathSafety.GetSafePath(gtaPath, rel);
+            return true;
+        }
+        catch { return false; }
+    }
+
+    private static bool IsWithinFolder(string fullPath, string folder)
+    {
+        if (string.IsNullOrWhiteSpace(folder) || string.IsNullOrWhiteSpace(fullPath)) return false;
+        try
+        {
+            var normalizedFolder = Path.GetFullPath(folder).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            var normalizedPath = Path.GetFullPath(fullPath);
+            return normalizedPath.StartsWith(normalizedFolder, StringComparison.OrdinalIgnoreCase);
+        }
+        catch { return false; }
     }
 
     private static string? TryComputeHash(string path)

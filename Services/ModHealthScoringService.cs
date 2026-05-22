@@ -48,9 +48,12 @@ public sealed class ModHealthScoringService
 
     private static bool AffectsMod(DiagnosticFinding finding, InstalledMod mod)
     {
-        // Match by install path prefix
+        // Match by install path prefix — but skip when InstallPath is the GTA root,
+        // which would otherwise match every file in the game directory.
+        var gtaPath = AppConfig.Instance.GtaPath;
         if (!string.IsNullOrEmpty(finding.AffectedPath) &&
             !string.IsNullOrEmpty(mod.InstallPath) &&
+            !(string.Equals(mod.InstallPath, gtaPath, StringComparison.OrdinalIgnoreCase)) &&
             finding.AffectedPath.StartsWith(mod.InstallPath, StringComparison.OrdinalIgnoreCase))
             return true;
 

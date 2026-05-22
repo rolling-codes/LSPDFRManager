@@ -24,6 +24,106 @@ public class SmartInstallPlannerTests : CommandCenterTestBase
         return zipPath;
     }
 
+    private string CreateArchiveWithBinaryEntry(string path, long sizeInBytes)
+    {
+        var zipPath = Path.Combine(TempDir, $"planner_{Guid.NewGuid():N}.zip");
+        using var zip = ZipFile.Open(zipPath, ZipArchiveMode.Create);
+        var entry = zip.CreateEntry(path, CompressionLevel.NoCompression);
+        using var stream = entry.Open();
+
+        var buffer = new byte[8192];
+        long remaining = sizeInBytes;
+        while (remaining > 0)
+        {
+            var count = (int)Math.Min(buffer.Length, remaining);
+            stream.Write(buffer, 0, count);
+            remaining -= count;
+        }
+
+        return zipPath;
+    }
+
+    private static long MeasureAllocatedBytes(Action action)
+    {
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+
+        var before = GC.GetAllocatedBytesForCurrentThread();
+        action();
+        return GC.GetAllocatedBytesForCurrentThread() - before;
+    }
+
+    [Fact]
+    public void BuildPlan_ReleasesArchiveHandle_AfterLazyEntryReads()
+    {
+        var archive = CreateArchive(
+            ("readme.txt", "Install instructions"),
+            ("plugins/lspdfr/Example.dll", "plugin")
+        );
+
+        var plan = new SmartInstallPlanner().BuildPlan(archive);
+
+        Assert.Equal("Install instructions", plan.ReadmeContent);
+
+        using (File.Open(archive, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        {
+        }
+
+        File.Delete(archive);
+        Assert.False(File.Exists(archive));
+    }
+
+    [Fact]
+    public async Task BuildPlan_CanPlanSameArchiveConcurrently()
+    {
+        var archive = CreateArchive(
+            ("plugins/lspdfr/ExampleA.dll", "a"),
+            ("plugins/lspdfr/ExampleB.dll", "b"),
+            ("readme.txt", "Concurrent install instructions")
+        );
+        var planner = new SmartInstallPlanner();
+
+        var tasks = Enumerable.Range(0, 12)
+            .Select(_ => Task.Run(() => planner.BuildPlan(archive)))
+            .ToArray();
+
+        var plans = await Task.WhenAll(tasks);
+
+        Assert.All(plans, plan =>
+        {
+            Assert.Equal(3, plan.Entries.Count);
+            Assert.Equal("Concurrent install instructions", plan.ReadmeContent);
+            Assert.DoesNotContain(plan.Warnings, w => w.Contains("Could not read archive", StringComparison.OrdinalIgnoreCase));
+        });
+    }
+
+    [Fact]
+    public void BuildPlan_AllocationDoesNotScaleWithLargeBinaryPayload()
+    {
+        var warmup = CreateArchiveWithBinaryEntry("plugins/lspdfr/Warmup.dll", 1024);
+        _ = new SmartInstallPlanner().BuildPlan(warmup);
+
+        var smallArchive = CreateArchiveWithBinaryEntry("plugins/lspdfr/Small.dll", 1024);
+        var largeArchive = CreateArchiveWithBinaryEntry("plugins/lspdfr/Large.dll", 24L * 1024 * 1024);
+
+        var smallAllocated = MeasureAllocatedBytes(() =>
+        {
+            var plan = new SmartInstallPlanner().BuildPlan(smallArchive);
+            Assert.Single(plan.Entries);
+        });
+
+        var largeAllocated = MeasureAllocatedBytes(() =>
+        {
+            var plan = new SmartInstallPlanner().BuildPlan(largeArchive);
+            Assert.Single(plan.Entries);
+        });
+
+        Assert.True(
+            largeAllocated < smallAllocated + 2_000_000,
+            $"Planning allocated too much for an unread binary payload. Small={smallAllocated:N0}, Large={largeAllocated:N0}");
+    }
+
     [Fact]
     public void BatchWithStopThePedAndUltimateBackup_OrdersStopThePedFirst()
     {

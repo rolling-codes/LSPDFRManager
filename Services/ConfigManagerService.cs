@@ -35,14 +35,14 @@ public class ConfigManagerService
             return;
         }
 
-        Configs.Add(new ConfigEntry
+        UiDispatcher.Invoke(() => Configs.Add(new ConfigEntry
         {
             ModName = modName,
             ConfigFileName = fileName,
             ConfigContent = content,
             SourcePath = sourcePath,
             LastModified = DateTime.Now,
-        });
+        }));
 
         Save();
         AppLogger.Info($"Config added: {fileName} for {modName}");
@@ -65,7 +65,7 @@ public class ConfigManagerService
         if (entry is null)
             return;
 
-        Configs.Remove(entry);
+        UiDispatcher.Invoke(() => Configs.Remove(entry));
         Save();
     }
 

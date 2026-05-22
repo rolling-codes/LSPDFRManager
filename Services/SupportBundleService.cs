@@ -19,7 +19,9 @@ public sealed class SupportBundleService
         var zipPath = outputPath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)
             ? outputPath : outputPath + ".zip";
 
-        Directory.CreateDirectory(Path.GetDirectoryName(zipPath)!);
+        var zipDir = Path.GetDirectoryName(Path.GetFullPath(zipPath));
+        if (!string.IsNullOrWhiteSpace(zipDir))
+            Directory.CreateDirectory(zipDir);
 
         using var zip = System.IO.Compression.ZipFile.Open(zipPath, System.IO.Compression.ZipArchiveMode.Create);
 
@@ -148,7 +150,7 @@ public sealed class SupportBundleService
         try
         {
             // Read, sanitize, write — don't copy raw in case log contains full paths
-            var lines = File.ReadAllLines(logPath);
+            var lines = LogFileReader.ReadAllLines(logPath);
             var sanitized = lines.Select(l => ContainsSensitive(l) ? "[REDACTED LINE]" : SanitizePath(l));
             var entry = zip.CreateEntry(entryName);
             using var stream = entry.Open();
@@ -179,14 +181,14 @@ public sealed class SupportBundleService
     private static string SanitizePath(string? path)
     {
         if (string.IsNullOrWhiteSpace(path)) return string.Empty;
-        // Replace home directory with %USERPROFILE%
-        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        if (!string.IsNullOrEmpty(home) && path.StartsWith(home, StringComparison.OrdinalIgnoreCase))
-            path = "%USERPROFILE%" + path[home.Length..];
-        // Replace AppData with %APPDATA%
+        // Check AppData first — it is always a sub-path of UserProfile, so if we checked
+        // UserProfile first we would never reach the more-specific %APPDATA% replacement.
         var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         if (!string.IsNullOrEmpty(appData) && path.StartsWith(appData, StringComparison.OrdinalIgnoreCase))
-            path = "%APPDATA%" + path[appData.Length..];
+            return "%APPDATA%" + path[appData.Length..];
+        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        if (!string.IsNullOrEmpty(home) && path.StartsWith(home, StringComparison.OrdinalIgnoreCase))
+            return "%USERPROFILE%" + path[home.Length..];
         return path;
     }
 

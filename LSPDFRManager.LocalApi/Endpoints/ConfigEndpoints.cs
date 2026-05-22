@@ -28,7 +28,16 @@ public static class ConfigEndpoints
         var cfg = AppConfig.Instance;
 
         if (req.GtaPath is not null)
+        {
+            if (!string.IsNullOrWhiteSpace(req.GtaPath))
+            {
+                if (!Directory.Exists(req.GtaPath))
+                    return Results.BadRequest(new { error = "GTA V folder not found." });
+                if (LspdfrInstallLocator.FindGtaExe(req.GtaPath) is null)
+                    return Results.BadRequest(new { error = "GTA V executable not found in the specified folder." });
+            }
             cfg.GtaPath = req.GtaPath;
+        }
 
         if (req.BackupPath is not null)
             cfg.BackupPath = req.BackupPath;
@@ -70,8 +79,9 @@ public static class ConfigEndpoints
 
         if (req.BrowseApiBaseUrl is not null)
         {
-            if (!Uri.TryCreate(req.BrowseApiBaseUrl, UriKind.Absolute, out _))
-                return Results.BadRequest(new { error = "BrowseApiBaseUrl is not a valid absolute URL." });
+            if (!Uri.TryCreate(req.BrowseApiBaseUrl, UriKind.Absolute, out var browseUri) ||
+                (browseUri.Host != "localhost" && browseUri.Host != "127.0.0.1"))
+                return Results.BadRequest(new { error = "BrowseApiBaseUrl must use a loopback address (localhost or 127.0.0.1)." });
             cfg.BrowseApiBaseUrl = req.BrowseApiBaseUrl;
         }
 

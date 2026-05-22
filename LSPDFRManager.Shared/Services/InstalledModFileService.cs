@@ -13,6 +13,13 @@ public class InstalledModFileService
         var completedRenames = new List<(string from, string to)>();
         foreach (var file in mod.InstalledFiles.Distinct(StringComparer.OrdinalIgnoreCase))
         {
+            if (!IsWithinGtaPath(file))
+            {
+                AppLogger.Warning($"[InstalledModFileService] Skipping toggle on path outside GTA directory: {file}");
+                failed.Add(file);
+                continue;
+            }
+
             try
             {
                 var rename = ToggleFile(file, enabled);
@@ -54,6 +61,14 @@ public class InstalledModFileService
 
         foreach (var file in mod.InstalledFiles.Select(NormalizeDisabledPath).Distinct(StringComparer.OrdinalIgnoreCase))
         {
+            if (!IsWithinGtaPath(file))
+            {
+                var msg = $"[InstalledModFileService] Rejected uninstall path outside GTA directory: {file}";
+                result.Errors.Add(msg);
+                AppLogger.Warning(msg);
+                continue;
+            }
+
             if (sharedFiles.Contains(file))
             {
                 result.SkippedSharedFiles.Add(file);
@@ -200,6 +215,19 @@ public class InstalledModFileService
                 AppLogger.Warning($"Rollback toggle '{to}' -> '{from}' failed: {ex.Message}");
             }
         }
+    }
+
+    private static bool IsWithinGtaPath(string fullPath)
+    {
+        var gtaPath = AppConfig.Instance.GtaPath;
+        if (string.IsNullOrWhiteSpace(gtaPath)) return false;
+        try
+        {
+            var relative = Path.GetRelativePath(gtaPath, fullPath);
+            PathSafety.GetSafePath(gtaPath, relative);
+            return true;
+        }
+        catch { return false; }
     }
 
     private static string GetDisabledPath(string file) => file + ".disabled";

@@ -1,3 +1,4 @@
+using LSPDFRManager.Core;
 using LSPDFRManager.Domain;
 
 namespace LSPDFRManager.Services;
@@ -9,6 +10,8 @@ public class RestorePointService
 
     private List<RestorePoint> _points = [];
     public IReadOnlyList<RestorePoint> Points => _points;
+
+    public RestorePointService() => Load();
 
     public void Load()
     {
@@ -39,7 +42,14 @@ public class RestorePointService
         {
             try
             {
-                var fullPath = Path.Combine(gtaPath, entry.RelativePath);
+                string fullPath;
+                try { fullPath = PathSafety.GetSafePath(gtaPath, entry.RelativePath); }
+                catch
+                {
+                    progress?.Report($"Skipped unsafe path: {entry.RelativePath}");
+                    AppLogger.Warning($"[RestorePoint] Rejected traversal path: {entry.RelativePath}");
+                    continue;
+                }
                 var disabledPath = fullPath.EndsWith(".disabled") ? fullPath : fullPath + ".disabled";
                 var enabledPath = fullPath.EndsWith(".disabled") ? fullPath[..^".disabled".Length] : fullPath;
 

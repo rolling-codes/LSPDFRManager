@@ -33,9 +33,12 @@ public static class ProfileEndpoints
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(request.Name))
+                    return Results.BadRequest(new { error = "Profile name is required." });
+
                 var profile = new ModProfile
                 {
-                    Name = request.Name,
+                    Name = request.Name.Trim(),
                     Notes = request.Notes,
                 };
                 SaveProfile(profile);
@@ -51,7 +54,8 @@ public static class ProfileEndpoints
         {
             try
             {
-                var path = ProfilePath(id);
+                var path = SafeProfilePath(id);
+                if (path is null) return Results.BadRequest("Invalid profile ID.");
                 if (!File.Exists(path))
                     return Results.NotFound($"Profile {id} not found.");
 
@@ -76,7 +80,8 @@ public static class ProfileEndpoints
         {
             try
             {
-                var path = ProfilePath(id);
+                var path = SafeProfilePath(id);
+                if (path is null) return Results.BadRequest("Invalid profile ID.");
                 if (!File.Exists(path))
                     return Results.NotFound($"Profile {id} not found.");
 
@@ -108,13 +113,19 @@ public static class ProfileEndpoints
         return result;
     }
 
-    private static string ProfilePath(string id) =>
-        Path.Combine(AppDataPaths.ProfilesDirectory, $"{id}.json");
+    private static string? SafeProfilePath(string id)
+    {
+        if (!Guid.TryParse(id, out _)) return null;
+        try { return PathSafety.GetSafePath(AppDataPaths.ProfilesDirectory, $"{id}.json"); }
+        catch { return null; }
+    }
 
     private static void SaveProfile(ModProfile p)
     {
+        var path = SafeProfilePath(p.Id)
+            ?? throw new InvalidOperationException($"Profile ID '{p.Id}' is not a valid GUID.");
         Directory.CreateDirectory(AppDataPaths.ProfilesDirectory);
-        File.WriteAllText(ProfilePath(p.Id), JsonSerializer.Serialize(p));
+        File.WriteAllText(path, JsonSerializer.Serialize(p));
     }
 
     private static ModProfileDto ToDto(ModProfile p) =>

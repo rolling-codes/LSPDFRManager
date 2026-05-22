@@ -9,6 +9,8 @@ public class ChangeHistoryService
 
     private List<ChangeHistoryEntry> _entries = [];
 
+    internal ChangeHistoryService() => Load();
+
     public IReadOnlyList<ChangeHistoryEntry> Entries => _entries;
 
     public void Load()
@@ -58,14 +60,37 @@ public class ChangeHistoryService
     {
         if (asJson)
         {
-            var json = System.Text.Json.JsonSerializer.Serialize(_entries, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            var sanitized = _entries.Select(e => new
+            {
+                e.Id, e.Action, e.Description, e.OccurredAt, e.Detail,
+                AffectedFile = SanitizePath(e.AffectedFile),
+            });
+            var json = System.Text.Json.JsonSerializer.Serialize(sanitized,
+                new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
             await File.WriteAllTextAsync(outputPath, json);
         }
         else
         {
-            var lines = _entries.Select(e => $"[{e.OccurredAt:yyyy-MM-dd HH:mm:ss}] [{e.Action}] {e.Description}");
+            var lines = _entries.Select(e =>
+            {
+                var line = $"[{e.OccurredAt:yyyy-MM-dd HH:mm:ss}] [{e.Action}] {e.Description}";
+                var af   = SanitizePath(e.AffectedFile);
+                return string.IsNullOrEmpty(af) ? line : $"{line} — {af}";
+            });
             await File.WriteAllLinesAsync(outputPath, lines);
         }
+    }
+
+    private static string SanitizePath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return string.Empty;
+        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        if (!string.IsNullOrEmpty(appData) && path.StartsWith(appData, StringComparison.OrdinalIgnoreCase))
+            return "%APPDATA%" + path[appData.Length..];
+        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        if (!string.IsNullOrEmpty(home) && path.StartsWith(home, StringComparison.OrdinalIgnoreCase))
+            return "%USERPROFILE%" + path[home.Length..];
+        return path;
     }
 
     private void Save()

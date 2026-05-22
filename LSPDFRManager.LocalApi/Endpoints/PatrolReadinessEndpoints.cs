@@ -48,9 +48,9 @@ public static class PatrolReadinessEndpoints
                 passing.Add("GTA5.exe found.");
 
             if (bundle is null || !bundle.RagePluginHookPresent)
-                blocking.Add("RAGEPluginHook.exe is missing — LSPDFR cannot launch.");
+                blocking.Add("RAGE Plugin Hook install is incomplete — RAGEPluginHook.exe or RagePluginHook.dll is missing.");
             else
-                passing.Add("RAGEPluginHook.exe found.");
+                passing.Add("RAGEPluginHook.exe and RagePluginHook.dll found.");
 
             if (bundle is null || !bundle.LspdfrPresent)
                 blocking.Add("LSPDFR core files were not found.");

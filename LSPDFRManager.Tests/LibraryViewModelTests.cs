@@ -126,7 +126,9 @@ public class LibraryViewModelTests : IDisposable
         File.WriteAllText(filePath, "locked");
 
         var originalConfirm = AppConfig.Instance.ConfirmBeforeUninstall;
+        var originalGtaPath = AppConfig.Instance.GtaPath;
         AppConfig.Instance.ConfirmBeforeUninstall = false;
+        AppConfig.Instance.GtaPath = Path.Combine(_tempRoot, "GTA");
 
         try
         {
@@ -152,6 +154,7 @@ public class LibraryViewModelTests : IDisposable
         finally
         {
             AppConfig.Instance.ConfirmBeforeUninstall = originalConfirm;
+            AppConfig.Instance.GtaPath = originalGtaPath ?? string.Empty;
         }
     }
 }

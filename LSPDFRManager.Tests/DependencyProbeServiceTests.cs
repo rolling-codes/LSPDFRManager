@@ -121,12 +121,33 @@ public class DependencyProbeServiceTests : IDisposable
     }
 
     [Fact]
-    public void RagePluginHook_Present_WhenExeExists()
+    public void RagePluginHook_Missing_WhenOnlyExeExists()
     {
         File.WriteAllText(Path.Combine(_gtaPath, "RAGEPluginHook.exe"), "");
         var result = _sut.Probe(_gtaPath, BuildDeps("RAGE Plugin Hook"));
         var probe = Assert.Single(result.Probes);
+        Assert.Equal(DependencyProbeStatus.Missing, probe.Status);
+    }
+
+    [Fact]
+    public void RagePluginHook_Missing_WhenOnlyDllExists()
+    {
+        File.WriteAllText(Path.Combine(_gtaPath, "RagePluginHook.dll"), "");
+        var result = _sut.Probe(_gtaPath, BuildDeps("RAGE Plugin Hook"));
+        var probe = Assert.Single(result.Probes);
+        Assert.Equal(DependencyProbeStatus.Missing, probe.Status);
+    }
+
+    [Fact]
+    public void RagePluginHook_Present_WhenBothExeAndDllExist()
+    {
+        File.WriteAllText(Path.Combine(_gtaPath, "RAGEPluginHook.exe"), "");
+        File.WriteAllText(Path.Combine(_gtaPath, "RagePluginHook.dll"), "");
+        var result = _sut.Probe(_gtaPath, BuildDeps("RAGE Plugin Hook"));
+        var probe = Assert.Single(result.Probes);
         Assert.Equal(DependencyProbeStatus.Present, probe.Status);
+        Assert.Contains("RAGEPluginHook.exe", probe.Evidence);
+        Assert.Contains("RagePluginHook.dll", probe.Evidence);
     }
 
     [Fact]
@@ -140,7 +161,9 @@ public class DependencyProbeServiceTests : IDisposable
     [Fact]
     public void Mixed_HasMissingRequired_WhenAtLeastOneMissing()
     {
+        // RPH is complete (both files present); SHV is absent — ensures one Present and one Missing.
         File.WriteAllText(Path.Combine(_gtaPath, "RAGEPluginHook.exe"), "");
+        File.WriteAllText(Path.Combine(_gtaPath, "RagePluginHook.dll"), "");
         var result = _sut.Probe(_gtaPath, BuildDeps("RAGE Plugin Hook", "Script Hook V"));
         Assert.True(result.HasMissingRequired);
         Assert.Contains(result.Probes, p => p.Status == DependencyProbeStatus.Present);

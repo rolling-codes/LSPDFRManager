@@ -92,9 +92,10 @@ public class PatrolReadinessTests : CommandCenterTestBase
     [Fact]
     public async Task Service_AllRequiredFilesPresent_ReturnsReadyOrWarning()
     {
-        // Place all required files
+        // Place all required files (IsRagePluginHookInstalled requires both exe and dll)
         File.WriteAllText(Path.Combine(GtaDir, "GTA5.exe"), "fake");
         File.WriteAllText(Path.Combine(GtaDir, "RAGEPluginHook.exe"), "fake");
+        File.WriteAllText(Path.Combine(GtaDir, "RagePluginHook.dll"), "fake");
         var pluginsDir = Path.Combine(GtaDir, "plugins");
         Directory.CreateDirectory(pluginsDir);
         File.WriteAllText(Path.Combine(pluginsDir, "LSPDFR.dll"), "fake");
@@ -133,6 +134,7 @@ public class PatrolReadinessTests : CommandCenterTestBase
         // All required files present; ScriptHookV absent → warning only
         File.WriteAllText(Path.Combine(GtaDir, "GTA5.exe"), "fake");
         File.WriteAllText(Path.Combine(GtaDir, "RAGEPluginHook.exe"), "fake");
+        File.WriteAllText(Path.Combine(GtaDir, "RagePluginHook.dll"), "fake");
         var pluginsDir = Path.Combine(GtaDir, "plugins");
         Directory.CreateDirectory(pluginsDir);
         File.WriteAllText(Path.Combine(pluginsDir, "LSPDFR.dll"), "fake");

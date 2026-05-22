@@ -4,17 +4,22 @@ using Xunit;
 
 namespace LSPDFRManager.Tests;
 
+[Collection("AppData serial")]
 public class PersistenceAndConflictTests : IDisposable
 {
     private readonly string _tempRoot = Path.Combine(Path.GetTempPath(), $"lspdfr_persist_{Guid.NewGuid():N}");
+    private readonly string? _savedGtaPath;
 
     public PersistenceAndConflictTests()
     {
         Directory.CreateDirectory(_tempRoot);
+        _savedGtaPath = AppConfig.Instance.GtaPath;
+        AppConfig.Instance.GtaPath = _tempRoot;
     }
 
     public void Dispose()
     {
+        AppConfig.Instance.GtaPath = _savedGtaPath ?? string.Empty;
         try
         {
             if (Directory.Exists(_tempRoot))

@@ -257,6 +257,60 @@ public class RageLogScannerTests
         Assert.Null(result);
     }
 
+    // ── Version-mismatch keyword detection (Bug 7: TypeLoadException hidden char) ──
+
+    [Theory]
+    [InlineData("System.TypeLoadException: Could not load type 'Foo' from assembly 'Bar'.")]
+    [InlineData("System.MissingMethodException: Method not found: 'Void Foo.Bar()'.")]
+    [InlineData("System.BadImageFormatException: Bad IL format.")]
+    [InlineData("System.IO.FileNotFoundException: Could not load file or assembly 'Baz.dll'.")]
+    public void Scanner_VersionMismatchKeywords_DetectedFromInlinedLog(string exceptionLine)
+    {
+        var lines = new[]
+        {
+            "[11/09/2023 17:20:00.100] [ERROR] [RPH] Exception in plugin StopThePed.dll:",
+            "  " + exceptionLine,
+        };
+
+        var tempPath = Path.Combine(Path.GetTempPath(), $"rph_kw_{Guid.NewGuid():N}.log");
+        try
+        {
+            File.WriteAllLines(tempPath, lines);
+            var session = new RageLogScanner().ScanFile(tempPath);
+            Assert.NotNull(session);
+            Assert.True(
+                session.Findings.Any(f => f.Code is "version-mismatch" or "missing-dependency" or "bad-image-format"),
+                $"Expected a finding for: {exceptionLine}");
+        }
+        finally
+        {
+            File.Delete(tempPath);
+        }
+    }
+
+    [Fact]
+    public void Scanner_TypeLoadException_NormalAsciiString_ProducesVersionMismatchFinding()
+    {
+        var lines = new[]
+        {
+            "[11/09/2023 17:20:00.100] [ERROR] [RPH] Plugin 'UltimateBackup.dll' threw an exception:",
+            "  System.TypeLoadException: Could not load type 'Foo'.",
+        };
+
+        var tempPath = Path.Combine(Path.GetTempPath(), $"rph_tle_{Guid.NewGuid():N}.log");
+        try
+        {
+            File.WriteAllLines(tempPath, lines);
+            var session = new RageLogScanner().ScanFile(tempPath);
+            Assert.NotNull(session);
+            Assert.Contains(session.Findings, f => f.Code == "version-mismatch");
+        }
+        finally
+        {
+            File.Delete(tempPath);
+        }
+    }
+
     // ── Severity assignment ─────────────────────────────────────────────────
 
     [Fact]

@@ -29,7 +29,7 @@ public class BackupService
             }
         });
 
-        config.LastBackupDate = DateTime.Now;
+        config.LastBackupDate = DateTime.UtcNow;
         config.Save();
 
         AppLogger.Info($"Backup created: {backupPath}");

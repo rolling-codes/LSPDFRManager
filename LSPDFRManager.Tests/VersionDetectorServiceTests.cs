@@ -117,6 +117,39 @@ public class VersionDetectorServiceTests : CommandCenterTestBase
         Assert.NotNull(bundle.ScriptHookVDotNetHash);
     }
 
+    // ── RPH presence requires both exe and dll ─────────────────────────────
+
+    [Fact]
+    public async Task Detect_DoesNotSetRphPresent_WhenOnlyExeExists()
+    {
+        File.WriteAllText(Path.Combine(GtaDir, "RAGEPluginHook.exe"), "fake");
+
+        var bundle = await _sut.DetectAsync(GtaDir);
+
+        Assert.False(bundle.RagePluginHookPresent);
+    }
+
+    [Fact]
+    public async Task Detect_SetsRphPresent_WhenBothExeAndDllExist()
+    {
+        File.WriteAllText(Path.Combine(GtaDir, "RAGEPluginHook.exe"), "fake");
+        File.WriteAllText(Path.Combine(GtaDir, "RagePluginHook.dll"), "fake");
+
+        var bundle = await _sut.DetectAsync(GtaDir);
+
+        Assert.True(bundle.RagePluginHookPresent);
+    }
+
+    [Fact]
+    public async Task Detect_DoesNotSetRphPresent_WhenOnlyDllExists()
+    {
+        File.WriteAllText(Path.Combine(GtaDir, "RagePluginHook.dll"), "fake");
+
+        var bundle = await _sut.DetectAsync(GtaDir);
+
+        Assert.False(bundle.RagePluginHookPresent);
+    }
+
     // ── GTA5.exe is never hashed ───────────────────────────────────────────
 
     [Fact]

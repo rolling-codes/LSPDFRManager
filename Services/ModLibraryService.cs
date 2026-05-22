@@ -85,6 +85,19 @@ public class ModLibraryService
         }
     }
 
+    public void UpdateNotes(Guid id, string? notes)
+    {
+        InstalledMod? target = null;
+        UiDispatcher.Invoke(() => { target = Mods.FirstOrDefault(m => m.Id == id); });
+        if (target is null) return;
+        lock (_mutationLock)
+        {
+            target.Notes = notes ?? "";
+            ModUpdated?.Invoke(target);
+            Save();
+        }
+    }
+
     public void SetLoadOrder(Guid id, int priority)
     {
         lock (_mutationLock)

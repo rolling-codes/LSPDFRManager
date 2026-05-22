@@ -95,7 +95,14 @@ public class ProfileManager
         {
             foreach (var entry in profile.Entries)
             {
-                var fullPath = Path.Combine(gtaPath, entry.RelativePath);
+                string fullPath;
+                try { fullPath = PathSafety.GetSafePath(gtaPath, entry.RelativePath); }
+                catch
+                {
+                    AppLogger.Warning($"[ProfileManager] Skipping entry with unsafe path: {entry.RelativePath}");
+                    continue;
+                }
+
                 var disabledPath = fullPath + ".disabled";
                 var isCurrentlyEnabled = File.Exists(fullPath) && !File.Exists(disabledPath);
                 if (isCurrentlyEnabled != entry.Enabled)
@@ -166,11 +173,24 @@ public class ProfileManager
             var profile = System.Text.Json.JsonSerializer.Deserialize<ModProfile>(json);
             if (profile is null) return null;
             profile.Id = Guid.NewGuid().ToString();
+
+            var gtaPath = AppConfig.Instance.GtaPath;
+            var removed = profile.Entries.RemoveAll(e => !IsValidProfileEntry(e, gtaPath));
+            if (removed > 0)
+                AppLogger.Warning($"[ProfileManager] Import removed {removed} entry(ies) with invalid or traversal paths.");
+
             _profiles.Add(profile);
             SaveProfile(profile);
             return profile;
         }
         catch { return null; }
+    }
+
+    private static bool IsValidProfileEntry(ProfileEntry entry, string gtaPath)
+    {
+        if (string.IsNullOrWhiteSpace(entry.RelativePath)) return false;
+        try { PathSafety.GetSafePath(gtaPath, entry.RelativePath); return true; }
+        catch { return false; }
     }
 
     private void SaveAll()

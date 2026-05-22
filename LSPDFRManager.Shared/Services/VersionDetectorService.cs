@@ -30,7 +30,7 @@ public class VersionDetectorService
         {
             GtaPresent             = gta5Info is not null,
             LspdfrPresent          = lspdfr is not null || LspdfrInstallLocator.IsLspdfrInstalled(gtaPath),
-            RagePluginHookPresent  = rph is not null,
+            RagePluginHookPresent  = LspdfrInstallLocator.IsRagePluginHookInstalled(gtaPath),
 
             GtaExeFileSizeBytes    = gta5Info?.Length,
             GtaExeLastWriteTimeUtc = gta5Info?.LastWriteTimeUtc,

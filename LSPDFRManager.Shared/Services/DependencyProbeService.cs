@@ -110,7 +110,7 @@ public sealed class DependencyProbeService : IDependencyProbeService
 
         if (name.Contains("RAGE Plugin Hook", StringComparison.OrdinalIgnoreCase))
         {
-            return ProbeFiles(name, gtaPath, LspdfrInstallLocator.RagePluginHookCandidates, anyRequired: true);
+            return ProbeFiles(name, gtaPath, ["RAGEPluginHook.exe", "RagePluginHook.dll"], anyRequired: false);
         }
 
         // Unknown dependency type

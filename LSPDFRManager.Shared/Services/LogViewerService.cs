@@ -23,7 +23,7 @@ public class LogViewerService
     public string[] ReadLines(string logPath)
     {
         if (!File.Exists(logPath)) return [];
-        try { return File.ReadAllLines(logPath); }
+        try { return LogFileReader.ReadAllLines(logPath); }
         catch { return []; }
     }
 

@@ -5,13 +5,14 @@ namespace LSPDFRManager.Services;
 
 public class DependencyScanner
 {
-    private record KnownDependency(string Name, string RelativePath, bool IsRequired);
+    private record KnownDependency(string Name, string RelativePath, bool IsRequired, string? MissingNote = null);
 
     private static readonly KnownDependency[] KnownDependencies =
     [
         new("GTA5.exe",                      "GTA5.exe",                            true),
         new("PlayGTAV.exe",                  "PlayGTAV.exe",                        false),
-        new("RAGEPluginHook.exe",            "RAGEPluginHook.exe",                  false),
+        new("RAGEPluginHook.exe",            "RAGEPluginHook.exe",                  true,  "Required for LSPDFR launch."),
+        new("RagePluginHook.dll",            "RagePluginHook.dll",                  true,  "Required for LSPDFR launch."),
         new(LspdfrPaths.LspdfrDllName,       LspdfrPaths.LspdfrDllRelative,         false),
         new("ScriptHookV.dll",               "ScriptHookV.dll",                     false),
         new("ScriptHookVDotNet.asi",         "ScriptHookVDotNet.asi",               false),
@@ -61,7 +62,7 @@ public class DependencyScanner
                 ActualPath = exists ? fullPath : null,
                 Status = status,
                 Version = version,
-                Note = dep.IsRequired && !exists ? "Required for GTA V to run." : null,
+                Note = dep.IsRequired && !exists ? (dep.MissingNote ?? "Required for GTA V to run.") : null,
                 IsIgnored = _ignored.Contains(dep.Name),
             });
         }

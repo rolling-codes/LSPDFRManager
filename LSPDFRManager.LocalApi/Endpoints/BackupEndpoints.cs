@@ -25,7 +25,6 @@ public static class BackupEndpoints
                         var info = new FileInfo(path);
                         return new BackupFileDto(
                             FileName: info.Name,
-                            FilePath: info.FullName,
                             SizeBytes: info.Length,
                             SizeDisplay: FormatSize(info.Length),
                             LastWriteUtc: info.LastWriteTimeUtc);
@@ -52,7 +51,7 @@ public static class BackupEndpoints
                 try
                 {
                     var svc = new BackupService();
-                    var progress = new Progress<string>(_ => { });
+                    var progress = new Progress<string>(status => queue.UpdateProgress(jobId, 0, status));
                     await svc.CreateBackupAsync(progress);
                     queue.CompleteJob(jobId);
                 }
@@ -70,14 +69,18 @@ public static class BackupEndpoints
             if (string.IsNullOrWhiteSpace(request.FileName))
                 return Results.BadRequest("FileName is required.");
 
+            if (Path.IsPathRooted(request.FileName) || request.FileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                return Results.BadRequest("Invalid file name.");
+
             var backupPath = AppConfig.Instance.BackupPath;
             if (string.IsNullOrWhiteSpace(backupPath))
                 return Results.BadRequest("Backup path is not configured.");
 
-            var resolvedPath = Path.GetFullPath(Path.Combine(backupPath, request.FileName));
-            var resolvedRoot = Path.GetFullPath(backupPath);
+            var root = Path.GetFullPath(backupPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                       + Path.DirectorySeparatorChar;
+            var resolvedPath = Path.GetFullPath(Path.Combine(root, request.FileName));
 
-            if (!resolvedPath.StartsWith(resolvedRoot, StringComparison.OrdinalIgnoreCase))
+            if (!resolvedPath.StartsWith(root, StringComparison.OrdinalIgnoreCase))
                 return Results.BadRequest("Invalid file name.");
 
             if (!resolvedPath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
@@ -95,7 +98,7 @@ public static class BackupEndpoints
                 try
                 {
                     var svc = new BackupService();
-                    var progress = new Progress<string>(_ => { });
+                    var progress = new Progress<string>(status => queue.UpdateProgress(jobId, 0, status));
                     await svc.RestoreFromBackupAsync(resolvedPath, progress);
                     queue.CompleteJob(jobId);
                 }
@@ -113,14 +116,18 @@ public static class BackupEndpoints
             if (string.IsNullOrWhiteSpace(fileName))
                 return Results.BadRequest("fileName is required.");
 
+            if (Path.IsPathRooted(fileName) || fileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                return Results.BadRequest("Invalid file name.");
+
             var backupPath = AppConfig.Instance.BackupPath;
             if (string.IsNullOrWhiteSpace(backupPath))
                 return Results.BadRequest("Backup path is not configured.");
 
-            var resolvedPath = Path.GetFullPath(Path.Combine(backupPath, fileName));
-            var resolvedRoot = Path.GetFullPath(backupPath);
+            var root = Path.GetFullPath(backupPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                       + Path.DirectorySeparatorChar;
+            var resolvedPath = Path.GetFullPath(Path.Combine(root, fileName));
 
-            if (!resolvedPath.StartsWith(resolvedRoot, StringComparison.OrdinalIgnoreCase))
+            if (!resolvedPath.StartsWith(root, StringComparison.OrdinalIgnoreCase))
                 return Results.BadRequest("Invalid file name.");
 
             if (!resolvedPath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
@@ -140,15 +147,6 @@ public static class BackupEndpoints
             }
         });
 
-        app.MapGet("/api/v1/jobs/{jobId}", (string jobId, HttpContext ctx) =>
-        {
-            var queue = ctx.RequestServices.GetRequiredService<JobQueue>();
-            var job = queue.GetJob(jobId);
-            if (job is null)
-                return Results.NotFound($"Job '{jobId}' not found.");
-
-            return Results.Ok(new JobStatusDto(job.JobId, job.State, job.ProgressPct, job.Error, job.ResultJson));
-        });
     }
 
     private static string FormatSize(long bytes)

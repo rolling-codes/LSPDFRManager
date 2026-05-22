@@ -8,6 +8,7 @@ namespace LSPDFRManager.Tests;
 /// Tests for <see cref="ModLibraryService"/> using fresh non-singleton instances
 /// so each test starts with an empty, isolated library.
 /// </summary>
+[Collection("AppData serial")]
 public class ModLibraryServiceTests
 {
     // Create a new instance (not the singleton) for each test.
@@ -65,6 +66,9 @@ public class ModLibraryServiceTests
         Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
         File.WriteAllText(filePath, "locked");
 
+        var savedGtaPath = AppConfig.Instance.GtaPath;
+        AppConfig.Instance.GtaPath = tempRoot;
+
         try
         {
             var lib = Fresh();
@@ -83,6 +87,7 @@ public class ModLibraryServiceTests
         }
         finally
         {
+            AppConfig.Instance.GtaPath = savedGtaPath ?? string.Empty;
             try { if (Directory.Exists(tempRoot)) Directory.Delete(tempRoot, recursive: true); } catch { }
         }
     }
