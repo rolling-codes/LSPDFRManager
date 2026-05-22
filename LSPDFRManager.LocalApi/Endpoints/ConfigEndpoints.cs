@@ -80,9 +80,15 @@ public static class ConfigEndpoints
         if (req.BrowseApiBaseUrl is not null)
         {
             if (!Uri.TryCreate(req.BrowseApiBaseUrl, UriKind.Absolute, out var browseUri) ||
-                (browseUri.Host != "localhost" && browseUri.Host != "127.0.0.1"))
-                return Results.BadRequest(new { error = "BrowseApiBaseUrl must use a loopback address (localhost or 127.0.0.1)." });
-            cfg.BrowseApiBaseUrl = req.BrowseApiBaseUrl;
+                browseUri.Scheme != Uri.UriSchemeHttp ||
+                (browseUri.Host != "localhost" && browseUri.Host != "127.0.0.1") ||
+                browseUri.Port <= 0 ||
+                !string.IsNullOrEmpty(browseUri.AbsolutePath.Trim('/')) ||
+                !string.IsNullOrEmpty(browseUri.Query) ||
+                !string.IsNullOrEmpty(browseUri.Fragment))
+                return Results.BadRequest(new { error = "BrowseApiBaseUrl must be an http loopback origin, e.g. http://127.0.0.1:7100." });
+            // Persist normalized origin (no trailing slash, no path/query/fragment)
+            cfg.BrowseApiBaseUrl = $"{browseUri.Scheme}://{browseUri.Host}:{browseUri.Port}";
         }
 
         if (req.AutoBackupEnabled.HasValue)

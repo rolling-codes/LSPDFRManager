@@ -47,12 +47,21 @@ public static class BackupEndpoints
 
             _ = Task.Run(async () =>
             {
-                queue.UpdateProgress(jobId, 0, "Running");
+                queue.UpdateProgress(jobId, 5, "Running");
                 try
                 {
                     var svc = new BackupService();
-                    var progress = new Progress<string>(status => queue.UpdateProgress(jobId, 0, status));
+                    queue.UpdateProgress(jobId, 15, "Validating paths");
+                    var progress = new Progress<string>(status =>
+                    {
+                        var pct = status.StartsWith("Creating backup",  StringComparison.Ordinal) ? 35
+                                : status.StartsWith("Backed up:",       StringComparison.Ordinal) ? 70
+                                : status.StartsWith("Done",             StringComparison.Ordinal) ? 90
+                                : 50;
+                        queue.UpdateProgress(jobId, pct, status);
+                    });
                     await svc.CreateBackupAsync(progress);
+                    queue.UpdateProgress(jobId, 95, "Saving state");
                     queue.CompleteJob(jobId);
                 }
                 catch (Exception ex)
@@ -94,11 +103,19 @@ public static class BackupEndpoints
 
             _ = Task.Run(async () =>
             {
-                queue.UpdateProgress(jobId, 0, "Running");
+                queue.UpdateProgress(jobId, 5, "Running");
                 try
                 {
                     var svc = new BackupService();
-                    var progress = new Progress<string>(status => queue.UpdateProgress(jobId, 0, status));
+                    queue.UpdateProgress(jobId, 15, "Opening archive");
+                    var progress = new Progress<string>(status =>
+                    {
+                        var pct = status.StartsWith("Restoring from",   StringComparison.Ordinal) ? 35
+                                : status.StartsWith("Restored:",        StringComparison.Ordinal) ? 70
+                                : status.StartsWith("Restore complete", StringComparison.Ordinal) ? 90
+                                : 50;
+                        queue.UpdateProgress(jobId, pct, status);
+                    });
                     await svc.RestoreFromBackupAsync(resolvedPath, progress);
                     queue.CompleteJob(jobId);
                 }

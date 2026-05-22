@@ -64,6 +64,9 @@ public static class ProfileEndpoints
                 if (profile is null)
                     return Results.NotFound($"Profile {id} not found.");
 
+                if (!string.Equals(profile.Id, id, StringComparison.OrdinalIgnoreCase))
+                    return Results.BadRequest(new { error = "Profile ID mismatch." });
+
                 if (request.Name is not null) profile.Name = request.Name;
                 if (request.Notes is not null) profile.Notes = request.Notes;
 
