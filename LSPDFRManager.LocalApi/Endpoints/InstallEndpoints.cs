@@ -1,19 +1,12 @@
-using System.Text.Json;
 using LSPDFRManager.Domain;
 using LSPDFRManager.LocalApi.Dtos;
 using LSPDFRManager.LocalApi.Services;
-using LSPDFRManager.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LSPDFRManager.LocalApi.Endpoints;
 
 public static class InstallEndpoints
 {
-    private static readonly JsonSerializerOptions JsonOpts = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-    };
-
     public static void MapInstall(this WebApplication app)
     {
         app.MapPost("/api/v1/install", (StartInstallRequest request, HttpContext ctx) =>
@@ -32,35 +25,34 @@ public static class InstallEndpoints
             if (!sourceExists)
                 return Results.BadRequest($"Source path does not exist: {request.SourcePath}");
 
+            var callback = LocalApiHost.ExecuteInstallCallback;
+            if (callback is null)
+                return Results.Problem("Install service is not available in standalone mode.");
+
             var queue = ctx.RequestServices.GetRequiredService<JobQueue>();
             var jobId = queue.CreateJob();
-
             var sourcePath = request.SourcePath;
-            var targetRoot = gtaPath;
 
             _ = Task.Run(async () =>
             {
-                queue.UpdateProgress(jobId, 0, "Running");
                 try
                 {
-                    var mod = new ModInfo
+                    queue.UpdateProgress(jobId, 10, "Detecting mod");
+
+                    var modInfo = new ModInfo
                     {
                         SourcePath = sourcePath,
                         Name = Path.GetFileNameWithoutExtension(sourcePath),
                     };
 
-                    var result = await FileInstaller.InstallAsync(mod, targetRoot);
+                    queue.UpdateProgress(jobId, 30, "Queuing install");
+
+                    var result = await callback(modInfo);
 
                     if (result.Success)
-                    {
-                        var dto = new InstallResultDto(true, null, null, result.FilesWritten);
-                        var json = JsonSerializer.Serialize(dto, JsonOpts);
-                        queue.CompleteJob(jobId, json);
-                    }
+                        queue.CompleteJob(jobId);
                     else
-                    {
                         queue.FailJob(jobId, result.UserMessage ?? result.Error);
-                    }
                 }
                 catch (Exception ex)
                 {

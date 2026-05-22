@@ -1,8 +1,11 @@
+using System.Text.Json;
 using LSPDFRManager.Domain;
 using LSPDFRManager.LocalApi.Dtos;
 using LSPDFRManager.Services;
 
 namespace LSPDFRManager.LocalApi.Endpoints;
+
+file record SafeModeManifest(IReadOnlyList<string> DisabledPaths);
 
 public static class SafeModeEndpoints
 {
@@ -66,13 +69,22 @@ public static class SafeModeEndpoints
                 var progress = new Progress<string>(_ => disabledCount++);
                 await service.ApplyAsync(plan, progress);
 
-                // Count actions that will be disabled
-                var willDisableCount = plan.Actions.Count(a => a.WillDisable);
+                // Collect files that were actually renamed to .disabled
+                var actuallyDisabled = plan.Actions
+                    .Where(a => a.WillDisable)
+                    .Select(a => a.AffectedPath + ".disabled")
+                    .Where(File.Exists)
+                    .ToList();
+
+                // Write manifest so restore only re-enables what we actually disabled
+                var manifestPath = Path.Combine(AppDataPaths.Root, "safe_mode_state.json");
+                var manifest = new SafeModeManifest(actuallyDisabled);
+                File.WriteAllText(manifestPath, JsonSerializer.Serialize(manifest));
 
                 return Results.Ok(new SafeModeApplyResponse(
                     Success: true,
                     Error: null,
-                    FilesDisabled: willDisableCount));
+                    FilesDisabled: actuallyDisabled.Count));
             }
             catch (Exception ex)
             {
@@ -89,30 +101,31 @@ public static class SafeModeEndpoints
             if (string.IsNullOrWhiteSpace(gtaPath) || !Directory.Exists(gtaPath))
                 return Results.BadRequest("GTA V path is not configured or does not exist.");
 
+            var manifestPath = Path.Combine(AppDataPaths.Root, "safe_mode_state.json");
+            if (!File.Exists(manifestPath))
+                return Results.BadRequest("No active safe mode session found. Nothing to restore.");
+
             try
             {
-                // Re-enable .disabled files in plugins/lspdfr and root .asi files
-                var restoredCount = 0;
-                var searchDirs = new[]
-                {
-                    gtaPath,
-                    Path.Combine(gtaPath, "plugins", "lspdfr"),
-                    Path.Combine(gtaPath, "scripts"),
-                };
+                var json = File.ReadAllText(manifestPath);
+                var manifest = JsonSerializer.Deserialize<SafeModeManifest>(json);
+                if (manifest is null)
+                    return Results.BadRequest("Safe mode manifest is corrupt. Nothing to restore.");
 
-                foreach (var dir in searchDirs)
+                var restoredCount = 0;
+                foreach (var disabledPath in manifest.DisabledPaths)
                 {
-                    if (!Directory.Exists(dir)) continue;
-                    foreach (var file in Directory.EnumerateFiles(dir, "*.disabled", SearchOption.AllDirectories))
+                    if (!disabledPath.EndsWith(".disabled", StringComparison.OrdinalIgnoreCase)) continue;
+                    if (!File.Exists(disabledPath)) continue;
+                    var original = disabledPath[..^".disabled".Length];
+                    if (!File.Exists(original))
                     {
-                        var original = file[..^".disabled".Length];
-                        if (!File.Exists(original))
-                        {
-                            File.Move(file, original);
-                            restoredCount++;
-                        }
+                        File.Move(disabledPath, original);
+                        restoredCount++;
                     }
                 }
+
+                File.Delete(manifestPath);
 
                 return Results.Ok(new SafeModeApplyResponse(
                     Success: true,

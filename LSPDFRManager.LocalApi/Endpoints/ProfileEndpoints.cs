@@ -89,6 +89,11 @@ public static class ProfileEndpoints
                     return Results.NotFound($"Profile {id} not found.");
 
                 File.Delete(path);
+                if (string.Equals(AppConfig.Instance.ActiveProfileId, id, StringComparison.OrdinalIgnoreCase))
+                {
+                    AppConfig.Instance.ActiveProfileId = null;
+                    AppConfig.Instance.Save();
+                }
                 return Results.NoContent();
             }
             catch (Exception ex)

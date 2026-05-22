@@ -62,6 +62,11 @@ export default function SettingsPage() {
       if (pathChanged) {
         void invalidateEnvironmentQueries(queryClient)
       }
+
+      const backupPathChanged = (previousConfig?.backupPath ?? '') !== (updated.backupPath ?? '')
+      if (backupPathChanged) {
+        queryClient.invalidateQueries({ queryKey: ['backups'] })
+      }
     },
     onError: () => setSaveStatus('error'),
   })

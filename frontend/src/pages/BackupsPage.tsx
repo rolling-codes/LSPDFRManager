@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchBackups, startBackup, restoreBackup, deleteBackup } from '../lib/api/backups'
 import { useJob } from '../lib/hooks/useJob'
@@ -19,10 +19,11 @@ export default function BackupsPage() {
   const { jobStatus: backupJob, isPolling: backupPolling } = useJob(backupJobId)
   const { jobStatus: restoreJob, isPolling: restorePolling } = useJob(restoreJobId)
 
-  // Refetch list once a backup job completes
-  if (backupJob?.state === 'Completed') {
-    queryClient.invalidateQueries({ queryKey: ['backups'] })
-  }
+  useEffect(() => {
+    if (backupJob?.state === 'Completed') {
+      queryClient.invalidateQueries({ queryKey: ['backups'] })
+    }
+  }, [backupJob?.state, queryClient])
 
   async function handleCreateBackup() {
     setActionError(null)

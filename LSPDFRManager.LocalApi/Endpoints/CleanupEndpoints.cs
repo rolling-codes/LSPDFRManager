@@ -75,7 +75,10 @@ public static class CleanupEndpoints
                     Success: applyResult.Success,
                     FilesDeleted: applyResult.DeletedPaths.Count,
                     BytesFreed: 0L, // size not tracked at deletion time
-                    Error: applyResult.AbortReason));
+                    Error: applyResult.AbortReason
+                        ?? (applyResult.FailedPaths.Count > 0
+                            ? $"Failed to delete {applyResult.FailedPaths.Count} item(s): {string.Join(", ", applyResult.FailedPaths.Take(3))}{(applyResult.FailedPaths.Count > 3 ? "…" : "")}"
+                            : null)));
             }
             catch (Exception ex)
             {

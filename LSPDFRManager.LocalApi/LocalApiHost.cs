@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
+using LSPDFRManager.Domain;
 using LSPDFRManager.LocalApi.Endpoints;
 using LSPDFRManager.LocalApi.Middleware;
 using LSPDFRManager.LocalApi.Services;
@@ -38,6 +39,12 @@ public static class LocalApiHost
     /// <c>ModLibraryService.UpdateNotes</c>, keeping the in-memory collection consistent.
     /// </summary>
     public static Action<Guid, string?>? UpdateNotesCallback { get; set; }
+
+    /// <summary>
+    /// Set by the WPF host so that /api/v1/install routes through InstallQueue,
+    /// which owns the full workflow: backup, plan, transaction, library update.
+    /// </summary>
+    public static Func<ModInfo, Task<InstallResult>>? ExecuteInstallCallback { get; set; }
 
     public static int Port => _portReady.Task.IsCompletedSuccessfully
         ? _portReady.Task.Result : 0;

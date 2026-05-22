@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   AlertTriangle,
   ChevronDown,
@@ -218,6 +218,10 @@ function ModRow({
   const queryClient = useQueryClient()
   const [notesValue, setNotesValue] = useState(mod.notes)
   const [notesSaving, setNotesSaving] = useState(false)
+
+  useEffect(() => {
+    setNotesValue(mod.notes)
+  }, [mod.id, mod.notes])
 
   async function handleSaveNotes() {
     setNotesSaving(true)
