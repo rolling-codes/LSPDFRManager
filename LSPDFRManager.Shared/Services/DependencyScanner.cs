@@ -12,6 +12,7 @@ public class DependencyScanner
         new("GTA5.exe",                      "GTA5.exe",                            true),
         new("PlayGTAV.exe",                  "PlayGTAV.exe",                        false),
         new("RAGEPluginHook.exe",            "RAGEPluginHook.exe",                  false),
+        new("RagePluginHook.dll",            "RagePluginHook.dll",                  false),
         new(LspdfrPaths.LspdfrDllName,       LspdfrPaths.LspdfrDllRelative,         false),
         new("ScriptHookV.dll",               "ScriptHookV.dll",                     false),
         new("ScriptHookVDotNet.asi",         "ScriptHookVDotNet.asi",               false),

@@ -42,7 +42,7 @@ public class CompatibilityViewModel : ObservableObject
     public bool HasBundle => Bundle is not null;
 
     public ComponentRow GtaRow    => BuildRow("GTA5.exe",            Bundle?.GtaVersion,               Bundle?.GtaHash,               Bundle?.GtaPresent ?? false,            required: true);
-    public ComponentRow LspdfrRow => BuildRow("LSPDFR.dll",          Bundle?.LspdfrVersion,            Bundle?.LspdfrHash,            Bundle?.LspdfrPresent ?? false,         required: false);
+    public ComponentRow LspdfrRow => BuildRow(LspdfrPaths.LspdfrDllName, Bundle?.LspdfrVersion,          Bundle?.LspdfrHash,            Bundle?.LspdfrPresent ?? false,         required: false);
     public ComponentRow RphRow    => BuildRow("RAGEPluginHook.exe",  Bundle?.RagePluginHookVersion,    Bundle?.RagePluginHookHash,    Bundle?.RagePluginHookPresent ?? false, required: false);
     public ComponentRow ShvRow    => BuildRow("ScriptHookV.dll",     Bundle?.ScriptHookVVersion,       Bundle?.ScriptHookVHash,       present: Bundle?.ScriptHookVVersion is not null, required: false);
     public ComponentRow ShvdnRow  => BuildRow("ScriptHookVDotNet",   Bundle?.ScriptHookVDotNetVersion, Bundle?.ScriptHookVDotNetHash, present: Bundle?.ScriptHookVDotNetVersion is not null, required: false);

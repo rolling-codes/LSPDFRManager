@@ -49,7 +49,7 @@ public static class LogEndpoints
 
             try
             {
-                var all   = File.ReadAllLines(path);
+                var all   = LogFileReader.ReadAllLines(path);
                 var lines = all.Length <= tail
                     ? all
                     : all[^tail..];

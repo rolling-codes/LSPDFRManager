@@ -36,6 +36,22 @@ public class DependencyScannerTests : CommandCenterTestBase
 
 
     [Fact]
+    public void RagePluginHookDll_OptionalEntryExistsInResults()
+    {
+        // RagePluginHook.dll must appear as its own entry so missing-DLL installs are visible.
+        var results = new DependencyScanner().Scan();
+        Assert.Contains(results, r => r.Name == "RagePluginHook.dll");
+    }
+
+    [Fact]
+    public void RagePluginHookDll_InstalledWhenPresent()
+    {
+        File.WriteAllText(Path.Combine(GtaDir, "RagePluginHook.dll"), "");
+        var results = new DependencyScanner().Scan();
+        Assert.Equal(DependencyStatus.Installed, results.First(r => r.Name == "RagePluginHook.dll").Status);
+    }
+
+    [Fact]
     public void StopThePedAndUltimateBackup_DetectedWhenPresent()
     {
         var pluginDir = Path.Combine(GtaDir, "plugins", "lspdfr");

@@ -62,7 +62,7 @@ public sealed class RageLogScanner
     {
         if (!File.Exists(path)) return null;
         string[] lines;
-        try { lines = File.ReadAllLines(path); }
+        try { lines = LogFileReader.ReadAllLines(path); }
         catch (Exception ex)
         {
             AppLogger.Warning($"[RageLogScanner] Could not read {name}: {ex.Message}");
@@ -139,7 +139,7 @@ public sealed class RageLogScanner
 
             // Version mismatch
             if (allLower.Contains("version mismatch") || allLower.Contains("incompatible") ||
-                allLower.Contains("typeloa­dexception") || allLower.Contains("missingmethodexception"))
+                allLower.Contains("typeloadexception") || allLower.Contains("missingmethodexception"))
             {
                 findings.Add(new RageLogFinding(
                     Code: "version-mismatch",

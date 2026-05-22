@@ -15,7 +15,7 @@ public class PreLaunchChecklistService
 
         if (requireLspdfr)
         {
-            Check(results, "RAGEPluginHook.exe exists", LspdfrInstallLocator.IsRagePluginHookInstalled(gtaPath), "RAGEPluginHook.exe not found.", false);
+            Check(results, "RAGE Plugin Hook install is complete", LspdfrInstallLocator.IsRagePluginHookInstalled(gtaPath), "RAGEPluginHook.exe or RagePluginHook.dll is missing.", false);
             Check(results, "LSPDFR core exists", LspdfrInstallLocator.IsLspdfrInstalled(gtaPath), "LSPDFR core files not found.", false);
         }
 

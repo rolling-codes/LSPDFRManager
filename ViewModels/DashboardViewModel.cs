@@ -122,11 +122,16 @@ public class DashboardViewModel : ObservableObject
 
     private void LaunchRph()
     {
-        var exe = LspdfrInstallLocator.FindRagePluginHook(AppConfig.Instance.GtaPath);
-        if (exe is not null)
-            StartShellProcess(exe, AppConfig.Instance.GtaPath, "Could not launch RAGE Plugin Hook.");
-        else
-            StatusMessage = "RAGEPluginHook.exe was not found.";
+        var gtaPath = AppConfig.Instance.GtaPath;
+        if (!LspdfrInstallLocator.IsRagePluginHookInstalled(gtaPath))
+        {
+            StatusMessage = LspdfrInstallLocator.FindRagePluginHook(gtaPath) is not null
+                ? "RagePluginHook.dll is missing — RPH install is incomplete."
+                : "RAGEPluginHook.exe was not found.";
+            return;
+        }
+        var exe = LspdfrInstallLocator.FindRagePluginHook(gtaPath)!;
+        StartShellProcess(exe, gtaPath, "Could not launch RAGE Plugin Hook.");
     }
 
     private void StartShellProcess(string fileName, string workingDirectoryOrArgument, string failureMessage)

@@ -259,9 +259,10 @@ public class PatrolReadinessControllerTests : IDisposable
 
     private void PlaceMinimalGtaFiles()
     {
-        // VersionDetectorService checks: GTA5.exe, RAGEPluginHook.exe, plugins/LSPDFR.dll
+        // IsRagePluginHookInstalled requires both RAGEPluginHook.exe and RagePluginHook.dll.
         File.WriteAllBytes(Path.Combine(_tempGta, "GTA5.exe"), []);
         File.WriteAllBytes(Path.Combine(_tempGta, "RAGEPluginHook.exe"), []);
+        File.WriteAllBytes(Path.Combine(_tempGta, "RagePluginHook.dll"), []);
         File.WriteAllBytes(Path.Combine(_tempGta, "plugins", "LSPDFR.dll"), []);
     }
 }
