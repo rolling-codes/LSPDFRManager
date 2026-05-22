@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Sockets;
 using LSPDFRManager.LocalApi.Endpoints;
 using LSPDFRManager.LocalApi.Middleware;
+using LSPDFRManager.LocalApi.Services;
 
 namespace LSPDFRManager.LocalApi;
 
@@ -38,6 +39,7 @@ public static class LocalApiHost
         var builder = WebApplication.CreateBuilder(options);
         builder.WebHost.UseUrls($"http://127.0.0.1:{port}");
         builder.Logging.SetMinimumLevel(LogLevel.Warning);
+        builder.Services.AddSingleton<JobQueue>();
 
         var app = builder.Build();
         _app = app;
@@ -46,12 +48,18 @@ public static class LocalApiHost
         app.UseDefaultFiles();
         app.UseStaticFiles();
 
-        app.MapGet("/health", () => Results.Ok(new { status = "ok", version = "1.0" }));
+        app.MapGet("/health", () => Results.Ok(new
+        {
+            status  = "ok",
+            version = typeof(LocalApiHost).Assembly.GetName().Version?.ToString(3) ?? "0.0.0",
+        }));
         app.MapHistory();
         app.MapLogs();
         app.MapCompatibility();
         app.MapConfig();
         app.MapPatrolReadiness();
+        app.MapBackups();
+        app.MapJobs();
         app.MapBrowse();
         app.MapFallbackToFile("index.html");
 

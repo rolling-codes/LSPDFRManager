@@ -568,8 +568,9 @@ public class InstallViewModel : ObservableObject, IDisposable
         DetectedMod.Name = string.IsNullOrWhiteSpace(NameOverride) ? DetectedMod.Name : NameOverride.Trim();
         DetectedMod.Author = string.IsNullOrWhiteSpace(AuthorOverride) ? null : AuthorOverride.Trim();
 
-        if (!ResolveDuplicateBeforeInstall())
-            return;
+        // NOTE: ResolveDuplicateBeforeInstall() is intentionally NOT called here.
+        // Duplicate resolution (which may uninstall existing mods) must only happen
+        // after the user has confirmed the install in ConfirmInstallAsync().
 
         _isBuildingPlan = true;
         OnPropertyChanged(nameof(IsIdle));
@@ -611,10 +612,17 @@ public class InstallViewModel : ObservableObject, IDisposable
             return;
         }
 
-        // Pre-install conflict check against tracked mods (independent of file-level plan)
-        var incomingPaths = DetectedMod.Files
-            .Select(f => Path.GetFullPath(Path.Combine(gtaPath, f.Replace('/', Path.DirectorySeparatorChar))))
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        // Resolve duplicates (may uninstall existing mods) now that the user has confirmed.
+        if (!ResolveDuplicateBeforeInstall())
+            return;
+
+        // Pre-install conflict check against tracked mods — uses planned target paths from the
+        // review plan rather than raw archive paths so the comparison reflects real destinations.
+        var incomingPaths = new HashSet<string>(
+            ReviewPlan.Entries
+                .Where(e => !e.IsExcluded && e.PlannedAction != InstallConflictAction.Skip)
+                .Select(e => Path.GetFullPath(e.RenamedTargetPath ?? e.TargetPath)),
+            StringComparer.OrdinalIgnoreCase);
 
         var conflictingModsWithFiles = ModLibraryService.Instance.Mods
             .Where(mod => mod.InstalledFiles.Any(file =>

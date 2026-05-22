@@ -66,7 +66,15 @@ public class SafeLaunchManager
                 if (!change.WillBeEnabled && !change.FilePath.EndsWith(".disabled"))
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    File.Move(change.FilePath, change.FilePath + ".disabled");
+                    var disabledTarget = change.FilePath + ".disabled";
+                    if (File.Exists(disabledTarget))
+                    {
+                        var msg = $"Skipped (already disabled): {Path.GetFileName(change.FilePath)}";
+                        progress?.Report(msg);
+                        failures.Add(msg);
+                        continue;
+                    }
+                    File.Move(change.FilePath, disabledTarget);
                 }
                 progress?.Report($"Disabled: {Path.GetFileName(change.FilePath)}");
             }
@@ -94,7 +102,9 @@ public class SafeLaunchManager
         foreach (var file in Directory.EnumerateFiles(pluginsDir, "*.dll"))
         {
             var name = Path.GetFileNameWithoutExtension(file);
-            if (keepLspdfr && name.Equals("LSPDFR", StringComparison.OrdinalIgnoreCase)) continue;
+            if (keepLspdfr && name.Equals(
+                    Path.GetFileNameWithoutExtension(LspdfrPaths.LspdfrDllName),
+                    StringComparison.OrdinalIgnoreCase)) continue;
             changes.Add(new SafeLaunchChange { FilePath = file, WasEnabled = true, WillBeEnabled = false });
         }
     }

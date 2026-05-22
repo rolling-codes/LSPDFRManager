@@ -181,14 +181,14 @@ public sealed class SupportBundleService
     private static string SanitizePath(string? path)
     {
         if (string.IsNullOrWhiteSpace(path)) return string.Empty;
-        // Replace home directory with %USERPROFILE%
-        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        if (!string.IsNullOrEmpty(home) && path.StartsWith(home, StringComparison.OrdinalIgnoreCase))
-            path = "%USERPROFILE%" + path[home.Length..];
-        // Replace AppData with %APPDATA%
+        // Check AppData first — it is always a sub-path of UserProfile, so if we checked
+        // UserProfile first we would never reach the more-specific %APPDATA% replacement.
         var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         if (!string.IsNullOrEmpty(appData) && path.StartsWith(appData, StringComparison.OrdinalIgnoreCase))
-            path = "%APPDATA%" + path[appData.Length..];
+            return "%APPDATA%" + path[appData.Length..];
+        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        if (!string.IsNullOrEmpty(home) && path.StartsWith(home, StringComparison.OrdinalIgnoreCase))
+            return "%USERPROFILE%" + path[home.Length..];
         return path;
     }
 

@@ -44,9 +44,27 @@ public sealed class InstallWorkflowController : IInstallController
         IEnumerable<string> paths,
         CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var validPaths = paths.Where(p => !string.IsNullOrWhiteSpace(p)).ToList();
-        var tasks = validPaths.Select(path => DetectAsync(path, cancellationToken: cancellationToken));
-        return await Task.WhenAll(tasks).ConfigureAwait(false);
+        var tasks = validPaths.Select(async path =>
+        {
+            try
+            {
+                return await DetectAsync(path, cancellationToken: cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Warning($"[Detect] Failed for {path}: {ex.Message}");
+                return null;
+            }
+        });
+        var results = await Task.WhenAll(tasks).ConfigureAwait(false);
+        return results.Where(r => r is not null).Select(r => r!).ToList();
     }
 
     public async Task<ModInfo> StageBrowseDownloadAsync(

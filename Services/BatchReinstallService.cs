@@ -5,6 +5,9 @@ namespace LSPDFRManager.Services;
 
 public class BatchReinstallService
 {
+    private static readonly HashSet<string> AllowedArchiveExtensions =
+        new(StringComparer.OrdinalIgnoreCase) { ".zip", ".7z", ".rar", ".tar", ".gz" };
+
     private readonly InstallQueue _queue;
     private readonly ConfigManagerService _configManager;
 
@@ -29,6 +32,13 @@ public class BatchReinstallService
 
             foreach (var entry in manifest.Mods)
             {
+                var ext = Path.GetExtension(entry.SourceArchivePath);
+                if (!AllowedArchiveExtensions.Contains(ext))
+                {
+                    issues.Add($"Skipping {entry.Name}: source path has disallowed extension '{ext}' — only archive files are accepted.");
+                    continue;
+                }
+
                 if (!File.Exists(entry.SourceArchivePath))
                 {
                     issues.Add($"Skipping {entry.Name}: source archive not found at {entry.SourceArchivePath}");

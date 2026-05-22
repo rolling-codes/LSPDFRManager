@@ -61,19 +61,18 @@ public class GtaBaselineService
         var configHashes = new Dictionary<string, string>();
         if (!string.IsNullOrEmpty(gtaPath) && Directory.Exists(gtaPath))
         {
-            foreach (var ext in new[] { "*.ini", "*.xml", "*.cfg", "*.json" })
+            var extensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".ini", ".xml", ".cfg", ".json" };
+            foreach (var file in SafeEnumerateFiles(gtaPath))
             {
-                foreach (var file in Directory.EnumerateFiles(gtaPath, ext, SearchOption.AllDirectories))
+                if (!extensions.Contains(Path.GetExtension(file))) continue;
+                try
                 {
-                    try
-                    {
-                        var rel = Path.GetRelativePath(gtaPath, file);
-                        using var sha = System.Security.Cryptography.SHA256.Create();
-                        using var stream = File.OpenRead(file);
-                        configHashes[rel] = Convert.ToHexString(sha.ComputeHash(stream)).ToLowerInvariant();
-                    }
-                    catch { /* skip locked/inaccessible */ }
+                    var rel = Path.GetRelativePath(gtaPath, file);
+                    using var sha = System.Security.Cryptography.SHA256.Create();
+                    using var stream = File.OpenRead(file);
+                    configHashes[rel] = Convert.ToHexString(sha.ComputeHash(stream)).ToLowerInvariant();
                 }
+                catch { /* skip locked/inaccessible file */ }
             }
         }
 
@@ -117,7 +116,10 @@ public class GtaBaselineService
         {
             foreach (var (relPath, baselineHash) in Current.ConfigHashes)
             {
-                var full = Path.Combine(gtaPath, relPath);
+                string full;
+                try { full = PathSafety.GetSafePath(gtaPath, relPath); }
+                catch (InvalidOperationException) { continue; }
+
                 if (!File.Exists(full))
                 {
                     changedConfigs.Add($"{relPath} (deleted)");
@@ -143,5 +145,23 @@ public class GtaBaselineService
     {
         Current = null;
         Load();
+    }
+
+    private static IEnumerable<string> SafeEnumerateFiles(string root)
+    {
+        var stack = new Stack<string>();
+        stack.Push(root);
+        while (stack.Count > 0)
+        {
+            var dir = stack.Pop();
+            IEnumerable<string> files;
+            try { files = Directory.EnumerateFiles(dir); }
+            catch { continue; }
+            foreach (var f in files) yield return f;
+            IEnumerable<string> subdirs;
+            try { subdirs = Directory.EnumerateDirectories(dir); }
+            catch { continue; }
+            foreach (var sub in subdirs) stack.Push(sub);
+        }
     }
 }

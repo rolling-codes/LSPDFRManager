@@ -43,5 +43,17 @@ public static class HistoryEndpoints
     }
 
     private static ChangeHistoryEntryDto ToDto(ChangeHistoryEntry e) =>
-        new(e.Id, e.Action.ToString(), e.Description, e.AffectedFile, e.Detail, e.OccurredAt);
+        new(e.Id, e.Action.ToString(), e.Description, SanitizePath(e.AffectedFile), e.Detail, e.OccurredAt);
+
+    private static string? SanitizePath(string? path)
+    {
+        if (path is null) return null;
+        var gta = AppConfig.Instance.GtaPath;
+        if (!string.IsNullOrWhiteSpace(gta) && path.StartsWith(gta, StringComparison.OrdinalIgnoreCase))
+            return "GTA:" + path[gta.Length..].TrimStart('\\', '/');
+        var appData = AppDataPaths.Root;
+        if (!string.IsNullOrWhiteSpace(appData) && path.StartsWith(appData, StringComparison.OrdinalIgnoreCase))
+            return "AppData:" + path[appData.Length..].TrimStart('\\', '/');
+        return Path.GetFileName(path);
+    }
 }

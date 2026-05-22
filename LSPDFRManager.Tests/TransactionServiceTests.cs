@@ -22,7 +22,7 @@ public class TransactionServiceTests : CommandCenterTestBase
     [Fact]
     public void Rollback_SkipsAddedFile_WhenHashDiffers()
     {
-        var filePath = Path.Combine(TempDir, "plugin.dll");
+        var filePath = Path.Combine(GtaDir, "plugin.dll");
         File.WriteAllText(filePath, "original content");
 
         // Record the hash of the original content
@@ -45,7 +45,7 @@ public class TransactionServiceTests : CommandCenterTestBase
     [Fact]
     public void Rollback_DeletesAddedFile_WhenHashMatches()
     {
-        var filePath = Path.Combine(TempDir, "plugin.dll");
+        var filePath = Path.Combine(GtaDir, "plugin.dll");
         File.WriteAllText(filePath, "installed content");
         var hash = ComputeHash(filePath);
 
@@ -65,7 +65,7 @@ public class TransactionServiceTests : CommandCenterTestBase
     {
         // Files >50 MB are not hashed at install time; InstalledHash is null.
         // Rollback must treat unknown state as unsafe and skip deletion.
-        var filePath = Path.Combine(TempDir, "big_texture.yft");
+        var filePath = Path.Combine(GtaDir, "big_texture.yft");
         File.WriteAllText(filePath, "large file content");
 
         var transaction = CommittedTransaction(filePath, installedHash: null);
@@ -84,9 +84,10 @@ public class TransactionServiceTests : CommandCenterTestBase
     [Fact]
     public void Rollback_RestoresOverwrittenFile_FromBackup()
     {
-        var destPath = Path.Combine(TempDir, "shared.dll");
-        var backupPath = Path.Combine(TempDir, "backup", "shared.dll.bak");
-        Directory.CreateDirectory(Path.GetDirectoryName(backupPath)!);
+        var destPath = Path.Combine(GtaDir, "shared.dll");
+        var backupFolder = Path.Combine(AppDataDir, "Backups", "txn");
+        var backupPath = Path.Combine(backupFolder, "shared.dll.bak");
+        Directory.CreateDirectory(backupFolder);
 
         File.WriteAllText(backupPath, "original dll");
         File.WriteAllText(destPath, "mod-installed dll");
@@ -97,6 +98,7 @@ public class TransactionServiceTests : CommandCenterTestBase
             ModId = Guid.NewGuid(),
             ModName = "Test Mod",
             State = TransactionState.Committed,
+            BackupFolder = backupFolder,
             FilesOverwritten =
             [
                 new TransactionFileRecord
@@ -120,7 +122,7 @@ public class TransactionServiceTests : CommandCenterTestBase
     [Fact]
     public void Rollback_MarksFailed_WhenBackupFileMissing()
     {
-        var destPath = Path.Combine(TempDir, "shared.dll");
+        var destPath = Path.Combine(GtaDir, "shared.dll");
         File.WriteAllText(destPath, "mod-installed dll");
 
         var transaction = new InstallTransaction
@@ -134,7 +136,7 @@ public class TransactionServiceTests : CommandCenterTestBase
                 new TransactionFileRecord
                 {
                     DestinationPath = destPath,
-                    BackupPath = Path.Combine(TempDir, "nonexistent.bak"), // missing
+                    BackupPath = Path.Combine(GtaDir, "nonexistent.bak"), // missing
                 }
             ],
         };
@@ -163,7 +165,7 @@ public class TransactionServiceTests : CommandCenterTestBase
     [Fact]
     public void Rollback_ReturnsUnavailable_WhenAlreadyRolledBack()
     {
-        var filePath = Path.Combine(TempDir, "plugin.dll");
+        var filePath = Path.Combine(GtaDir, "plugin.dll");
         File.WriteAllText(filePath, "content");
         var hash = ComputeHash(filePath);
 

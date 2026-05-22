@@ -88,7 +88,18 @@ public class OpenIvExecutor
             {
                 ct.ThrowIfCancellationRequested();
 
-                var patchFilePath = Path.Combine(targetRoot, patch.FilePath);
+                // Bug 14 fix: validate patch path stays within targetRoot
+                var patchFilePath = PathSafety.GetSafePath(targetRoot, patch.FilePath);
+
+                // Bug 13 fix: back up the XML before mutating so rollback can restore it
+                string? xmlBackupPath = null;
+                if (File.Exists(patchFilePath))
+                {
+                    xmlBackupPath = Path.Combine(backupRoot, Guid.NewGuid().ToString("N") + ".xmlbak");
+                    File.Copy(patchFilePath, xmlBackupPath, overwrite: false);
+                }
+                rollbackEntries.Push(new RollbackEntry(patchFilePath, xmlBackupPath));
+
                 AppLogger.Info($"[PATCH_APPLY] {Path.GetFileName(patchFilePath)} | xpath={patch.XPath}");
                 var xmlPatch = new XmlPatch
                 {
@@ -112,7 +123,7 @@ public class OpenIvExecutor
         {
             int writtenCount = rollbackEntries.Count;
             AppLogger.Error($"[PLAN_ERROR] written={writtenCount}", ex);
-            await RollbackAsync(rollbackEntries, ct);
+            await RollbackAsync(rollbackEntries, CancellationToken.None);
             DeleteBackupRoot(backupRoot);
 
             return new InstallResult

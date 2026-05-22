@@ -1,7 +1,10 @@
 using LSPDFRManager.LocalApi.Endpoints;
 using LSPDFRManager.LocalApi.Middleware;
 
+using LSPDFRManager.LocalApi.Services;
+
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddSingleton<JobQueue>();
 
 var app = builder.Build();
 
@@ -9,7 +12,11 @@ app.UseMiddleware<LocalhostOnlyMiddleware>();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
-app.MapGet("/health", () => Results.Ok(new { status = "ok", version = "1.0" }));
+app.MapGet("/health", () => Results.Ok(new
+{
+    status  = "ok",
+    version = typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "0.0.0",
+}));
 app.MapHistory();
 app.MapLogs();
 app.MapCompatibility();
@@ -17,6 +24,8 @@ app.MapConfig();
 app.MapLibrary();
 app.MapProfiles();
 app.MapPatrolReadiness();
+app.MapBackups();
+app.MapJobs();
 app.MapBrowse();
 app.MapFallbackToFile("index.html");
 

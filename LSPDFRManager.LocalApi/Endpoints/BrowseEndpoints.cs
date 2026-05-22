@@ -12,6 +12,7 @@ public static class BrowseEndpoints
     {
         app.MapGet("/api/v1/browse/search", async (string? q, int page = 1) =>
         {
+            page = Math.Max(1, page);
             var query = q ?? string.Empty;
 
             var browseApiBase = AppConfig.Instance.BrowseApiBaseUrl;

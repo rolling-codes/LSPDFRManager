@@ -2,7 +2,6 @@ namespace LSPDFRManager.LocalApi.Dtos;
 
 public record BackupFileDto(
     string FileName,
-    string FilePath,
     long SizeBytes,
     string SizeDisplay,
     DateTime LastWriteUtc);
