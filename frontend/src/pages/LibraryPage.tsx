@@ -1,20 +1,28 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { AlertTriangle, ChevronDown, ImageIcon, RefreshCcw, Search, Star } from 'lucide-react'
+import {
+  AlertTriangle,
+  ChevronDown,
+  FilterX,
+  ImageIcon,
+  RefreshCcw,
+  Search,
+  Star,
+} from 'lucide-react'
 import { Page, Panel, StateMessage, StatusBadge } from '../components/ui/Page'
 import { fetchMods, toggleMod, updateModNotes, syncMods } from '../lib/api/library'
 import type { InstalledModDto, ModsListResponse } from '../types/library'
 
 const MOD_TYPES: { value: string; label: string }[] = [
-  { value: 'All',           label: 'All types' },
-  { value: 'LspdfrPlugin',  label: 'LSPDFR Plugin' },
-  { value: 'VehicleDlc',    label: 'Vehicle Add-On DLC' },
-  { value: 'VehicleReplace',label: 'Vehicle Replace' },
-  { value: 'AsiMod',        label: 'ASI Mod' },
-  { value: 'Script',        label: 'Script (CS/VB)' },
-  { value: 'Eup',           label: 'EUP Clothing' },
-  { value: 'Map',           label: 'Map / MLO' },
-  { value: 'Sound',         label: 'Sound Pack' },
+  { value: 'All',            label: 'All types' },
+  { value: 'LspdfrPlugin',   label: 'LSPDFR Plugin' },
+  { value: 'VehicleDlc',     label: 'Vehicle Add-On DLC' },
+  { value: 'VehicleReplace', label: 'Vehicle Replace' },
+  { value: 'AsiMod',         label: 'ASI Mod' },
+  { value: 'Script',         label: 'Script (CS/VB)' },
+  { value: 'Eup',            label: 'EUP Clothing' },
+  { value: 'Map',            label: 'Map / MLO' },
+  { value: 'Sound',          label: 'Sound Pack' },
 ]
 
 export default function LibraryPage() {
@@ -23,6 +31,8 @@ export default function LibraryPage() {
   const [typeFilter, setTypeFilter] = useState('All')
   const [enabledFilter, setEnabledFilter] = useState<'all' | 'enabled' | 'disabled'>('all')
   const [expandedId, setExpandedId] = useState<string | null>(null)
+
+  const isFiltered = search !== '' || typeFilter !== 'All' || enabledFilter !== 'all'
 
   const params = {
     search: search || undefined,
@@ -53,9 +63,7 @@ export default function LibraryPage() {
       return { previous }
     },
     onError: (_err, _vars, ctx) => {
-      if (ctx?.previous) {
-        queryClient.setQueryData(['mods', params], ctx.previous)
-      }
+      if (ctx?.previous) queryClient.setQueryData(['mods', params], ctx.previous)
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['mods'] })
@@ -82,7 +90,15 @@ export default function LibraryPage() {
   }
 
   const mods = data?.mods ?? []
-  const enabledCount = mods.filter((mod) => mod.isEnabled).length
+  const enabledCount = mods.filter((m) => m.isEnabled).length
+  const disabledCount = mods.length - enabledCount
+  const issueCount = mods.filter((m) => m.isOrphaned || m.hasConflict).length
+
+  function clearFilters() {
+    setSearch('')
+    setTypeFilter('All')
+    setEnabledFilter('all')
+  }
 
   return (
     <Page
@@ -97,10 +113,17 @@ export default function LibraryPage() {
             className="btn-secondary h-8 py-0 px-3 text-xs flex items-center gap-1.5"
           >
             <RefreshCcw size={13} className={syncMutation.isPending ? 'animate-spin' : ''} />
-            {syncMutation.isPending ? 'Syncing...' : 'Sync Library'}
+            {syncMutation.isPending ? 'Syncing…' : 'Sync Library'}
           </button>
           <StatusBadge tone="neutral">{data?.total ?? 0} total</StatusBadge>
           <StatusBadge tone="success">{enabledCount} enabled</StatusBadge>
+          {disabledCount > 0 && <StatusBadge tone="neutral">{disabledCount} disabled</StatusBadge>}
+          {issueCount > 0 && (
+            <StatusBadge tone="danger">
+              <AlertTriangle size={11} />
+              {issueCount} {issueCount === 1 ? 'issue' : 'issues'}
+            </StatusBadge>
+          )}
         </>
       }
     >
@@ -110,7 +133,7 @@ export default function LibraryPage() {
             <Search className="pointer-events-none absolute left-3 top-2.5 text-zinc-500" size={15} />
             <input
               className="input w-full pl-9"
-              placeholder="Search mods"
+              placeholder="Search mods…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -130,14 +153,38 @@ export default function LibraryPage() {
             onChange={(e) => setEnabledFilter(e.target.value as typeof enabledFilter)}
           >
             <option value="all">All states</option>
-            <option value="enabled">Enabled</option>
-            <option value="disabled">Disabled</option>
+            <option value="enabled">Enabled only</option>
+            <option value="disabled">Disabled only</option>
           </select>
+          {isFiltered && (
+            <button className="btn-secondary h-8 py-0 px-3 text-xs flex items-center gap-1.5" onClick={clearFilters}>
+              <FilterX size={13} />
+              Clear
+            </button>
+          )}
         </div>
       </Panel>
 
       {mods.length === 0 ? (
-        <StateMessage title="No mods found" description="Try clearing filters or run a scan from the desktop app." />
+        isFiltered ? (
+          <Panel>
+            <div className="flex flex-col items-center gap-3 py-12 text-center">
+              <FilterX size={28} className="text-zinc-600" />
+              <div>
+                <p className="text-sm font-medium text-zinc-300">No mods match your filters</p>
+                <p className="mt-1 text-xs text-zinc-500">Try adjusting the search, type, or state filter.</p>
+              </div>
+              <button className="btn-secondary text-xs px-3 py-1.5" onClick={clearFilters}>
+                Clear all filters
+              </button>
+            </div>
+          </Panel>
+        ) : (
+          <StateMessage
+            title="Library is empty"
+            description="No mods have been installed yet. Use the Install tab to add mods."
+          />
+        )
       ) : (
         <Panel>
           <div className="divide-y divide-zinc-800/70">
@@ -182,36 +229,40 @@ function ModRow({
     }
   }
 
+  const hasIssue = mod.isOrphaned || mod.hasConflict
+
   return (
-    <div>
+    <div className={hasIssue ? 'bg-red-950/10' : undefined}>
       <div className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-950/35">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-md border border-zinc-800 bg-zinc-950">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md border border-zinc-800 bg-zinc-950">
           {mod.thumbnailUrl ? (
             <img src={mod.thumbnailUrl} alt={mod.name} className="w-full h-full object-cover" />
           ) : (
-            <ImageIcon size={17} className="text-zinc-600" />
+            <ImageIcon size={15} className="text-zinc-600" />
           )}
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-zinc-100 truncate">{mod.name}</span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className={`text-sm font-medium truncate ${mod.isEnabled ? 'text-zinc-100' : 'text-zinc-400'}`}>
+              {mod.name}
+            </span>
+            {mod.isFavorite && (
+              <Star size={13} className="shrink-0 fill-yellow-400 text-yellow-400" />
+            )}
             {mod.isOrphaned && (
               <StatusBadge tone="danger">
-                <AlertTriangle size={11} className="inline mr-1" />
+                <AlertTriangle size={11} />
                 Files missing
               </StatusBadge>
             )}
-            {mod.hasConflict && (
+            {mod.hasConflict && !mod.isOrphaned && (
               <StatusBadge tone="danger">Conflict</StatusBadge>
             )}
-            {mod.isFavorite && (
-              <Star size={14} className="shrink-0 fill-yellow-400 text-yellow-400" />
-            )}
           </div>
-          <div className="flex items-center gap-2 mt-0.5">
+          <div className="flex flex-wrap items-center gap-2 mt-0.5">
             <span
-              className="text-xs rounded px-1.5 py-0.5 font-medium"
+              className="text-xs rounded px-1.5 py-0.5 font-medium leading-tight"
               style={{ backgroundColor: mod.typeColor + '33', color: mod.typeColor }}
             >
               {mod.typeLabel || mod.type}
@@ -222,7 +273,7 @@ function ModRow({
           </div>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
             role="switch"
@@ -239,20 +290,22 @@ function ModRow({
             className="btn-secondary h-8 w-8 p-0"
             aria-label={expanded ? 'Collapse' : 'Expand'}
           >
-            <ChevronDown size={16} className={`transition-transform ${expanded ? 'rotate-180' : ''}`} />
+            <ChevronDown size={15} className={`transition-transform ${expanded ? 'rotate-180' : ''}`} />
           </button>
         </div>
       </div>
 
       {expanded && (
-        <div className="border-t border-zinc-800 px-4 py-3 space-y-2">
-          <span className="text-xs text-zinc-500">
-            Installed {new Date(mod.installedAt).toLocaleDateString()} · Priority {mod.loadOrderPriority} · Score {mod.detectionScore}
-          </span>
+        <div className="border-t border-zinc-800/70 bg-zinc-950/20 px-4 py-3 space-y-3">
+          <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-zinc-500">
+            <span>Installed {new Date(mod.installedAt).toLocaleDateString()}</span>
+            <span>Priority {mod.loadOrderPriority}</span>
+            <span>Score {mod.detectionScore}</span>
+          </div>
           <div className="flex gap-2">
             <input
               className="input flex-1 text-sm"
-              placeholder="Notes…"
+              placeholder="Add notes…"
               value={notesValue}
               onChange={(e) => setNotesValue(e.target.value)}
             />

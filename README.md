@@ -2,9 +2,9 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-8.0-blue.svg)](https://dotnet.microsoft.com/download/dotnet/8.0)
-[![Release](https://img.shields.io/badge/release-v3.7.19-blue.svg)](https://github.com/rolling-codes/LSPDFRManager/releases/latest)
+[![Release](https://img.shields.io/badge/release-v3.7.21-blue.svg)](https://github.com/rolling-codes/LSPDFRManager/releases/latest)
 
-A complete GTA V and LSPDFR command center — install and manage mods, run diagnostics, switch profiles, analyze crashes, and launch safely. Built with .NET 8 WPF.
+A complete GTA V and LSPDFR command center — install and manage mods, run diagnostics, switch profiles, analyze crashes, and launch safely. Built with .NET 8 WPF + a React/TypeScript frontend.
 
 **[Download Latest Release →](https://github.com/rolling-codes/LSPDFRManager/releases/latest)**
 
@@ -16,7 +16,7 @@ See the [GitHub Releases page](https://github.com/rolling-codes/LSPDFRManager/re
 
 | Tab | What it does |
 |-----|-------------|
-| **Home** | Dashboard with mod count, status indicators, and quick-action buttons |
+| **Home** | Dashboard with launch readiness, component status, and quick-action links |
 | **Library** | Browse, search, filter, enable/disable, and uninstall all installed mods |
 | **Install** | Drag-and-drop or browse for mod archives — smart plan with conflict detection and rollback |
 | **Browse** | Embedded lcpdfr.com browser with one-click install queuing |
@@ -65,6 +65,21 @@ Before any file is written, the planner builds a full install plan:
 
 ---
 
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Desktop shell | .NET 8 WPF (`net8.0-windows`) |
+| Local API | ASP.NET Core Minimal API, hosted in-process |
+| Frontend | React 19, TypeScript, Vite 8, Tailwind CSS 4 |
+| Data fetching | TanStack Query v5 |
+| Routing | React Router v7 |
+| Test suite | xUnit (1 000+ tests) |
+
+The React SPA is built by Vite and served from `wwwroot/` by the in-process ASP.NET Core host. The WPF `MainWindow` embeds a WebView2 that points to the local API port.
+
+---
+
 ## Requirements
 
 - Windows 10 / 11 (x64)
@@ -93,6 +108,13 @@ dotnet build LSPDFRManager.sln
 dotnet test LSPDFRManager.Tests/LSPDFRManager.Tests.csproj
 ```
 
+**Frontend:**
+```bash
+cd frontend
+npm install
+npm run build   # outputs to LSPDFRManager.LocalApi/wwwroot/
+```
+
 **Self-contained release build:**
 ```bash
 dotnet publish LSPDFRManager.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish
@@ -110,12 +132,21 @@ LSPDFRManager/
 ├── ViewModels/      # MVVM view models; MainViewModel orchestrates tab navigation
 ├── Views/           # WPF UserControls, one per tab
 │   └── Components/  # Shared sub-controls (ModCard…)
-├── Converters/      # WPF value converters
 ├── Core/            # AppLogger, InstallQueue, UiDispatcher, PathSafety
 │   └── Commands/    # IAppCommand, AsyncAppCommand
 ├── Features/        # Feature slices (Install, Library, OivCreatorTemplates, Updates…)
-├── Resources/       # Colors.xaml (design tokens), Styles.xaml (component styles)
-└── LSPDFRManager.Tests/  # xUnit test suite (734 tests)
+├── LSPDFRManager.LocalApi/
+│   ├── Endpoints/   # Minimal API route handlers (one file per domain area)
+│   ├── Dtos/        # Request/response DTOs mirroring frontend TypeScript types
+│   └── wwwroot/     # Vite build output (React SPA)
+├── LSPDFRManager.Shared/
+│   └── Services/    # Domain logic with no WPF dependency (InstalledModFileService…)
+├── frontend/        # React + TypeScript SPA (Vite, Tailwind, TanStack Query)
+│   └── src/
+│       ├── lib/api/ # Thin API client wrappers (one file per domain area)
+│       ├── types/   # TypeScript types mirroring C# DTOs
+│       └── pages/   # One page component per tab
+└── LSPDFRManager.Tests/  # xUnit test suite (1 000+ tests)
 ```
 
 Key singletons: `ModLibraryService`, `AppConfig`, `InstallQueue`, `LspdfrStatusService`
@@ -126,6 +157,12 @@ All persistent data lives in `%APPDATA%\LSPDFRManager\`:
 - `configs.json` — captured mod config snapshots
 - `Backups/` — ZIP backup archives
 - `app.log` — runtime log
+
+---
+
+## Roadmap
+
+- **Electron + Node.js migration** — The next major milestone will move the application shell from WPF/WebView2 to a full Electron + Node.js architecture, removing the Windows .NET runtime dependency and enabling cross-platform distribution.
 
 ---
 
