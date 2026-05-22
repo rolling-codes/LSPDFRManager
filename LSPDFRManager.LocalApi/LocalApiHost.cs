@@ -76,11 +76,16 @@ public static class LocalApiHost
         app.MapLogs();
         app.MapCompatibility();
         app.MapConfig();
+        app.MapProfiles();
         app.MapPatrolReadiness();
         app.MapBackups();
         app.MapJobs();
         app.MapBrowse();
         app.MapLibrary();
+        app.MapInstall();
+        app.MapCleanup();
+        app.MapDiagnostics();
+        app.MapSafeMode();
         app.MapFallbackToFile("index.html");
 
         await app.StartAsync(cancellationToken);

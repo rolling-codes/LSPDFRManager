@@ -21,12 +21,16 @@ app.MapHistory();
 app.MapLogs();
 app.MapCompatibility();
 app.MapConfig();
-app.MapLibrary();
 app.MapProfiles();
 app.MapPatrolReadiness();
 app.MapBackups();
 app.MapJobs();
 app.MapBrowse();
+app.MapLibrary();
+app.MapInstall();
+app.MapCleanup();
+app.MapDiagnostics();
+app.MapSafeMode();
 app.MapFallbackToFile("index.html");
 
 app.Run("http://127.0.0.1:5284");

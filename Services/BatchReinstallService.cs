@@ -120,12 +120,24 @@ public class BatchReinstallService
 
         // Resolve relative SourceArchivePaths against the manifest's directory so that
         // bare manifest + sibling archives work without absolute paths in the JSON.
-        // Path.GetFullPath also collapses any ../ traversal segments.
+        // Path.GetFullPath collapses any ../ traversal segments.
+        // After normalization, reject paths that escape the manifest directory —
+        // an absolute path in the JSON that points outside the manifest's folder
+        // has no legitimate use case and could reference arbitrary system files.
         var manifestDir = Path.GetDirectoryName(Path.GetFullPath(manifestPath)) ?? string.Empty;
+        var sep = Path.DirectorySeparatorChar;
         foreach (var mod in bare.Mods)
         {
-            if (!string.IsNullOrWhiteSpace(mod.SourceArchivePath) && !Path.IsPathRooted(mod.SourceArchivePath))
+            if (string.IsNullOrWhiteSpace(mod.SourceArchivePath))
+                continue;
+
+            if (!Path.IsPathRooted(mod.SourceArchivePath))
                 mod.SourceArchivePath = Path.GetFullPath(Path.Combine(manifestDir, mod.SourceArchivePath));
+
+            // Reject paths that escape the manifest directory (after normalization).
+            var normalizedDir = manifestDir.TrimEnd(sep) + sep;
+            if (!mod.SourceArchivePath.StartsWith(normalizedDir, StringComparison.OrdinalIgnoreCase))
+                mod.SourceArchivePath = string.Empty; // extension + existence checks will skip it
         }
 
         return (bare, null);
