@@ -27,6 +27,18 @@ public static class LocalApiHost
     /// </summary>
     public static Func<int>? SyncLibraryCallback { get; set; }
 
+    /// <summary>
+    /// Set by the WPF host so that /api/v1/mods/{id}/enable delegates to
+    /// <c>ModLibraryService.SetEnabled</c>, keeping the in-memory collection consistent.
+    /// </summary>
+    public static Action<Guid, bool>? SetEnabledCallback { get; set; }
+
+    /// <summary>
+    /// Set by the WPF host so that /api/v1/mods/{id}/notes delegates to
+    /// <c>ModLibraryService.UpdateNotes</c>, keeping the in-memory collection consistent.
+    /// </summary>
+    public static Action<Guid, string?>? UpdateNotesCallback { get; set; }
+
     public static int Port => _portReady.Task.IsCompletedSuccessfully
         ? _portReady.Task.Result : 0;
 

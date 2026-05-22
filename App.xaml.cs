@@ -22,9 +22,11 @@ public partial class App : Application
             ex.Handled = false;
         };
 
-        // Route /api/v1/mods/sync through the in-process service so both code paths share
-        // the same mutation lock rather than having two independent disk read-modify-write cycles.
-        LocalApiHost.SyncLibraryCallback = () => ModLibraryService.Instance.SyncWithDirectory();
+        // Route library mutations through the in-process service so the WPF in-memory
+        // collection stays consistent with API changes rather than both sides touching library.json.
+        LocalApiHost.SyncLibraryCallback    = ()             => ModLibraryService.Instance.SyncWithDirectory();
+        LocalApiHost.SetEnabledCallback     = (id, enabled)  => ModLibraryService.Instance.SetEnabled(id, enabled);
+        LocalApiHost.UpdateNotesCallback    = (id, notes)    => ModLibraryService.Instance.UpdateNotes(id, notes);
 
         // Start local API in-process (non-blocking; React UI nav waits on PortTask)
         _ = Task.Run(async () =>

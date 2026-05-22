@@ -115,8 +115,19 @@ public class BatchReinstallService
         }
 
         var json = await File.ReadAllTextAsync(manifestPath);
-        return (
-            JsonSerializer.Deserialize<ModManifest>(json) ?? throw new InvalidOperationException("Invalid manifest"),
-            null);
+        var bare = JsonSerializer.Deserialize<ModManifest>(json)
+            ?? throw new InvalidOperationException("Invalid manifest");
+
+        // Resolve relative SourceArchivePaths against the manifest's directory so that
+        // bare manifest + sibling archives work without absolute paths in the JSON.
+        // Path.GetFullPath also collapses any ../ traversal segments.
+        var manifestDir = Path.GetDirectoryName(Path.GetFullPath(manifestPath)) ?? string.Empty;
+        foreach (var mod in bare.Mods)
+        {
+            if (!string.IsNullOrWhiteSpace(mod.SourceArchivePath) && !Path.IsPathRooted(mod.SourceArchivePath))
+                mod.SourceArchivePath = Path.GetFullPath(Path.Combine(manifestDir, mod.SourceArchivePath));
+        }
+
+        return (bare, null);
     }
 }

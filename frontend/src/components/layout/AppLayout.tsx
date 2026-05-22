@@ -17,7 +17,7 @@ export function AppLayout() {
   })
 
   useEffect(() => {
-    if (!isLoading && config && !config.gtaPath && location.pathname !== '/setup') {
+    if (!isLoading && config && (!config.gtaPath || !config.gtaPathValid) && location.pathname !== '/setup') {
       navigate('/setup')
     }
   }, [config, isLoading, location.pathname, navigate])

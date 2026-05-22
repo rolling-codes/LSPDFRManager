@@ -45,6 +45,22 @@ public static class LibraryEndpoints
 
         app.MapPost("/api/v1/mods/{id:guid}/enable", async (Guid id, ToggleModRequest request) =>
         {
+            if (LocalApiHost.SetEnabledCallback is { } setEnabled)
+            {
+                // In-process mode: delegate to ModLibraryService so the WPF collection stays consistent.
+                try
+                {
+                    setEnabled(id, request.Enabled);
+                    var mods = Store.LoadOrDefault(static () => []);
+                    var mod  = mods.FirstOrDefault(m => m.Id == id);
+                    return mod is null ? Results.NotFound($"Mod {id} not found.") : Results.Ok(ToDto(mod));
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem($"Failed to toggle mod: {ex.Message}");
+                }
+            }
+
             await Mutex.WaitAsync();
             try
             {
@@ -53,7 +69,6 @@ public static class LibraryEndpoints
                 if (mod is null)
                     return Results.NotFound($"Mod {id} not found.");
 
-                // Physically rename .disabled files — same service used by ModLibraryService
                 FileService.SetEnabled(mod, request.Enabled);
                 Store.Save(mods);
                 return Results.Ok(ToDto(mod));
@@ -70,6 +85,22 @@ public static class LibraryEndpoints
 
         app.MapPut("/api/v1/mods/{id:guid}/notes", async (Guid id, UpdateModNotesRequest request) =>
         {
+            if (LocalApiHost.UpdateNotesCallback is { } updateNotes)
+            {
+                // In-process mode: delegate to ModLibraryService so the WPF collection stays consistent.
+                try
+                {
+                    updateNotes(id, request.Notes);
+                    var mods = Store.LoadOrDefault(static () => []);
+                    var mod  = mods.FirstOrDefault(m => m.Id == id);
+                    return mod is null ? Results.NotFound($"Mod {id} not found.") : Results.Ok(ToDto(mod));
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem($"Failed to update notes: {ex.Message}");
+                }
+            }
+
             await Mutex.WaitAsync();
             try
             {

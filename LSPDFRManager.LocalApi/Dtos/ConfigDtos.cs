@@ -2,6 +2,7 @@ namespace LSPDFRManager.LocalApi.Dtos;
 
 public record AppConfigDto(
     string GtaPath,
+    bool GtaPathValid,
     string BackupPath,
     bool AutoBackupOnInstall,
     bool ConfirmBeforeUninstall,

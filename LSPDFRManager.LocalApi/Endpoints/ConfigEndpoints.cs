@@ -138,6 +138,9 @@ public static class ConfigEndpoints
 
     private static AppConfigDto ToDto(AppConfig cfg) => new(
         GtaPath: cfg.GtaPath,
+        GtaPathValid: !string.IsNullOrWhiteSpace(cfg.GtaPath)
+            && Directory.Exists(cfg.GtaPath)
+            && LspdfrInstallLocator.FindGtaExe(cfg.GtaPath) is not null,
         BackupPath: cfg.BackupPath,
         AutoBackupOnInstall: cfg.AutoBackupOnInstall,
         ConfirmBeforeUninstall: cfg.ConfirmBeforeUninstall,

@@ -9,6 +9,7 @@ export type BackupScheduleMode =
 
 export interface AppConfigDto {
   gtaPath: string
+  gtaPathValid: boolean
   backupPath: string
   autoBackupOnInstall: boolean
   confirmBeforeUninstall: boolean
