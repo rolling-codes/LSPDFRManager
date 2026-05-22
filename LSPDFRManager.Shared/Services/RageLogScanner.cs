@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using LSPDFRManager.Core;
 using LSPDFRManager.Domain;
 
@@ -8,8 +9,62 @@ namespace LSPDFRManager.Services;
 /// and produces <see cref="RageLogFinding"/> items that explain what failed, which plugin was
 /// likely involved, and what the user should do next.
 /// </summary>
-public sealed class RageLogScanner
+public sealed partial class RageLogScanner
 {
+    // ── Detection patterns ───────────────────────────────────────────────────
+
+    [GeneratedRegex(@"\bloading plugin\b|\bloaded plugin\b|\binitializing plugin\b|\bplugin started\b",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex PluginLifecyclePattern();
+
+    [GeneratedRegex(@"\bbadimageformatexception\b|\bbad image format\b",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex BadImageFormatPattern();
+
+    [GeneratedRegex(@"\bcould not load file or assembly\b|\bfilenotfoundexception\b|\bassembly load failed\b",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex MissingDependencyPattern();
+
+    [GeneratedRegex(@"\bversion mismatch\b|\bincompatible\b|\btypeloadexception\b|\bmissingmethodexception\b",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex VersionMismatchPattern();
+
+    [GeneratedRegex(@"\baborted\b|\bplugin crashed\b|\bcould not load plugin\b",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex PluginCrashPattern();
+
+    [GeneratedRegex(@"\brph hook failed\b|\bfailed to hook gta\b|\bhook failed\b",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex RphHookFailedPattern();
+
+    [GeneratedRegex(@"\bunhandled exception\b",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex UnhandledExceptionPattern();
+
+    [GeneratedRegex(@"\bfatal\b|\bcrash\b|\bgame terminated\b|\bprocess exited\b",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex CrashSignalPattern();
+
+    [GeneratedRegex(@"\berror\b|\bfailed\b",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex ScriptHookErrorPattern();
+
+    // ── Extraction patterns ──────────────────────────────────────────────────
+
+    [GeneratedRegex(@"['""]?([A-Za-z0-9_.]+\.dll)['""]?",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex PluginNamePattern();
+
+    [GeneratedRegex(@"assembly '([^']+)'|assembly ""([^""]+)""|'([A-Za-z0-9_.]+\.dll)'",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex AssemblyNamePattern();
+
+    [GeneratedRegex(@"[A-Za-z]:\\[^\n\r""']+\.(dll|exe|asi)",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex FilePathPattern();
+
+    // ────────────────────────────────────────────────────────────────────────
+
     private static readonly string[] KnownLogs =
     [
         "RagePluginHook.log",
@@ -80,26 +135,24 @@ public sealed class RageLogScanner
         string? lastPlugin = null;
         RageLogEntry? lastPluginEntry = null;
 
-        // Walk entries in order, tracking plugin context
         foreach (var entry in session.Entries)
         {
-            var lower = entry.Message.ToLowerInvariant();
             var allText = string.Join("\n", new[] { entry.Message }.Concat(entry.ContinuationLines));
-            var allLower = allText.ToLowerInvariant();
 
             // Track plugin lifecycle context
-            var pluginName = ExtractPluginName(entry.Message);
-            if (pluginName is not null &&
-                (lower.Contains("loading plugin") || lower.Contains("loaded plugin") ||
-                 lower.Contains("initializing plugin") || lower.Contains("plugin started")))
+            if (PluginLifecyclePattern().IsMatch(entry.Message))
             {
-                lastPlugin = pluginName;
-                lastPluginEntry = entry;
+                var pluginName = ExtractPluginName(entry.Message);
+                if (pluginName is not null)
+                {
+                    lastPlugin = pluginName;
+                    lastPluginEntry = entry;
+                }
             }
 
             // Bad image format must be checked before missing-dependency because a BadImageFormatException
             // continuation can also contain "could not load file or assembly".
-            if (allLower.Contains("badimageformatexception") || allLower.Contains("bad image format"))
+            if (BadImageFormatPattern().IsMatch(allText))
             {
                 findings.Add(new RageLogFinding(
                     Code: "bad-image-format",
@@ -117,9 +170,7 @@ public sealed class RageLogScanner
             }
 
             // Missing dependency / assembly load failure
-            if (allLower.Contains("could not load file or assembly") ||
-                allLower.Contains("filenotfoundexception") ||
-                allLower.Contains("assembly load failed"))
+            if (MissingDependencyPattern().IsMatch(allText))
             {
                 var dep = ExtractAssemblyName(allText);
                 findings.Add(new RageLogFinding(
@@ -138,8 +189,7 @@ public sealed class RageLogScanner
             }
 
             // Version mismatch
-            if (allLower.Contains("version mismatch") || allLower.Contains("incompatible") ||
-                allLower.Contains("typeloadexception") || allLower.Contains("missingmethodexception"))
+            if (VersionMismatchPattern().IsMatch(allText))
             {
                 findings.Add(new RageLogFinding(
                     Code: "version-mismatch",
@@ -158,10 +208,9 @@ public sealed class RageLogScanner
 
             // Plugin aborted / crashed — match "aborted" alone since RPH logs format as
             // "Plugin 'Name.dll' aborted!" (not "plugin aborted" as a contiguous phrase)
-            if (lower.Contains("aborted") || lower.Contains("plugin crashed") ||
-                lower.Contains("could not load plugin"))
+            if (PluginCrashPattern().IsMatch(entry.Message))
             {
-                var plugin = pluginName ?? ExtractPluginName(entry.Message) ?? lastPlugin;
+                var plugin = ExtractPluginName(entry.Message) ?? lastPlugin;
                 findings.Add(new RageLogFinding(
                     Code: "plugin-load-failed",
                     Severity: CrashLogSeverity.Error,
@@ -178,8 +227,7 @@ public sealed class RageLogScanner
             }
 
             // RPH hook failure
-            if (lower.Contains("rph hook failed") || lower.Contains("failed to hook gta") ||
-                lower.Contains("hook failed"))
+            if (RphHookFailedPattern().IsMatch(entry.Message))
             {
                 findings.Add(new RageLogFinding(
                     Code: "rph-hook-failed",
@@ -199,7 +247,7 @@ public sealed class RageLogScanner
             // ScriptHookV failure
             if (session.SourceLog.Contains("ScriptHookV", StringComparison.OrdinalIgnoreCase) &&
                 (entry.Severity is CrashLogSeverity.Error or CrashLogSeverity.Fatal ||
-                 lower.Contains("error") || lower.Contains("failed")))
+                 ScriptHookErrorPattern().IsMatch(entry.Message)))
             {
                 findings.Add(new RageLogFinding(
                     Code: "script-hook-failed",
@@ -217,7 +265,7 @@ public sealed class RageLogScanner
             }
 
             // Unhandled exception block
-            if (allLower.Contains("unhandled exception") ||
+            if (UnhandledExceptionPattern().IsMatch(allText) ||
                 (entry.ContinuationLines.Count > 2 &&
                  entry.ContinuationLines.Any(l => l.TrimStart().StartsWith("at ", StringComparison.Ordinal))))
             {
@@ -237,9 +285,7 @@ public sealed class RageLogScanner
             }
 
             // Fatal / crash signal
-            if (entry.Severity == CrashLogSeverity.Fatal ||
-                lower.Contains("fatal") || lower.Contains("crash") ||
-                lower.Contains("game terminated") || lower.Contains("process exited"))
+            if (entry.Severity == CrashLogSeverity.Fatal || CrashSignalPattern().IsMatch(entry.Message))
             {
                 findings.Add(new RageLogFinding(
                     Code: "crash-signal",
@@ -303,17 +349,13 @@ public sealed class RageLogScanner
 
     private static string? ExtractPluginName(string message)
     {
-        // Look for 'PluginName.dll' or quoted plugin names
-        var m = System.Text.RegularExpressions.Regex.Match(
-            message, @"['""]?([A-Za-z0-9_.]+\.dll)['""]?",
-            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        var m = PluginNamePattern().Match(message);
         return m.Success ? m.Groups[1].Value : null;
     }
 
     private static string? ExtractAssemblyName(string text)
     {
-        var m = System.Text.RegularExpressions.Regex.Match(
-            text, "assembly '([^']+)'|assembly \"([^\"]+)\"|'([A-Za-z0-9_.]+\\.dll)'");
+        var m = AssemblyNamePattern().Match(text);
         if (!m.Success) return null;
         return (m.Groups[1].Value.Length > 0 ? m.Groups[1].Value :
                 m.Groups[2].Value.Length > 0 ? m.Groups[2].Value :
@@ -322,9 +364,7 @@ public sealed class RageLogScanner
 
     private static string? ExtractFilePath(string text)
     {
-        var m = System.Text.RegularExpressions.Regex.Match(
-            text, @"[A-Za-z]:\\[^\n\r""']+\.(dll|exe|asi)",
-            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        var m = FilePathPattern().Match(text);
         return m.Success ? m.Value : null;
     }
 }

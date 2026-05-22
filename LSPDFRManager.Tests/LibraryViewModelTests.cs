@@ -1,7 +1,6 @@
 using LSPDFRManager.Domain;
 using LSPDFRManager.Services;
 using LSPDFRManager.ViewModels;
-using Xunit;
 
 namespace LSPDFRManager.Tests;
 
@@ -116,6 +115,59 @@ public class LibraryViewModelTests : IDisposable
         Assert.True(plugin.IsEnabled);
         Assert.True(callout.IsEnabled);
         Assert.False(vehicle.IsEnabled);
+    }
+
+    // ── Async refresh (SyncAndRefreshAsync) ──────────────────────────────────
+
+    [Fact]
+    public async Task RefreshCommand_PrunesOrphanedMod_AfterAsyncSync()
+    {
+        // Arrange: one orphaned mod (nonexistent file), one live mod
+        var tempFile = Path.GetTempFileName();
+        try
+        {
+            _library.Mods.Add(new InstalledMod
+            {
+                Name = "Ghost",
+                TypeLabel = "LSPDFR Plugin",
+                InstalledFiles = [@"C:\nonexistent_lspm_xyz\ghost.dll"],
+            });
+            _library.Mods.Add(new InstalledMod
+            {
+                Name = "Live",
+                TypeLabel = "LSPDFR Plugin",
+                InstalledFiles = [tempFile],
+            });
+
+            var vm = new LibraryViewModel();
+            Assert.Equal(2, vm.TotalMods);
+
+            // Act: execute the async RefreshCommand (which runs SyncWithDirectory off-thread)
+            // RelayCommand wraps async () => await SyncAndRefreshAsync() — fire and collect the Task
+            var command = vm.RefreshCommand;
+            command.Execute(null);
+
+            // Allow the async Task.Run to complete; xUnit runs without a real dispatcher so
+            // UiDispatcher.Invoke executes inline — a short yield is sufficient.
+            await Task.Delay(200);
+
+            // Assert
+            Assert.Equal(1, vm.TotalMods);
+            Assert.Equal("Live", _library.Mods[0].Name);
+        }
+        finally { try { File.Delete(tempFile); } catch { } }
+    }
+
+    [Fact]
+    public async Task RefreshCommand_IsRefreshingFalse_AfterCompletion()
+    {
+        var vm = new LibraryViewModel();
+        Assert.False(vm.IsRefreshing);
+
+        vm.RefreshCommand.Execute(null);
+        await Task.Delay(200);
+
+        Assert.False(vm.IsRefreshing);
     }
 
     [Fact]

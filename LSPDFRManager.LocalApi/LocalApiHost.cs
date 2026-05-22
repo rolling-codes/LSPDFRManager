@@ -20,6 +20,13 @@ public static class LocalApiHost
     /// <summary>Awaitable port number — completes once the server is listening.</summary>
     public static Task<int> PortTask => _portReady.Task;
 
+    /// <summary>
+    /// Set by the WPF host before <see cref="StartAsync"/> so that the
+    /// /api/v1/mods/sync endpoint delegates to <c>ModLibraryService</c> (which owns the
+    /// in-memory collection and its mutation lock) rather than reading library.json directly.
+    /// </summary>
+    public static Func<int>? SyncLibraryCallback { get; set; }
+
     public static int Port => _portReady.Task.IsCompletedSuccessfully
         ? _portReady.Task.Result : 0;
 
@@ -61,6 +68,7 @@ public static class LocalApiHost
         app.MapBackups();
         app.MapJobs();
         app.MapBrowse();
+        app.MapLibrary();
         app.MapFallbackToFile("index.html");
 
         await app.StartAsync(cancellationToken);

@@ -92,26 +92,32 @@ public static class LibraryEndpoints
             }
         });
 
-        app.MapPost("/api/v1/mods/sync", async () =>
+        app.MapPost("/api/v1/mods/sync", () =>
         {
-            await Mutex.WaitAsync();
             try
             {
-                var mods = Store.LoadOrDefault(static () => []);
-                var before = mods.Count;
-                mods.RemoveAll(InstalledModFileService.IsOrphaned);
-                var pruned = before - mods.Count;
-                if (pruned > 0)
-                    Store.Save(mods);
+                int pruned;
+                if (LocalApiHost.SyncLibraryCallback is { } sync)
+                {
+                    // In-process mode: delegate to ModLibraryService which owns the in-memory
+                    // collection and its mutation lock — avoids a separate disk read-modify-write.
+                    pruned = sync();
+                }
+                else
+                {
+                    // Standalone / dev-server mode: fall back to direct file read.
+                    var mods = Store.LoadOrDefault(static () => []);
+                    var before = mods.Count;
+                    mods.RemoveAll(InstalledModFileService.IsOrphaned);
+                    pruned = before - mods.Count;
+                    if (pruned > 0)
+                        Store.Save(mods);
+                }
                 return Results.Ok(new { pruned });
             }
             catch (Exception ex)
             {
                 return Results.Problem($"Sync failed: {ex.Message}");
-            }
-            finally
-            {
-                Mutex.Release();
             }
         });
     }

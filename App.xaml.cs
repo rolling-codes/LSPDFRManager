@@ -22,6 +22,10 @@ public partial class App : Application
             ex.Handled = false;
         };
 
+        // Route /api/v1/mods/sync through the in-process service so both code paths share
+        // the same mutation lock rather than having two independent disk read-modify-write cycles.
+        LocalApiHost.SyncLibraryCallback = () => ModLibraryService.Instance.SyncWithDirectory();
+
         // Start local API in-process (non-blocking; React UI nav waits on PortTask)
         _ = Task.Run(async () =>
         {

@@ -24,6 +24,7 @@ public class LibraryViewModel : ObservableObject
     private ModItemViewModel? _selectedMod;
     private IReadOnlyList<BulkToggleState>? _lastBulkToggle;
     private string _rollbackStatus = "";
+    private bool _isRefreshing;
 
     public LibraryViewModel(ILibraryController? libraryController = null)
     {
@@ -31,7 +32,7 @@ public class LibraryViewModel : ObservableObject
         ToggleEnabledCommand = new RelayCommand(static _ => { });
         UninstallCommand = new RelayCommand(static _ => { });
 
-        RefreshCommand = new RelayCommand(Refresh);
+        RefreshCommand = new RelayCommand(async () => await SyncAndRefreshAsync());
         EnableVisibleCommand = new RelayCommand(
             () => SetVisibleModsEnabled(true),
             () => FilteredMods.Any(mod => !mod.IsEnabled));
@@ -131,6 +132,12 @@ public class LibraryViewModel : ObservableObject
         }
     }
 
+    public bool IsRefreshing
+    {
+        get => _isRefreshing;
+        private set => SetProperty(ref _isRefreshing, value);
+    }
+
     public int TotalMods => _library.Mods.Count;
     public int EnabledMods => _library.Mods.Count(mod => mod.IsEnabled);
     public int DisabledMods => _library.Mods.Count(mod => !mod.IsEnabled);
@@ -214,9 +221,23 @@ public class LibraryViewModel : ObservableObject
     public ICommand SetFilterCommand { get; }
     public ICommand RollbackCommand { get; }
 
+    private async Task SyncAndRefreshAsync()
+    {
+        if (_isRefreshing) return;
+        IsRefreshing = true;
+        try
+        {
+            await Task.Run(() => _library.SyncWithDirectory());
+            Refresh();
+        }
+        finally
+        {
+            IsRefreshing = false;
+        }
+    }
+
     private void Refresh()
     {
-        _library.SyncWithDirectory();
         RefreshFiltered();
         RaiseCountsChanged();
     }

@@ -227,4 +227,105 @@ public class ModLibraryServiceTests
 
         Assert.Empty(lib.FindConflicts(candidate));
     }
+
+    // ── SyncWithDirectory ─────────────────────────────────────────────────
+
+    [Fact]
+    public void SyncWithDirectory_RemovesOrphanedMod_ReturnsCount()
+    {
+        var lib = Fresh();
+        // InstalledFiles must be non-empty and point to a path that does not exist
+        lib.Mods.Add(Mod("Ghost", files: [@"C:\nonexistent_lspm_xyz\ghost.dll"]));
+
+        var pruned = lib.SyncWithDirectory();
+
+        Assert.Equal(1, pruned);
+        Assert.Empty(lib.Mods);
+    }
+
+    [Fact]
+    public void SyncWithDirectory_LeavesModWithExistingFile()
+    {
+        var tempFile = Path.GetTempFileName();
+        try
+        {
+            var lib = Fresh();
+            lib.Mods.Add(Mod("Live", files: [tempFile]));
+
+            var pruned = lib.SyncWithDirectory();
+
+            Assert.Equal(0, pruned);
+            Assert.Single(lib.Mods);
+        }
+        finally { File.Delete(tempFile); }
+    }
+
+    [Fact]
+    public void SyncWithDirectory_LeavesModWithDisabledVariant()
+    {
+        var tempFile = Path.GetTempFileName() + ".disabled";
+        try
+        {
+            File.WriteAllText(tempFile, "");
+            var lib = Fresh();
+            // Record the path without .disabled — IsOrphaned checks both f and f+".disabled"
+            lib.Mods.Add(Mod("Disabled", files: [tempFile[..^".disabled".Length]]));
+
+            var pruned = lib.SyncWithDirectory();
+
+            Assert.Equal(0, pruned);
+        }
+        finally { try { File.Delete(tempFile); } catch { } }
+    }
+
+    [Fact]
+    public void SyncWithDirectory_IgnoresModWithEmptyFileList()
+    {
+        // Mods with no tracked files are not considered orphaned (pre-tracking installs)
+        var lib = Fresh();
+        lib.Mods.Add(Mod("OldMod"));   // files: []
+
+        var pruned = lib.SyncWithDirectory();
+
+        Assert.Equal(0, pruned);
+        Assert.Single(lib.Mods);
+    }
+
+    [Fact]
+    public void SyncWithDirectory_RemovesOnlyOrphanedMods_LeavesLiveModsIntact()
+    {
+        var tempFile = Path.GetTempFileName();
+        try
+        {
+            var lib = Fresh();
+            lib.Mods.Add(Mod("Ghost", files: [@"C:\nonexistent_lspm_xyz\ghost.dll"]));
+            lib.Mods.Add(Mod("Live",  files: [tempFile]));
+
+            var pruned = lib.SyncWithDirectory();
+
+            Assert.Equal(1, pruned);
+            Assert.Single(lib.Mods);
+            Assert.Equal("Live", lib.Mods[0].Name);
+        }
+        finally { File.Delete(tempFile); }
+    }
+
+    [Fact]
+    public async Task SyncWithDirectory_CalledFromBackgroundThread_DoesNotDeadlock()
+    {
+        var tempFile = Path.GetTempFileName();
+        try
+        {
+            var lib = Fresh();
+            lib.Mods.Add(Mod("Ghost", files: [@"C:\nonexistent_lspm_xyz\ghost.dll"]));
+            lib.Mods.Add(Mod("Live",  files: [tempFile]));
+
+            // Simulate the async path used by LibraryViewModel.SyncAndRefreshAsync
+            var pruned = await Task.Run(lib.SyncWithDirectory);
+
+            Assert.Equal(1, pruned);
+            Assert.Equal("Live", lib.Mods[0].Name);
+        }
+        finally { File.Delete(tempFile); }
+    }
 }

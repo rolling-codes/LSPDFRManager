@@ -45,28 +45,25 @@ public class ModLibraryService
     /// <summary>
     /// Removes library records for mods whose installed files no longer exist on disk
     /// (neither the active file nor the .disabled variant). Returns the number of entries pruned.
+    /// Orphan detection and removal happen inside a single lock acquisition — no gap exists
+    /// between the snapshot and the removal where a concurrent reinstall could re-add a mod.
     /// </summary>
     public int SyncWithDirectory()
     {
-        List<InstalledMod> orphaned = [];
-
-        UiDispatcher.Invoke(() =>
-        {
-            orphaned = [.. Mods.Where(InstalledModFileService.IsOrphaned)];
-        });
-
-        if (orphaned.Count == 0)
-            return 0;
-
+        List<InstalledMod> toRemove;
         lock (_mutationLock)
         {
-            foreach (var mod in orphaned)
+            // Read Mods directly inside the lock — consistent with Reorder/SetLoadOrder.
+            // All writes are also under _mutationLock, so the collection is stable here.
+            toRemove = Mods.Where(InstalledModFileService.IsOrphaned).ToList();
+            if (toRemove.Count == 0)
+                return 0;
+            foreach (var mod in toRemove)
                 RemoveFromCollection(mod.Id);
             Save();
         }
-
-        AppLogger.Info($"[Library] SyncWithDirectory pruned {orphaned.Count} orphaned mod(s): {string.Join(", ", orphaned.Select(m => m.Name))}");
-        return orphaned.Count;
+        AppLogger.Info($"[Library] SyncWithDirectory pruned {toRemove.Count} orphaned mod(s): {string.Join(", ", toRemove.Select(m => m.Name))}");
+        return toRemove.Count;
     }
 
     public void SetEnabled(Guid id, bool enabled)
