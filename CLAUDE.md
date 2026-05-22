@@ -41,7 +41,7 @@ This is a .NET 8 WPF desktop application for managing GTA V / LSPDFR mods. It ha
 | `LSPDFRManager.csproj` | WPF `net8.0-windows` | Shell: App.xaml, MainWindow, Views, ViewModels, Services, Core |
 | `LSPDFRManager.Shared` | Class library `net8.0` | Domain models, AppLogger, CarInstall helpers — no WPF dependency |
 | `LSPDFRManager.LocalApi` | ASP.NET Core `net8.0` | Minimal API hosted in-process; serves the React UI and exposes REST endpoints |
-| `LSPDFRManager.Tests` | xUnit `net8.0-windows` | ~734 tests; references both WPF project and Shared |
+| `LSPDFRManager.Tests` | xUnit `net8.0-windows` | ~1004 tests; references both WPF project and Shared |
 
 ### How the parts connect
 
@@ -77,10 +77,11 @@ Stack: React 19, Vite 8, Tailwind CSS 4, TanStack Query v5, React Router v7, Rad
 - **ModInfo** — in-flight mod before install (detected type, archive path, confidence score)
 - **InstalledMod** — persisted library entry
 - **InstallPlan / InstallPlanEntry** — reviewed plan that is built once and executed as-is (no double-build)
-- **ModType** — enum for plugin types: `LspdfrPlugin`, `Asi`, `VehicleAddOn`, `VehicleReplace`, `Script`, `Eup`, `Map`, `Sound`
+- **ModType** — enum for plugin types: `LspdfrPlugin`, `AsiMod`, `VehicleDlc`, `VehicleReplace`, `Script`, `Eup`, `Map`, `Sound`, `Unknown`
 - **PathSafety** — all archive entries are validated through this before extraction (path traversal protection)
 - **AppConfig** — singleton, serialized to `config.json`
 - **TransactionService** — singleton that persists install transactions to `transactions.json`; drives user-initiated rollback (removes added files only if unchanged, restores overwritten files from per-transaction backup folder)
+- **InstalledModFileService.IsOrphaned()** — static helper (in `LSPDFRManager.Shared`) that returns true when a mod's `InstalledFiles` list is non-empty but none of the files exist on disk (active or `.disabled`). Used by `ModLibraryService.SyncWithDirectory()` and the `/api/v1/mods/sync` endpoint to prune ghost entries.
 
 ### Architecture constraints (enforced by tests)
 
@@ -90,6 +91,7 @@ Stack: React 19, Vite 8, Tailwind CSS 4, TanStack Query v5, React Router v7, Rad
 
 ### Test patterns
 
-- Tests that touch `AppConfig.Instance` or `AppDataPaths` singletons must use `AppDataPaths.OverrideRoot(tempDir)` in setup and `AppDataPaths.ClearOverride()` in teardown (`IDisposable`). `CommandCenterTestBase` provides this boilerplate for command-center integration tests.
-- Test classes that share singleton state must be placed in the `"AppData serial"` or `"CommandCenter"` xUnit collection (both disable parallelization). Most other tests run in parallel by default.
+- Tests that touch `AppConfig.Instance` or `AppDataPaths` singletons must use `AppDataPaths.OverrideRoot(tempDir)` in setup and `AppDataPaths.ClearOverride()` in teardown (`IDisposable`). `CommandCenterTestBase` provides this boilerplate for command-center integration tests. If a test also mutates `AppConfig.Instance.GtaPath`, save and restore it manually in `Dispose`.
+- Test classes that share singleton state (`AppConfig`, `AppDataPaths`, `ModLibraryService`) must be placed in the `"AppData serial"` or `"CommandCenter"` xUnit collection (both disable parallelization). Most other tests run in parallel by default. Any class that sets `AppConfig.Instance.GtaPath` must be in `"AppData serial"` to avoid racing with other serialised classes.
 - `FakeArchive` (in the test project) is the helper for constructing in-memory archives for installer tests.
+- When bumping the app version, update `<Version>` in both `LSPDFRManager.csproj` **and** `LSPDFRManager.Shared/LSPDFRManager.Shared.csproj`, then update the hardcoded assertions in `VersionAndBrowseGuardTests` (`AssemblyVersion_Is_X_Y_Z_0`) and `SetupWizardTests` (`result.CurrentVersion`).

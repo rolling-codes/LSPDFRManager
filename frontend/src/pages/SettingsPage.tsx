@@ -5,6 +5,7 @@ import { CheckCircle2, Save, ShieldCheck } from 'lucide-react'
 import { Page, Panel, StateMessage, StatusBadge } from '../components/ui/Page'
 import { fetchConfig, updateConfig, validateGtaPath } from '../lib/api/config'
 import type { AppConfigDto, BackupScheduleMode } from '../types/config'
+import { invalidateEnvironmentQueries } from '../lib/queryInvalidation'
 
 const BACKUP_MODES: BackupScheduleMode[] = [
   'ManualOnly',
@@ -32,10 +33,19 @@ export default function SettingsPage() {
   const mutation = useMutation({
     mutationFn: updateConfig,
     onSuccess: (updated) => {
+      const previousConfig = queryClient.getQueryData<AppConfigDto>(['config'])
       queryClient.setQueryData(['config'], updated)
       setPatch({})
       setSaveStatus('saved')
       setTimeout(() => setSaveStatus('idle'), 2000)
+
+      // If the GTA path changed (including being set for the first time), invalidate
+      // every query whose result depends on the path so no page shows stale data.
+      const pathChanged =
+        (previousConfig?.gtaPath ?? '') !== (updated.gtaPath ?? '')
+      if (pathChanged) {
+        void invalidateEnvironmentQueries(queryClient)
+      }
     },
     onError: () => setSaveStatus('error'),
   })

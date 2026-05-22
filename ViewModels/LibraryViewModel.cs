@@ -216,6 +216,7 @@ public class LibraryViewModel : ObservableObject
 
     private void Refresh()
     {
+        _library.SyncWithDirectory();
         RefreshFiltered();
         RaiseCountsChanged();
     }

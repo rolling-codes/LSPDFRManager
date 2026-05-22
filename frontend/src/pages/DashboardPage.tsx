@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import { AlertTriangle, CheckCircle2, RefreshCcw, XCircle } from 'lucide-react'
 import { Page, Panel, StateMessage, StatusBadge } from '../components/ui/Page'
 import { fetchCompatibility } from '../lib/api/compatibility'
@@ -42,6 +43,28 @@ export default function DashboardPage() {
         )
       }
     >
+      {!data?.gtaPathConfigured && (
+        <div className="mb-6 rounded-lg border border-amber-900/60 bg-amber-950/20 p-5 shadow-sm">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex gap-3">
+              <AlertTriangle className="h-5 w-5 shrink-0 text-amber-500" />
+              <div>
+                <h4 className="text-sm font-semibold text-amber-200">GTA V Path Not Configured</h4>
+                <p className="mt-1 text-xs text-zinc-300">
+                  LSPDFR Manager requires your Grand Theft Auto V installation directory to start checking compatibility, managing mods, and auditing logs.
+                </p>
+              </div>
+            </div>
+            <Link
+              to="/setup"
+              className="btn-primary self-start text-xs whitespace-nowrap bg-amber-600 hover:bg-amber-500 border-amber-500 text-black font-semibold px-4 py-2 rounded"
+            >
+              Configure GTA V Path
+            </Link>
+          </div>
+        </div>
+      )}
+
       <div className="grid gap-4 md:grid-cols-3">
         <Metric label="Detected" value={present} tone="success" />
         <Metric label="Missing" value={missing} tone={missing > 0 ? 'danger' : 'neutral'} />

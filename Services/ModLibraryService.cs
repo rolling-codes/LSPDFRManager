@@ -42,6 +42,33 @@ public class ModLibraryService
 
     public void SaveProxy() => Save();
 
+    /// <summary>
+    /// Removes library records for mods whose installed files no longer exist on disk
+    /// (neither the active file nor the .disabled variant). Returns the number of entries pruned.
+    /// </summary>
+    public int SyncWithDirectory()
+    {
+        List<InstalledMod> orphaned = [];
+
+        UiDispatcher.Invoke(() =>
+        {
+            orphaned = [.. Mods.Where(InstalledModFileService.IsOrphaned)];
+        });
+
+        if (orphaned.Count == 0)
+            return 0;
+
+        lock (_mutationLock)
+        {
+            foreach (var mod in orphaned)
+                RemoveFromCollection(mod.Id);
+            Save();
+        }
+
+        AppLogger.Info($"[Library] SyncWithDirectory pruned {orphaned.Count} orphaned mod(s): {string.Join(", ", orphaned.Select(m => m.Name))}");
+        return orphaned.Count;
+    }
+
     public void SetEnabled(Guid id, bool enabled)
     {
         InstalledMod? target = null;

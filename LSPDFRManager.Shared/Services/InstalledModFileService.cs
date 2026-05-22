@@ -270,4 +270,13 @@ public class InstalledModFileService
             AppLogger.Warning($"Delete '{path}' failed: {ex.Message}");
         }
     }
+
+    /// <summary>
+    /// Returns true when the mod has a non-empty file list but none of its files exist
+    /// on disk (neither the active path nor the .disabled variant). These are ghost
+    /// entries left behind after files were removed outside of LSPDFRManager.
+    /// </summary>
+    public static bool IsOrphaned(InstalledMod mod) =>
+        mod.InstalledFiles.Count > 0 &&
+        !mod.InstalledFiles.Any(f => File.Exists(f) || File.Exists(f + ".disabled"));
 }

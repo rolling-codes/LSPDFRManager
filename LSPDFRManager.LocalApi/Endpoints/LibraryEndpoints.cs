@@ -91,6 +91,29 @@ public static class LibraryEndpoints
                 Mutex.Release();
             }
         });
+
+        app.MapPost("/api/v1/mods/sync", async () =>
+        {
+            await Mutex.WaitAsync();
+            try
+            {
+                var mods = Store.LoadOrDefault(static () => []);
+                var before = mods.Count;
+                mods.RemoveAll(InstalledModFileService.IsOrphaned);
+                var pruned = before - mods.Count;
+                if (pruned > 0)
+                    Store.Save(mods);
+                return Results.Ok(new { pruned });
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem($"Sync failed: {ex.Message}");
+            }
+            finally
+            {
+                Mutex.Release();
+            }
+        });
     }
 
     private static InstalledModDto ToDto(InstalledMod mod) =>
@@ -99,5 +122,5 @@ public static class LibraryEndpoints
             mod.Version, mod.Author,
             mod.InstalledAt.ToString("o"), mod.TotalSizeBytes, mod.TotalSizeDisplay,
             mod.DetectionScore, mod.Notes, mod.ImageUrl, mod.ThumbnailUrl,
-            mod.LoadOrderPriority);
+            mod.LoadOrderPriority, InstalledModFileService.IsOrphaned(mod));
 }

@@ -17,6 +17,7 @@ export interface InstalledModDto {
   imageUrl: string | null
   thumbnailUrl: string | null
   loadOrderPriority: number
+  isOrphaned: boolean
 }
 
 export interface ModsListResponse {

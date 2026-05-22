@@ -1,11 +1,21 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { ChevronDown, ImageIcon, Search, Star } from 'lucide-react'
+import { AlertTriangle, ChevronDown, ImageIcon, RefreshCcw, Search, Star } from 'lucide-react'
 import { Page, Panel, StateMessage, StatusBadge } from '../components/ui/Page'
-import { fetchMods, toggleMod, updateModNotes } from '../lib/api/library'
+import { fetchMods, toggleMod, updateModNotes, syncMods } from '../lib/api/library'
 import type { InstalledModDto, ModsListResponse } from '../types/library'
 
-const MOD_TYPES = ['All', 'Plugin', 'VehicleDlc', 'EupUniform', 'Script', 'Other']
+const MOD_TYPES: { value: string; label: string }[] = [
+  { value: 'All',           label: 'All types' },
+  { value: 'LspdfrPlugin',  label: 'LSPDFR Plugin' },
+  { value: 'VehicleDlc',    label: 'Vehicle Add-On DLC' },
+  { value: 'VehicleReplace',label: 'Vehicle Replace' },
+  { value: 'AsiMod',        label: 'ASI Mod' },
+  { value: 'Script',        label: 'Script (CS/VB)' },
+  { value: 'Eup',           label: 'EUP Clothing' },
+  { value: 'Map',           label: 'Map / MLO' },
+  { value: 'Sound',         label: 'Sound Pack' },
+]
 
 export default function LibraryPage() {
   const queryClient = useQueryClient()
@@ -52,6 +62,13 @@ export default function LibraryPage() {
     },
   })
 
+  const syncMutation = useMutation({
+    mutationFn: syncMods,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mods'] })
+    },
+  })
+
   if (isLoading) return <StateMessage title="Loading library" description="Reading installed mods, metadata, and current enablement state." />
 
   if (isError) {
@@ -74,6 +91,14 @@ export default function LibraryPage() {
       description="Filter installed mods, review conflicts, and toggle loadout state without leaving the command center."
       actions={
         <>
+          <button
+            onClick={() => syncMutation.mutate()}
+            disabled={syncMutation.isPending}
+            className="btn-secondary h-8 py-0 px-3 text-xs flex items-center gap-1.5"
+          >
+            <RefreshCcw size={13} className={syncMutation.isPending ? 'animate-spin' : ''} />
+            {syncMutation.isPending ? 'Syncing...' : 'Sync Library'}
+          </button>
           <StatusBadge tone="neutral">{data?.total ?? 0} total</StatusBadge>
           <StatusBadge tone="success">{enabledCount} enabled</StatusBadge>
         </>
@@ -96,7 +121,7 @@ export default function LibraryPage() {
             onChange={(e) => setTypeFilter(e.target.value)}
           >
             {MOD_TYPES.map((t) => (
-              <option key={t} value={t}>{t}</option>
+              <option key={t.value} value={t.value}>{t.label}</option>
             ))}
           </select>
           <select
@@ -171,6 +196,12 @@ function ModRow({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-zinc-100 truncate">{mod.name}</span>
+            {mod.isOrphaned && (
+              <StatusBadge tone="danger">
+                <AlertTriangle size={11} className="inline mr-1" />
+                Files missing
+              </StatusBadge>
+            )}
             {mod.hasConflict && (
               <StatusBadge tone="danger">Conflict</StatusBadge>
             )}

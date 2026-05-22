@@ -17,3 +17,7 @@ export function toggleMod(id: string, enabled: boolean): Promise<InstalledModDto
 export function updateModNotes(id: string, notes: string): Promise<InstalledModDto> {
   return api.put<InstalledModDto>(`/api/v1/mods/${id}/notes`, { notes })
 }
+
+export function syncMods(): Promise<{ pruned: number }> {
+  return api.post<{ pruned: number }>('/api/v1/mods/sync', {})
+}

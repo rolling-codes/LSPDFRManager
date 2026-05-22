@@ -1,3 +1,6 @@
+import { useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { fetchConfig } from '../../lib/api/config'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { CircleDot, Shield } from 'lucide-react'
 import { routes } from '../../routes/routeConfig'
@@ -7,9 +10,32 @@ import { StatusBadge } from '../ui/Page'
 export function AppLayout() {
   const location = useLocation()
   const navigate = useNavigate()
+
+  const { data: config, isLoading } = useQuery({
+    queryKey: ['config'],
+    queryFn: fetchConfig,
+  })
+
+  useEffect(() => {
+    if (!isLoading && config && !config.gtaPath && location.pathname !== '/setup') {
+      navigate('/setup')
+    }
+  }, [config, isLoading, location.pathname, navigate])
+
   const activeRoute =
     routes.find((route) => route.path !== '/' && location.pathname.startsWith(route.path)) ??
     routes.find((route) => route.path === '/')
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-zinc-950 text-zinc-400">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-[var(--color-accent,indigo-500)]" />
+          <span className="text-sm font-medium">Checking configuration...</span>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="app-shell">

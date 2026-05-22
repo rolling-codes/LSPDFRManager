@@ -6,7 +6,7 @@ public record InstalledModDto(
     string Version, string Author,
     string InstalledAt, long TotalSizeBytes, string TotalSizeDisplay,
     int DetectionScore, string Notes, string? ImageUrl, string? ThumbnailUrl,
-    int LoadOrderPriority);
+    int LoadOrderPriority, bool IsOrphaned);
 
 public record ModsListResponse(IReadOnlyList<InstalledModDto> Mods, int Total);
 
