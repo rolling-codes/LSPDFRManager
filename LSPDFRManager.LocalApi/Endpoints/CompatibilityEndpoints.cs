@@ -45,7 +45,7 @@ public static class CompatibilityEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem($"Failed to detect component versions: {ex.Message}");
+                return ApiErrors.Problem($"Failed to detect component versions", ex);
             }
         });
     }

@@ -36,7 +36,7 @@ public static class BackupEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem($"Failed to list backups: {ex.Message}");
+                return ApiErrors.Problem($"Failed to list backups", ex);
             }
         });
 
@@ -160,7 +160,7 @@ public static class BackupEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem($"Failed to delete backup: {ex.Message}");
+                return ApiErrors.Problem($"Failed to delete backup", ex);
             }
         });
 

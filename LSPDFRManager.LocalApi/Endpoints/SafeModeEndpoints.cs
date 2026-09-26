@@ -46,7 +46,7 @@ public static class SafeModeEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem($"Failed to build safe mode plan: {ex.Message}");
+                return ApiErrors.Problem($"Failed to build safe mode plan", ex);
             }
         });
 
@@ -116,6 +116,9 @@ public static class SafeModeEndpoints
                 foreach (var disabledPath in manifest.DisabledPaths)
                 {
                     if (!disabledPath.EndsWith(".disabled", StringComparison.OrdinalIgnoreCase)) continue;
+                    // Contain the move to the GTA root: a tampered/corrupt manifest
+                    // must never move files to or from arbitrary locations.
+                    if (!PathContainment.IsWithin(gtaPath, disabledPath)) continue;
                     if (!File.Exists(disabledPath)) continue;
                     var original = disabledPath[..^".disabled".Length];
                     if (!File.Exists(original))

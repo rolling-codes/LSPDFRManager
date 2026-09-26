@@ -25,7 +25,7 @@ public static class ProfileEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem($"Failed to read profiles: {ex.Message}");
+                return ApiErrors.Problem($"Failed to read profiles", ex);
             }
         });
 
@@ -46,7 +46,7 @@ public static class ProfileEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem($"Failed to create profile: {ex.Message}");
+                return ApiErrors.Problem($"Failed to create profile", ex);
             }
         });
 
@@ -75,7 +75,7 @@ public static class ProfileEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem($"Failed to update profile: {ex.Message}");
+                return ApiErrors.Problem($"Failed to update profile", ex);
             }
         });
 
@@ -98,7 +98,7 @@ public static class ProfileEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem($"Failed to delete profile: {ex.Message}");
+                return ApiErrors.Problem($"Failed to delete profile", ex);
             }
         });
     }

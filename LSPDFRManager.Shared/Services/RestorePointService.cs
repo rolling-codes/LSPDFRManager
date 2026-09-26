@@ -5,11 +5,17 @@ namespace LSPDFRManager.Services;
 
 public class RestorePointService
 {
-    private static RestorePointService? _instance;
-    public static RestorePointService Instance => _instance ??= new();
+    private static readonly Lazy<RestorePointService> _instance = new(() => new RestorePointService());
+    public static RestorePointService Instance => _instance.Value;
 
+    private readonly object _lock = new();
     private List<RestorePoint> _points = [];
-    public IReadOnlyList<RestorePoint> Points => _points;
+
+    // Snapshot: callers iterate a stable copy, never the live list.
+    public IReadOnlyList<RestorePoint> Points
+    {
+        get { lock (_lock) return _points.ToList(); }
+    }
 
     public RestorePointService() => Load();
 
@@ -20,17 +26,23 @@ public class RestorePointService
         try
         {
             var json = File.ReadAllText(indexPath);
-            _points = System.Text.Json.JsonSerializer.Deserialize<List<RestorePoint>>(json) ?? [];
+            var loaded = System.Text.Json.JsonSerializer.Deserialize<List<RestorePoint>>(json) ?? [];
+            lock (_lock) _points = loaded;
         }
-        catch { _points = []; }
+        catch { lock (_lock) _points = []; }
     }
 
     public virtual async Task SaveAsync(RestorePoint point, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        _points.Insert(0, point);
-        if (_points.Count > 50) _points = _points.Take(50).ToList();
-        await PersistIndexAsync(cancellationToken);
+        List<RestorePoint> snapshot;
+        lock (_lock)
+        {
+            _points.Insert(0, point);
+            if (_points.Count > 50) _points = _points.Take(50).ToList();
+            snapshot = _points.ToList();
+        }
+        await PersistIndexAsync(snapshot, cancellationToken);
         ChangeHistoryService.Instance.Record(ChangeHistoryAction.RestorePointCreated, $"Restore point created: {point.OperationName}", detail: point.Id);
     }
 
@@ -77,15 +89,20 @@ public class RestorePointService
 
     public async Task DeleteAsync(RestorePoint point)
     {
-        _points.Remove(point);
-        await PersistIndexAsync();
+        List<RestorePoint> snapshot;
+        lock (_lock)
+        {
+            _points.Remove(point);
+            snapshot = _points.ToList();
+        }
+        await PersistIndexAsync(snapshot);
     }
 
-    private async Task PersistIndexAsync(CancellationToken cancellationToken = default)
+    private static async Task PersistIndexAsync(List<RestorePoint> points, CancellationToken cancellationToken = default)
     {
         var dir = AppDataPaths.RestorePointsDirectory;
         Directory.CreateDirectory(dir);
-        var json = System.Text.Json.JsonSerializer.Serialize(_points, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        var json = System.Text.Json.JsonSerializer.Serialize(points, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
         await File.WriteAllTextAsync(AppDataPaths.RestorePointsIndex, json, cancellationToken);
     }
 }

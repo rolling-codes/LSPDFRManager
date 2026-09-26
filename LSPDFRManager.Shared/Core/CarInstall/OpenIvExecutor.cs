@@ -49,15 +49,19 @@ public class OpenIvExecutor
 
         try
         {
+            // Build a one-time key→entry lookup so we don't re-enumerate the
+            // archive per operation (O(n²)) and don't risk re-opening entries
+            // out of order on non-seekable archive streams.
+            var entriesByKey = new Dictionary<string, IArchiveEntry>(StringComparer.Ordinal);
+            foreach (var e in archive.Entries)
+                entriesByKey.TryAdd(e.Key, e);
+
             // 1. Extract files from archive
             foreach (var operation in plan.Operations)
             {
                 ct.ThrowIfCancellationRequested();
 
-                var sourceEntry = archive.Entries
-                    .FirstOrDefault(e => e.Key == operation.SourcePath);
-
-                if (sourceEntry is null)
+                if (!entriesByKey.TryGetValue(operation.SourcePath, out var sourceEntry))
                     throw new InvalidOperationException(
                         $"Archive entry not found: {operation.SourcePath}");
 
@@ -157,6 +161,19 @@ public class OpenIvExecutor
         }
     }
 
+    private static void TryDeleteTemp(string tempPath)
+    {
+        try
+        {
+            if (File.Exists(tempPath))
+                File.Delete(tempPath);
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Warning($"[COPY_TEMP_CLEANUP] {Path.GetFileName(tempPath)} | {ex.Message}");
+        }
+    }
+
     private static int SelectBufferSize(long fileSize)
     {
         if (fileSize < 1_000_000)
@@ -194,14 +211,20 @@ public class OpenIvExecutor
 
         for (int attempt = 0; attempt < MaxRetries; attempt++)
         {
+            // Write to a temp sibling then commit with an atomic move, so an
+            // existing destination is never truncated in place — a crash or
+            // power-loss mid-copy leaves the original file intact for rollback.
+            var tempPath = destPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
             try
             {
                 ct.ThrowIfCancellationRequested();
 
-                using (var destFile = File.Create(destPath))
+                using (var destFile = File.Create(tempPath))
                 {
                     await source.CopyToAsync(destFile, bufferSize, ct);
                 }
+
+                File.Move(tempPath, destPath, overwrite: true);
 
                 AppLogger.Info($"[COPY_OK] {fileName}");
                 return;
@@ -212,6 +235,12 @@ public class OpenIvExecutor
                 await Task.Delay(backoff, ct);
                 backoff *= 2;
                 source.Seek(0, SeekOrigin.Begin);
+            }
+            finally
+            {
+                // On success the temp was already moved (no-op); on any failure
+                // or retry, drop the partial temp so nothing leaks.
+                TryDeleteTemp(tempPath);
             }
         }
 

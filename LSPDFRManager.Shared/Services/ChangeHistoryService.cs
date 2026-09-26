@@ -4,44 +4,50 @@ namespace LSPDFRManager.Services;
 
 public class ChangeHistoryService
 {
-    private static ChangeHistoryService? _instance;
-    public static ChangeHistoryService Instance => _instance ??= new();
+    private static readonly Lazy<ChangeHistoryService> _instance = new(() => new ChangeHistoryService());
+    public static ChangeHistoryService Instance => _instance.Value;
 
-    private List<ChangeHistoryEntry> _entries = [];
+    private readonly JsonFileStore<List<ChangeHistoryEntry>> _store = new(AppDataPaths.ChangeHistoryFile);
+    private readonly object _lock = new();
+    private List<ChangeHistoryEntry> _entries;
 
-    internal ChangeHistoryService() => Load();
+    internal ChangeHistoryService() => _entries = _store.LoadOrDefault(() => []);
 
-    public IReadOnlyList<ChangeHistoryEntry> Entries => _entries;
+    // Returns a snapshot: callers iterate a stable copy, never the live list.
+    public IReadOnlyList<ChangeHistoryEntry> Entries
+    {
+        get { lock (_lock) return _entries.ToList(); }
+    }
 
     public void Load()
     {
-        var path = AppDataPaths.ChangeHistoryFile;
-        if (!File.Exists(path)) return;
-        try
-        {
-            var json = File.ReadAllText(path);
-            _entries = System.Text.Json.JsonSerializer.Deserialize<List<ChangeHistoryEntry>>(json) ?? [];
-        }
-        catch { _entries = []; }
+        var loaded = _store.LoadOrDefault(() => []);
+        lock (_lock) _entries = loaded;
     }
 
     public void Record(ChangeHistoryAction action, string description, string? affectedFile = null, string? detail = null)
     {
-        _entries.Insert(0, new ChangeHistoryEntry
+        List<ChangeHistoryEntry> snapshot;
+        lock (_lock)
         {
-            Action = action,
-            Description = description,
-            AffectedFile = affectedFile,
-            Detail = detail,
-        });
+            _entries.Insert(0, new ChangeHistoryEntry
+            {
+                Action = action,
+                Description = description,
+                AffectedFile = affectedFile,
+                Detail = detail,
+            });
 
-        if (_entries.Count > 1000) _entries = _entries.Take(1000).ToList();
-        Save();
+            if (_entries.Count > 1000) _entries = _entries.Take(1000).ToList();
+            snapshot = _entries.ToList();
+        }
+        _store.Save(snapshot);
     }
 
     public List<ChangeHistoryEntry> Filter(ChangeHistoryAction? action = null, DateTime? since = null, string? search = null)
     {
-        IEnumerable<ChangeHistoryEntry> q = _entries;
+        IEnumerable<ChangeHistoryEntry> q;
+        lock (_lock) q = _entries.ToList();
         if (action.HasValue) q = q.Where(e => e.Action == action.Value);
         if (since.HasValue) q = q.Where(e => e.OccurredAt >= since.Value);
         if (!string.IsNullOrWhiteSpace(search))
@@ -52,15 +58,18 @@ public class ChangeHistoryService
 
     public void Clear()
     {
-        _entries.Clear();
-        Save();
+        lock (_lock) _entries.Clear();
+        _store.Save([]);
     }
 
     public async Task ExportAsync(string outputPath, bool asJson)
     {
+        List<ChangeHistoryEntry> entries;
+        lock (_lock) entries = _entries.ToList();
+
         if (asJson)
         {
-            var sanitized = _entries.Select(e => new
+            var sanitized = entries.Select(e => new
             {
                 e.Id, e.Action, e.Description, e.OccurredAt, e.Detail,
                 AffectedFile = SanitizePath(e.AffectedFile),
@@ -71,7 +80,7 @@ public class ChangeHistoryService
         }
         else
         {
-            var lines = _entries.Select(e =>
+            var lines = entries.Select(e =>
             {
                 var line = $"[{e.OccurredAt:yyyy-MM-dd HH:mm:ss}] [{e.Action}] {e.Description}";
                 var af   = SanitizePath(e.AffectedFile);
@@ -91,18 +100,5 @@ public class ChangeHistoryService
         if (!string.IsNullOrEmpty(home) && path.StartsWith(home, StringComparison.OrdinalIgnoreCase))
             return "%USERPROFILE%" + path[home.Length..];
         return path;
-    }
-
-    private void Save()
-    {
-        try
-        {
-            var path = AppDataPaths.ChangeHistoryFile;
-            var dir = Path.GetDirectoryName(path);
-            if (dir is not null) Directory.CreateDirectory(dir);
-            var json = System.Text.Json.JsonSerializer.Serialize(_entries, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(path, json);
-        }
-        catch { }
     }
 }

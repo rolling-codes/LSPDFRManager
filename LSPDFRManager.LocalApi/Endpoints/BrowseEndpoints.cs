@@ -53,7 +53,7 @@ public static class BrowseEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem($"Browse proxy error: {ex.Message}");
+                return ApiErrors.Problem($"Browse proxy error", ex);
             }
         });
     }
