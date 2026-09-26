@@ -46,7 +46,7 @@ public static class SafeModeEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem($"Failed to build safe mode plan: {ex.Message}");
+                return ApiErrors.Problem($"Failed to build safe mode plan", ex);
             }
         });
 

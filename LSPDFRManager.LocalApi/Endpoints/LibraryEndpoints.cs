@@ -39,7 +39,7 @@ public static class LibraryEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem($"Failed to read library: {ex.Message}");
+                return ApiErrors.Problem($"Failed to read library", ex);
             }
         });
 
@@ -57,7 +57,7 @@ public static class LibraryEndpoints
                 }
                 catch (Exception ex)
                 {
-                    return Results.Problem($"Failed to toggle mod: {ex.Message}");
+                    return ApiErrors.Problem($"Failed to toggle mod", ex);
                 }
             }
 
@@ -75,7 +75,7 @@ public static class LibraryEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem($"Failed to toggle mod: {ex.Message}");
+                return ApiErrors.Problem($"Failed to toggle mod", ex);
             }
             finally
             {
@@ -97,7 +97,7 @@ public static class LibraryEndpoints
                 }
                 catch (Exception ex)
                 {
-                    return Results.Problem($"Failed to update notes: {ex.Message}");
+                    return ApiErrors.Problem($"Failed to update notes", ex);
                 }
             }
 
@@ -115,7 +115,7 @@ public static class LibraryEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem($"Failed to update notes: {ex.Message}");
+                return ApiErrors.Problem($"Failed to update notes", ex);
             }
             finally
             {
@@ -148,7 +148,7 @@ public static class LibraryEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem($"Sync failed: {ex.Message}");
+                return ApiErrors.Problem($"Sync failed", ex);
             }
         });
     }

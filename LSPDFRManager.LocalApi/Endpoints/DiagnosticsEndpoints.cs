@@ -50,7 +50,7 @@ public static class DiagnosticsEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem($"Diagnostics scan failed: {ex.Message}");
+                return ApiErrors.Problem($"Diagnostics scan failed", ex);
             }
         });
     }

@@ -37,7 +37,7 @@ public static class HistoryEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem($"Failed to read change history: {ex.Message}");
+                return ApiErrors.Problem($"Failed to read change history", ex);
             }
         });
     }

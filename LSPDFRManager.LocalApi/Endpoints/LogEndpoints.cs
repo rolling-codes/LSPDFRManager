@@ -58,7 +58,7 @@ public static class LogEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem($"Failed to read log '{name}': {ex.Message}");
+                return ApiErrors.Problem($"Failed to read log '{name}'", ex);
             }
         });
     }

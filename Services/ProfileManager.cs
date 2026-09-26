@@ -18,7 +18,8 @@ public class ProfileManager
         var dir = AppDataPaths.ProfilesDirectory;
         Directory.CreateDirectory(dir);
 
-        foreach (var file in Directory.EnumerateFiles(dir, "*.json"))
+        var files = Directory.EnumerateFiles(dir, "*.json").ToList();
+        foreach (var file in files)
         {
             try
             {
@@ -26,10 +27,16 @@ public class ProfileManager
                 var profile = System.Text.Json.JsonSerializer.Deserialize<ModProfile>(json);
                 if (profile is not null) _profiles.Add(profile);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                AppLogger.Warning($"[ProfileManager] Skipped corrupt profile '{Path.GetFileName(file)}': {ex.Message}");
+            }
         }
 
-        if (_profiles.Count == 0)
+        // Seed stock defaults only when the profiles dir is genuinely empty —
+        // never when files existed but failed to parse, which would silently
+        // replace the user's real profiles with stock ones.
+        if (_profiles.Count == 0 && files.Count == 0)
             SeedDefaults();
     }
 
@@ -200,9 +207,10 @@ public class ProfileManager
 
     private void SaveProfile(ModProfile profile)
     {
-        var path = ProfilePath(profile);
-        var json = System.Text.Json.JsonSerializer.Serialize(profile, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
-        File.WriteAllText(path, json);
+        // JsonFileStore writes to a temp file then atomically replaces, so a
+        // crash mid-write never truncates an existing profile, and I/O failures
+        // are logged rather than thrown as a hard failure out of Create/Apply.
+        new JsonFileStore<ModProfile>(ProfilePath(profile)).Save(profile);
     }
 
     private static List<ProfileEntry> SnapshotCurrentLibrary()

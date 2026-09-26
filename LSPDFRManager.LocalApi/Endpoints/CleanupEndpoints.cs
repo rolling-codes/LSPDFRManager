@@ -23,7 +23,7 @@ public static class CleanupEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem($"Cleanup scan failed: {ex.Message}");
+                return ApiErrors.Problem($"Cleanup scan failed", ex);
             }
         });
 
@@ -50,7 +50,7 @@ public static class CleanupEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem($"Re-scan failed: {ex.Message}");
+                return ApiErrors.Problem($"Re-scan failed", ex);
             }
 
             var pathSet = req.RelativePaths.ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -82,7 +82,7 @@ public static class CleanupEndpoints
             }
             catch (Exception ex)
             {
-                return Results.Problem($"Cleanup apply failed: {ex.Message}");
+                return ApiErrors.Problem($"Cleanup apply failed", ex);
             }
         });
     }

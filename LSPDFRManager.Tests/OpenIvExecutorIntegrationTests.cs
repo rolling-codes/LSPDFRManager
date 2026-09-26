@@ -181,6 +181,47 @@ public class OpenIvExecutorIntegrationTests : IDisposable
         Assert.False(File.Exists(Path.Combine(_tempRoot, "escape.meta")));
     }
 
+    // ── Test 7: Overwrite failure preserves the original file ────────────
+    // Guards the temp-then-move write discipline: a mid-copy failure while
+    // overwriting an existing file must never truncate the original, and must
+    // leave no partial .tmp files behind.
+
+    [Fact]
+    public async Task Executor_OverwriteFailsMidCopy_OriginalPreservedAndNoTempLeftover()
+    {
+        var destRel = @"mods\existing.dll";
+        var destPath = Path.Combine(_tempRoot, destRel);
+        Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
+        var originalContent = new byte[] { 100, 101, 102, 103, 104 };
+        File.WriteAllBytes(destPath, originalContent);
+
+        var archive = new FakeArchive(new[]
+        {
+            new FakeArchiveEntry("existing.dll",
+                () => new ThrowingStream(new byte[] { 1, 2, 3, 4, 5, 6 }, failAfter: 2),
+                size: 6)
+        });
+        var plan = new OpenIvInstallPlan
+        {
+            Type = CarInstallType.ReplaceVehicle,
+            TargetDlcName = "overwrite_mod",
+            Operations = new()
+            {
+                new() { SourcePath = "existing.dll", DestinationPath = destRel, Overwrite = true }
+            },
+            XmlPatches = new()
+        };
+
+        var result = await _executor.ExecuteAsync(plan, archive, _tempRoot);
+
+        Assert.False(result.Success);
+        Assert.True(File.Exists(destPath), "original file must survive a failed overwrite");
+        Assert.Equal(originalContent, File.ReadAllBytes(destPath));
+
+        var leftoverTemps = Directory.GetFiles(Path.GetDirectoryName(destPath)!, "*.tmp");
+        Assert.Empty(leftoverTemps);
+    }
+
     private void SetupDlcListXml(string targetRoot)
     {
         var dlclistDir = Path.Combine(targetRoot, @"mods\update\update.rpf\common\data");
