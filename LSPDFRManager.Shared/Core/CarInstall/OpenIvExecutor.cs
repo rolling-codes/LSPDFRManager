@@ -49,15 +49,19 @@ public class OpenIvExecutor
 
         try
         {
+            // Build a one-time key→entry lookup so we don't re-enumerate the
+            // archive per operation (O(n²)) and don't risk re-opening entries
+            // out of order on non-seekable archive streams.
+            var entriesByKey = new Dictionary<string, IArchiveEntry>(StringComparer.Ordinal);
+            foreach (var e in archive.Entries)
+                entriesByKey.TryAdd(e.Key, e);
+
             // 1. Extract files from archive
             foreach (var operation in plan.Operations)
             {
                 ct.ThrowIfCancellationRequested();
 
-                var sourceEntry = archive.Entries
-                    .FirstOrDefault(e => e.Key == operation.SourcePath);
-
-                if (sourceEntry is null)
+                if (!entriesByKey.TryGetValue(operation.SourcePath, out var sourceEntry))
                     throw new InvalidOperationException(
                         $"Archive entry not found: {operation.SourcePath}");
 
