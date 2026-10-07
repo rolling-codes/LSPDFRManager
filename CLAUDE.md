@@ -95,3 +95,22 @@ Stack: React 19, Vite 8, Tailwind CSS 4, TanStack Query v5, React Router v7, Rad
 - Test classes that share singleton state (`AppConfig`, `AppDataPaths`, `ModLibraryService`) must be placed in the `"AppData serial"` or `"CommandCenter"` xUnit collection (both disable parallelization). Most other tests run in parallel by default. Any class that sets `AppConfig.Instance.GtaPath` must be in `"AppData serial"` to avoid racing with other serialised classes.
 - `FakeArchive` (in the test project) is the helper for constructing in-memory archives for installer tests.
 - When bumping the app version, update `<Version>` in both `LSPDFRManager.csproj` **and** `LSPDFRManager.Shared/LSPDFRManager.Shared.csproj`, then update the hardcoded assertions in `VersionAndBrowseGuardTests` (`AssemblyVersion_Is_X_Y_Z_0`) and `SetupWizardTests` (`result.CurrentVersion`).
+
+## universal-modder Integration
+
+The `universal-modder` plugin (`rehan-remade/universal-modder`) is installed at user scope.
+Its skills cover GTA V's RAGE engine, LSPDFR ecosystem, and mod conflict patterns —
+directly relevant to this project's domain.
+
+**When to use each skill:**
+
+| Skill | Use it when… |
+|-------|-------------|
+| `game-recon` | Investigating GTA V game-state detection: Script Hook V version, LSPDFR install path, OpenIV presence, anti-cheat (BattlEye) state — any code in `Services/LspdfrStatusService` or `ModDetector` |
+| `mod-any-game` | Working on conflict detection, RPF/archive logic, OIV pipeline steps (`Core/OivPipeline/`), or install plan generation — UM's 10-step mod workflow maps to this app's `InstallWorkflowController` |
+| `reverse-engineering` | Analyzing LSPDFR plugin binary conflicts: DLL hook chains, duplicate ASI hooks, trampoline issues — relevant to the Diagnostics tab and `Services/` conflict scanners |
+| `game-research-websearch` | Looking up lcpdfr.com, RAGE Multiplayer docs, or GTA V native function signatures |
+
+**Knowledge base:** `um kb search <query>` queries field notes from prior agents on GTA V modding patterns and known plugin conflicts. Useful before implementing any LSPDFR-specific detection or conflict logic.
+
+**Note on Issue #68** ("Add AI which reads installation guide"): `mod-any-game` + the UM knowledge base provide the GTA V context foundation for implementing AI-assisted installation guidance. Treat that issue as the implementation task; these skills are the supporting tools.
